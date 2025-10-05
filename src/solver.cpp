@@ -1,5 +1,6 @@
 #include "physics.h"
 
+
 Solver::Solver() : forces(nullptr), bodies(nullptr) {
     // set default params
     gravity = { 0, -10 };
@@ -36,19 +37,34 @@ Solver::~Solver() {
  * @param dt time that has passed since last step
  */
 void Solver::step(float dt) {
+    auto beforeStep = timeNow();
     bodySoA->compact(); // compact bodies to increase cache hits
+    printDurationUS(beforeStep, timeNow(), "Body Compact: ");
+
+    auto beforeTransform = timeNow();
     bodySoA->computeTransforms();
+    printDurationUS(beforeTransform, timeNow(), "Body Transform: ");
 
     // NOTE bodies are compact after this point
 
+    auto beforeBroad = timeNow();
     sphericalCollision(); // broad collision TODO replace with BVH
-    std::cout << "Broad: " << collisionPairs.size() << std::endl;
+    std::cout << "Broad Pairs: " << collisionPairs.size() << std::endl;
+    printDurationUS(beforeBroad, timeNow(), "Broad Collision: ");
+
+    auto beforeNarrow = timeNow();
     narrowCollision(); // -> uncompacts manifolds
+    printDurationUS(beforeNarrow, timeNow(), "Narrow Collision: ");
+
     // warmstart forces -> uncompacts forces
+    auto beforeCompact = timeNow();
     forceSoA->compact();
+    printDurationUS(beforeCompact, timeNow(), "Force Compact: ");
 
     // NOTE bodies and forces are compact after this point
-
+    print("------------------------------------------");
+    printDurationUS(beforeStep, timeNow(), "Total: ");
+    print("");
 }
 
 // TODO replace this with BVH
@@ -93,18 +109,16 @@ void Solver::narrowCollision() {
         uint rowB = pair.second;
 
         // create collider rows for better caching
-        auto imatTemp = xt::view(getIMat(), rowA, xt::all(), xt::all());
         ColliderRow a = {
             getPos()(rowA, 0), getPos()(rowA, 1),
-            { imatTemp(0, 0), imatTemp(0, 1), imatTemp(1, 0), imatTemp(1, 1) },
+            getMat()(rowA), getIMat()(rowA),
             getStartPtr(rowA), getLength(rowA),
             xt::view(getIndexA(), insertIndex, xt::all())
         };
 
-        imatTemp = xt::view(getIMat(), rowB, xt::all(), xt::all());
         ColliderRow b = {
             getPos()(rowB, 0), getPos()(rowB, 1),
-            { imatTemp(0, 0), imatTemp(0, 1), imatTemp(1, 0), imatTemp(1, 1) },
+            getMat()(rowB), getIMat()(rowB),
             getStartPtr(rowB), getLength(rowB),
             xt::view(getIndexB(), insertIndex, xt::all())
         };
@@ -136,6 +150,7 @@ void Solver::narrowCollision() {
 
 bool Solver::gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     for (uint _ = 0; _ < GJK_ITERATIONS; ++_) {
+        print(pair.freeIndex);
         // get next direction or test simplex if full
         handleSimplex(a, b, pair);
 
@@ -149,11 +164,11 @@ bool Solver::gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
 
         // if the point we found didn't cross the origin, we are not colliding
         if (glm::dot(pair.minks[pair.freeIndex], pair.dir) < COLLISION_MARGIN) {
-            std::cout << "no cross: " << pair.freeIndex << std::endl;
+            std::cout << "no cross " << pair.freeIndex << std::endl;
             return false;
         }
 
-        pair.minks[pair.freeIndex]++;
+        pair.freeIndex++;
     }
 
     std::cout << "time out" << std::endl;
@@ -162,10 +177,10 @@ bool Solver::gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
 
 void Solver::handleSimplex(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     switch (pair.freeIndex) {
-        case 0: return handle0(a, b, pair);
-        case 1: return handle1(a, b, pair);
-        case 2: return handle2(a, b, pair);
-        case 3: return handle3(a, b, pair);
+        case 0: print("case 0"); return handle0(a, b, pair);
+        case 1: print("case 1"); return handle1(a, b, pair);
+        case 2: print("case 2"); return handle2(a, b, pair);
+        case 3: print("case 3"); return handle3(a, b, pair);
         default: throw std::runtime_error("simplex has incorrect freeIndex");
     }
 }
@@ -189,8 +204,8 @@ void Solver::handle1(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
 }
 
 void Solver::handle2(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
-    vec2 CB = pair.minks[1] - pair.minks[2];
-    vec2 CO =               - pair.minks[2];
+    vec2 CB = pair.minks[1] - pair.minks[0];
+    vec2 CO =               - pair.minks[0];
 
     // TODO check for an extra robustness case (may not be needed)
     tripleProduct(CB, CO, CB, pair.dir);
@@ -220,9 +235,9 @@ void Solver::handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     perpTowards(AC, BO, perp);
     if (glm::dot(perp, AO) > -COLLISION_MARGIN) {
         // remove 1
-        a.index(0)    = a.index(2);
-        b.index(0)    = b.index(2);
-        pair.minks[0] = pair.minks[2];
+        a.index(1)    = a.index(2);
+        b.index(1)    = b.index(2);
+        pair.minks[1] = pair.minks[2];
 
         pair.dir = perp;
         pair.freeIndex = 2;
@@ -240,7 +255,7 @@ void Solver::handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
  * @param dir 
  * @return uint
  */
-uint Solver::getFar(vec2* verts, uint length, vec2& dir) {
+uint Solver::getFar(const vec2* verts, uint length, const vec2& dir) {
     uint cur = 0;
     float here = glm::dot(dir, verts[0]);
 
@@ -291,6 +306,13 @@ void Solver::addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
 
     a.index[pair.freeIndex] = getFar(a.start, a.length, dirA);
     b.index[pair.freeIndex] = getFar(b.start, b.length, dirB);
+
+    vec2 worldA = a.start[a.index[pair.freeIndex]];
+    vec2 worldB = b.start[b.index[pair.freeIndex]];
+    transform(a.pos, a.mat, worldA);
+    transform(b.pos, b.mat, worldB);
+
+    pair.minks[pair.freeIndex] = worldA - worldB;
 }
 
 void Solver::epa() {

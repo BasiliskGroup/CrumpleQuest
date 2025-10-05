@@ -17,7 +17,6 @@ void moveRow(Tensor& t, uint dst, uint src) {
     xt::view(t, dst) = xt::view(t, src);
 }
 
-
 /**
  * @brief Compacts a tensor into a single contiguous block of memory
  * 
@@ -60,19 +59,33 @@ void compactTensors(const std::set<uint>& freeIndices, uint capacity, Map& map, 
  * @param newCapacity 
  */
 template <typename Tensor>
-void expandTensor(Tensor& tensor, uint size, uint newCapacity)
+void expandTensor(Tensor& tensor, std::size_t size, std::size_t newCapacity)
 {
-    // Copy old shape and adjust first dimension
-    auto newShape = tensor.shape();
+    // shape & rank
+    auto oldShape = tensor.shape();
+    std::size_t rank = tensor.dimension();
+
+    // guard: size must not exceed old first-dimension
+    if (size > oldShape[0]) throw std::runtime_error("size > old first-dimension");
+
+    // build new shape
+    auto newShape = oldShape;
     newShape[0] = newCapacity;
 
-    // Create expanded tensor
+    // create the new tensor (default-initialized)
     Tensor newTensor = Tensor::from_shape(newShape);
 
-    // Copy old values into the expanded tensor
-    xt::view(newTensor, xt::range(0, size), xt::all()) = tensor;
+    // compute number of elements per "slice" along axis 0 (product of remaining dims)
+    std::size_t inner_count = 1;
+    for (std::size_t i = 1; i < rank; ++i) inner_count *= oldShape[i];
 
-    // Move back
+    // copy contiguous block: first `size` slices
+    // NOTE: this assumes row-major contiguous storage (xtensor default)
+    auto* src = tensor.data();
+    auto* dst = newTensor.data();
+    std::copy_n(src, size * inner_count, dst);
+
+    // move new tensor back
     tensor = std::move(newTensor);
 }
 

@@ -3,6 +3,7 @@
 
 #include "SoA/virtualSoA.h"
 #include "util/indexed.h"
+#include "util/print.h"
 
 // NOTE we do not need copy or move constructor as we will only have one of these
 class BodySoA : public SoA {
@@ -24,8 +25,8 @@ private:
 
     xt::xtensor<uint, 1> mesh; // vector
 
-    xt::xtensor<float, 3> mat; // list of 2x2 matrices
-    xt::xtensor<float, 3> imat;
+    xt::xtensor<mat2x2, 1> mat; // list of 2x2 matrices
+    xt::xtensor<mat2x2, 1> imat;
 
     xt::xtensor<bool, 1> updated;
 
@@ -53,8 +54,8 @@ public:
 
     xt::xtensor<uint, 1>& getMesh() { return mesh; }
 
-    xt::xtensor<float, 3>& getMat() { return mat; }
-    xt::xtensor<float, 3>& getIMat() { return imat; }
+    xt::xtensor<mat2x2, 1>& getMat() { return mat; }
+    xt::xtensor<mat2x2, 1>& getIMat() { return imat; }
 
     xt::xtensor<bool, 1>& getUpdated() { return updated; }
 
@@ -66,7 +67,7 @@ public:
     void compact() override;
     int insert(vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius);
     void remove(uint index);
-    void print();
+    void printRigids();
 };
 
 #endif

@@ -6,6 +6,7 @@
 #include "util/includes.h"
 #include "util/indexed.h"
 #include "util/constants.h"
+#include "util/maths.h"
 
 #include "forces/force.h"
 #include "forces/manifold.h"

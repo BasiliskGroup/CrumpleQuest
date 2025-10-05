@@ -3,10 +3,15 @@
 
 #include "util/includes.h"
 #include "util/maths.h"
+#include "util/time.h"
+#include "util/print.h"
 
 #include "SoA/bodySoA.h"
 #include "SoA/forceSoAs.h"
 #include "SoA/meshSoA.h"
+
+
+
 
 class Rigid;
 class Force;
@@ -37,15 +42,14 @@ private:
     // collision struct for hotloop caching
     struct ColliderRow {
         vec2 pos;
-        
-        // Exact types from your compiler errors:
-        mat2x2 imat;
-        vec2* start;
+        const mat2x2& mat;
+        const mat2x2& imat;
+        const vec2* start;
         uint length;
         xt::xview<xt::xtensor<uint, 2>&, uint, xt::xall<size_t>> index;
         
-        ColliderRow(float x, float y, mat2x2 imat, vec2* start, uint length, decltype(index) index_view)
-            : pos({x, y}), imat(imat), start(start), length(length), index(index_view) {}
+        ColliderRow(float x, float y, mat2x2& mat, mat2x2& imat, vec2* start, uint length, decltype(index) index_view)
+            : pos({x, y}), mat(mat), imat(imat), start(start), length(length), index(index_view) {}
     };
 
     struct CollisionPair {
@@ -76,6 +80,7 @@ public:
 private:
     // getters for accessing rows in a table
     auto& getPos() { return bodySoA->getPos(); }
+    auto& getMat() { return bodySoA->getMat(); }
     auto& getIMat() { return bodySoA->getIMat(); }
 
     auto& getVerts() { return meshSoA->getVerts(); }
@@ -104,7 +109,7 @@ private:
     void handle2(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
     void handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
     void addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
-    uint getFar(vec2* verts, uint length, vec2& dir);
+    uint getFar(const vec2* verts, uint length, const vec2& dir);
 
     // sat helper functions
 };

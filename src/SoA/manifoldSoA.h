@@ -15,17 +15,12 @@ private:
     xt::xtensor<float, 3> C0;
     xt::xtensor<float, 3> rA;
     xt::xtensor<float, 3> rB;
-
     xt::xtensor<float, 2> normal;
-
     xt::xtensor<float, 1> friction;
-
     xt::xtensor<bool, 1> stick;
-    
     xt::xtensor<uint, 2> indexA;
     xt::xtensor<uint, 2> indexB;
     xt::xtensor<float, 3> simplex;
-
     xt::xtensor<uint, 1> forceIndex;
 
 public:

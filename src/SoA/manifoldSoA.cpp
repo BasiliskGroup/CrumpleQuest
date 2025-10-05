@@ -1,4 +1,6 @@
 #include "SoA/forceSoAs.h"
+#include "util/print.h"
+
 
 ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA) {
     this->capacity = capacity;
@@ -9,20 +11,15 @@ ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA)
     }
 
     // create all xtensors
-    C0     = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-    rA     = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-    rB     = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-
-    normal = xt::xtensor<float, 2>::from_shape({capacity, 3});
-
-    friction = xt::xtensor<float, 1>::from_shape({capacity});
-
-    stick = xt::xtensor<bool, 1>::from_shape({capacity});
-
-    indexA   = xt::xtensor<uint, 2>::from_shape({capacity, 3});
-    indexB   = xt::xtensor<uint, 2>::from_shape({capacity, 3});
-    simplex = xt::xtensor<float, 3>::from_shape({capacity, 3, 2});
-
+    C0         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
+    rA         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
+    rB         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
+    normal     = xt::xtensor<float, 2>::from_shape({capacity, 3});
+    friction   = xt::xtensor<float, 1>::from_shape({capacity});
+    stick      = xt::xtensor<bool, 1>::from_shape({capacity});
+    indexA     = xt::xtensor<uint, 2>::from_shape({capacity, 3});
+    indexB     = xt::xtensor<uint, 2>::from_shape({capacity, 3});
+    simplex    = xt::xtensor<float, 3>::from_shape({capacity, 3, 2});
     forceIndex = xt::xtensor<uint, 1>::from_shape({capacity});
 }
 

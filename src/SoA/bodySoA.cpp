@@ -24,8 +24,8 @@ BodySoA::BodySoA(uint capacity) {
 
     mesh = xt::xtensor<unsigned int, 1>::from_shape({capacity});
 
-    mat  = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-    imat = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
+    mat  = xt::xtensor<mat2x2, 1>::from_shape({capacity});
+    imat = xt::xtensor<mat2x2, 1>::from_shape({capacity});
 
     updated = xt::xtensor<bool, 1>::from_shape({capacity});
 
@@ -39,7 +39,6 @@ BodySoA::BodySoA(uint capacity) {
  * 
  */
 void BodySoA::computeTransforms() {
-    // TODO make this vectorized, no point of xtensor if not
     for (uint i = 0; i < size; i++) {
         if (!updated(i)) continue;
 
@@ -50,15 +49,10 @@ void BodySoA::computeTransforms() {
         float c = cos(angle);
         float s = sin(angle);
 
-        mat(i, 0, 0) =  c * sx;
-        mat(i, 0, 1) = -s * sy;
-        mat(i, 1, 0) =  s * sx;
-        mat(i, 1, 1) =  c * sy;
+        mat(i) = { c * sx, -s * sy, s * sx, c * sy };
+        imat(i) = { c * isx, s * isy, -s * isx, c * isy };
 
-        imat(i, 0, 0) =  c * isx;
-        imat(i, 0, 1) = s * isy;
-        imat(i, 1, 0) = -s * isx;
-        imat(i, 1, 1) =  c * isy;
+        updated(i) = false;
     }
 }
 
@@ -89,7 +83,7 @@ void BodySoA::resize(uint newCapacity) {
     expandTensor(satur,    size, newCapacity);
 
     // add all new indices to freeIndices
-    for (uint i = capacity; i < newCapacity; ++i) {
+    for (uint i = size; i < newCapacity; ++i) {
         freeIndices.insert(i);
     }
 
@@ -99,8 +93,6 @@ void BodySoA::resize(uint newCapacity) {
 
 // NOTE this function is very expensive but should only be called once per frame
 // if needed, find a cheaper solution
-
-// TODO change indices of compacted Bodies
 void BodySoA::compact() {
     if (freeIndices.empty()) return; // nothing to remove
 
@@ -124,8 +116,7 @@ void BodySoA::compact() {
 
 int BodySoA::insert(vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius) {
     if (freeIndices.empty()) {
-        capacity *= 2;
-        resize(capacity);
+        resize(capacity * 2);
     }
 
     // pop a random element from the set
@@ -163,7 +154,7 @@ void BodySoA::remove(uint index) {
     size--;
 }
 
-void BodySoA::print() {
+void BodySoA::printRigids() {
     for(uint i = 0; i < size; i++) {
         std::cout << "(" << pos(i, 0) << ", " << pos(i, 1) << ", " << pos(i, 2) << ")" << " <" << vel(i, 0) << ", " << vel(i, 1) << ", " << vel(i, 2) << ">" << std::endl;
     }

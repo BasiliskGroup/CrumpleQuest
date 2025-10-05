@@ -3,6 +3,7 @@
 
 // io
 #include <iostream>
+#include <string>
 
 // errors
 #include <stdexcept>
@@ -29,11 +30,14 @@
 #include <glm/glm.hpp>
 
 // import xtensor
-#include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
+#include <xtensor/xarray.hpp>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xio.hpp>
-#include <xtensor/xview.hpp>
 #include <xtensor/xmasked_view.hpp>
+#include <xtensor/xnoalias.hpp>
+#include <xtensor/xstrided_view.hpp>
+#include <xtensor/xview.hpp>
 
 // look for future changes to glm experimental
 #define GLM_ENABLE_EXPERIMENTAL 
