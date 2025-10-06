@@ -56,10 +56,9 @@ private:
         uint insertIndex;
         std::vector<vec2> minks;
         vec2 dir;
-        uint freeIndex;
 
-        CollisionPair(uint insertIndex, std::vector<vec2> minks, int freeIndex)
-            : insertIndex(insertIndex), minks(minks), freeIndex(freeIndex) {}
+        CollisionPair(uint insertIndex, std::vector<vec2> minks)
+            : insertIndex(insertIndex), minks(minks) {}
     };
     
 public:
@@ -98,17 +97,17 @@ private:
     // collision functions
     void sphericalCollision();
     void narrowCollision();
-    bool gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
+    bool gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeIndex);
     void epa();
     void sat();
 
     // gjk methods helper functions
-    void handleSimplex(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
-    void handle0(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
-    void handle1(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
-    void handle2(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
-    void handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
-    void addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
+    uint handleSimplex(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeIndex);
+    uint handle0(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
+    uint handle1(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
+    uint handle2(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
+    uint handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
+    void addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint insertIndex);
     uint getFar(const vec2* verts, uint length, const vec2& dir);
 
     // sat helper functions

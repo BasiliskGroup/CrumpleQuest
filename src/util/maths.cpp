@@ -5,11 +5,14 @@ void tripleProduct(const vec2& a, const vec2& b, const vec2& c, vec2& o) {
 }
 
 void perpTowards(const vec2& v, const vec2& to, vec2& perp) {
-    perp = vec2(-v[1], v[0]);
-    if (glm::dot(perp, to) < 0) {
-        perp = -perp;
-    }
+    // Two possible perpendiculars
+    vec2 left  = vec2(-v.y,  v.x);
+    vec2 right = vec2( v.y, -v.x);
+
+    // Pick whichever points more toward 'to'
+    perp = (glm::dot(left, to) > glm::dot(right, to)) ? left : right;
 }
+
 
 /**
  * @brief Transforms the vector v using the position vector and scale/rotation matrix

@@ -40,7 +40,7 @@ BodySoA::BodySoA(uint capacity) {
  */
 void BodySoA::computeTransforms() {
     for (uint i = 0; i < size; i++) {
-        if (!updated(i)) continue;
+        if (updated(i)) continue;
 
         float angle = pos(i, 2);
         float sx = scale(i, 0), sy = scale(i, 1);

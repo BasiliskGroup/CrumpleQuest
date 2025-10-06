@@ -123,11 +123,24 @@ void Solver::narrowCollision() {
             xt::view(getIndexB(), insertIndex, xt::all())
         };
 
+        // check meshes
+        // print("A mesh");
+        // for (uint i = 0; i < a.length; i++) {
+        //     print(a.start[i]);
+        // }
+        // print("");
+
+        // print("B mesh");
+        // for (uint i = 0; i < b.length; i++) {
+        //     print(b.start[i]);
+        // }
+        // print("");
+
         auto minks = xt::view(getMinks(), insertIndex, xt::all(), xt::all());
-        CollisionPair collisionPair = { insertIndex, {{minks(0, 0), minks(0, 1)}, {minks(1, 0), minks(1, 1)}, {minks(2, 0), minks(2, 1)}}, 0 };
+        CollisionPair collisionPair = { insertIndex, {{minks(0, 0), minks(0, 1)}, {minks(1, 0), minks(1, 1)}, {minks(2, 0), minks(2, 1)}}};
 
         // determine if objects are colliding
-        bool collided = gjk(a, b, collisionPair);
+        bool collided = gjk(a, b, collisionPair, 0);
 
         if (!collided) {
             // increment enumeration
@@ -148,71 +161,84 @@ void Solver::narrowCollision() {
     std::cout << "Narrow: " << count << std::endl;
 }
 
-bool Solver::gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
+bool Solver::gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeIndex) {
     for (uint _ = 0; _ < GJK_ITERATIONS; ++_) {
-        print(pair.freeIndex);
         // get next direction or test simplex if full
-        handleSimplex(a, b, pair);
+        freeIndex = handleSimplex(a, b, pair, freeIndex);
 
         // termination signal
-        if (pair.freeIndex == -1) {
+        if (freeIndex == -1) {
             return true;
         }
 
+        // print("gjk it");
+        // for(int i = 0; i < freeIndex; i++) {
+        //     print(pair.minks[i]);
+        // }
+        // print("dir");
+        // print(pair.dir);
+
         // get next support point
-        addSupport(a, b, pair);
+        addSupport(a, b, pair, freeIndex);
+
+        // print("adding");
+        // print(pair.minks[freeIndex]);
+        // print("");
 
         // if the point we found didn't cross the origin, we are not colliding
-        if (glm::dot(pair.minks[pair.freeIndex], pair.dir) < COLLISION_MARGIN) {
-            std::cout << "no cross " << pair.freeIndex << std::endl;
+        if (glm::dot(pair.minks[freeIndex], pair.dir) < COLLISION_MARGIN) {
+            std::cout << "no cross " << freeIndex << std::endl;
             return false;
         }
 
-        pair.freeIndex++;
+        freeIndex++;
     }
 
     std::cout << "time out" << std::endl;
     return false;
 }
 
-void Solver::handleSimplex(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
-    switch (pair.freeIndex) {
-        case 0: print("case 0"); return handle0(a, b, pair);
-        case 1: print("case 1"); return handle1(a, b, pair);
-        case 2: print("case 2"); return handle2(a, b, pair);
-        case 3: print("case 3"); return handle3(a, b, pair);
+uint Solver::handleSimplex(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeIndex) {
+    switch (freeIndex) {
+        case 0: return handle0(a, b, pair);
+        case 1: return handle1(a, b, pair);
+        case 2: return handle2(a, b, pair);
+        case 3: return handle3(a, b, pair);
         default: throw std::runtime_error("simplex has incorrect freeIndex");
     }
 }
 
-void Solver::handle0(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
+uint Solver::handle0(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     pair.dir = b.pos - a.pos;
 
     // if center of masses are super close, they must be colliding
     // this also avoids numerical stability issues
     if (glm::length2(pair.dir) < COLLISION_MARGIN) {
-        pair.freeIndex = -1;
-        return;
+        return -1;
     }
 
-    pair.freeIndex = 0;
+    return 0;
 }
 
-void Solver::handle1(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
+uint Solver::handle1(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     pair.dir = -pair.minks[0];
-    pair.freeIndex = 1;
+    return 1;
 }
 
-void Solver::handle2(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
+uint Solver::handle2(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     vec2 CB = pair.minks[1] - pair.minks[0];
     vec2 CO =               - pair.minks[0];
-
-    // TODO check for an extra robustness case (may not be needed)
     tripleProduct(CB, CO, CB, pair.dir);
-    pair.freeIndex = 2;
+
+    if (glm::length2(pair.dir) < COLLISION_MARGIN) {
+        // fallback perpendicular
+        perpTowards(CB, CO, pair.dir);
+    }
+
+    return 2;
 }
 
-void Solver::handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
+uint Solver::handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     vec2 AB = pair.minks[1] - pair.minks[2];
     vec2 AC = pair.minks[0] - pair.minks[2];
     vec2 AO =               - pair.minks[2];
@@ -227,8 +253,7 @@ void Solver::handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
         pair.minks[0] = pair.minks[2];
 
         pair.dir = perp;
-        pair.freeIndex = 2;
-        return;
+        return 2;
     }
 
     vec2 BO = -pair.minks[1];
@@ -240,79 +265,44 @@ void Solver::handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
         pair.minks[1] = pair.minks[2];
 
         pair.dir = perp;
-        pair.freeIndex = 2;
-        return;
+        return 2;
     }
 
     // we have found a collision
-    pair.freeIndex = -1;
+    return -1;
 }
 
-/**
- * @brief Finds the index of the vertex with the highest dot product with dir. Uses hill climbing for optimization over vectorization. 
- * 
- * @param rigid 
- * @param dir 
- * @return uint
- */
 uint Solver::getFar(const vec2* verts, uint length, const vec2& dir) {
-    uint cur = 0;
-    float here = glm::dot(dir, verts[0]);
+    uint farIndex = 0;
+    float maxDot = glm::dot(verts[0], dir);
 
-    // select search direction
-    uint end = length - 1;
-    float roll = glm::dot(dir, verts[end]);
-    float right = glm::dot(dir, verts[1]);
-
-    // early out if the first index is at the top of the hill
-    if (here > roll && here > right) {
-        return cur;
-    }
-    
-    // prepare info for walk direction
-    uint walk;
-    if (roll > right) {
-        walk = -1;
-        cur = end;
-        here = roll;
-    } else {
-        walk = 1;
-        cur = 1;
-        here = right;
-    }
-
-    // walk until we find a worse vertex
-    uint nextIdx, nextDot;
-    while (0 <= cur && cur <= end) {
-        nextIdx = cur + walk;
-        if (0 > nextIdx || nextIdx > end) {
-            return cur; // we have hit the boundary and should leave
+    for (uint i = 1; i < length; ++i) {
+        float d = glm::dot(verts[i], dir);
+        if (d > maxDot) {
+            maxDot = d;
+            farIndex = i;
         }
-        nextDot = glm::dot(dir, verts[nextIdx]);
-        if (nextDot < here) {
-            return cur;
-        }
-        cur = nextIdx;
-        here = nextDot;
     }
 
-    return cur;
+    return farIndex;
 }
 
-void Solver::addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
+void Solver::addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint insertIndex) {
     // direct search vector into local space
     vec2 dirA = a.imat *  pair.dir;
-    vec2 dirB = b.imat * -pair.dir;
+    vec2 dirB = b.imat * (-pair.dir);
 
-    a.index[pair.freeIndex] = getFar(a.start, a.length, dirA);
-    b.index[pair.freeIndex] = getFar(b.start, b.length, dirB);
+    a.index[insertIndex] = getFar(a.start, a.length, dirA);
+    b.index[insertIndex] = getFar(b.start, b.length, dirB);
 
-    vec2 worldA = a.start[a.index[pair.freeIndex]];
-    vec2 worldB = b.start[b.index[pair.freeIndex]];
-    transform(a.pos, a.mat, worldA);
-    transform(b.pos, b.mat, worldB);
+    // Transform selected local vertices into world space
+    vec2 localA = a.start[a.index[insertIndex]];
+    vec2 localB = b.start[b.index[insertIndex]];
+    vec2 worldA = a.pos + a.mat * localA;
+    vec2 worldB = b.pos + b.mat * localB;
 
-    pair.minks[pair.freeIndex] = worldA - worldB;
+    // Compute Minkowski support point
+    pair.minks[insertIndex] = worldA - worldB;
 }
 
 void Solver::epa() {
@@ -326,3 +316,54 @@ void Solver::sat() {
 void Solver::draw() {
     // TODO draw everything
 }
+
+/**
+ * @brief Finds the index of the vertex with the highest dot product with dir. Uses hill climbing for optimization over vectorization. 
+ * 
+ * @param rigid 
+ * @param dir 
+ * @return uint
+ */
+// uint Solver::getFar(const vec2* verts, uint length, const vec2& dir) {
+//     uint cur = 0;
+//     float here = glm::dot(dir, verts[0]);
+
+//     // select search direction
+//     uint end = length - 1;
+//     float roll = glm::dot(dir, verts[end]);
+//     float right = glm::dot(dir, verts[1]);
+
+//     // early out if the first index is at the top of the hill
+//     if (here > roll && here > right) {
+//         return cur;
+//     }
+    
+//     // prepare info for walk direction
+//     uint walk;
+//     if (roll > right) {
+//         walk = -1;
+//         cur = end;
+//         here = roll;
+//     } else {
+//         walk = 1;
+//         cur = 1;
+//         here = right;
+//     }
+
+//     // walk until we find a worse vertex
+//     uint nextIdx, nextDot;
+//     while (0 <= cur && cur <= end) {
+//         nextIdx = cur + walk;
+//         if (0 > nextIdx || nextIdx > end) {
+//             return cur; // we have hit the boundary and should leave
+//         }
+//         nextDot = glm::dot(dir, verts[nextIdx]);
+//         if (nextDot < here) {
+//             return cur;
+//         }
+//         cur = nextIdx;
+//         here = nextDot;
+//     }
+
+//     return cur;
+// }
