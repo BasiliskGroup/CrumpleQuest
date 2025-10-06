@@ -52,10 +52,34 @@ private:
             : pos({x, y}), mat(mat), imat(imat), start(start), length(length), index(index_view) {}
     };
 
+    struct PolytopeFace {
+        vec2 normal;
+        float distance;
+
+        // face vertices
+        ushort va;
+        ushort vb;
+
+        PolytopeFace() = default;
+        PolytopeFace(ushort va, ushort vb, vec2 normal, float distance)
+            : normal(normal), distance(distance), va(va), vb(vb) {}
+    };
+
+    using SpSet = std::array<ushort, EPA_ITERATIONS + 3>;
+    using SpArray = std::array<vec2, EPA_ITERATIONS + 3>;
+    using Polytope = std::array<PolytopeFace, EPA_ITERATIONS + 3>;
+
     struct CollisionPair {
+        // gjk
         uint insertIndex;
         std::vector<vec2> minks;
         vec2 dir;
+
+        // epa
+        // we add 3 since we start with 3 faces
+        SpArray sps;
+        SpSet spSet;
+        Polytope polytope;
 
         CollisionPair(uint insertIndex, std::vector<vec2> minks)
             : insertIndex(insertIndex), minks(minks) {}
@@ -98,7 +122,7 @@ private:
     void sphericalCollision();
     void narrowCollision();
     bool gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeIndex);
-    void epa();
+    void epa(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
     void sat();
 
     // gjk methods helper functions
@@ -109,6 +133,14 @@ private:
     uint handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
     void addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint insertIndex);
     uint getFar(const vec2* verts, uint length, const vec2& dir);
+
+    // epa helper methods
+    ushort manageHorizonCloud(SpSet& spSet, ushort spIndex, ushort setSize);
+    bool discardHorizon(SpSet& spSet, ushort spIndex, ushort setSize);
+    ushort polytopeFront(Polytope& polytope, ushort setSize);
+    void removeFace(Polytope& polytope, ushort index, ushort size);
+    void supportMinkOnly(ColliderRow& a, ColliderRow& b, SpArray sps, uint insertIndex);
+    void buildFace(Polytope& polytope, ushort indexA, ushort indexB, ushort indexL);
 
     // sat helper functions
 };

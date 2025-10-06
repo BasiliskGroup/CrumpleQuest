@@ -72,26 +72,19 @@ void Solver::sphericalCollision() {
     // clear contact pairs from last frame
     collisionPairs.clear();
 
-    // generate new contact pairs
-    uint num_bodies = bodySoA->getSize();
+    uint numBodies = bodySoA->getSize();
     auto pos = bodySoA->getPos();
     auto radii = bodySoA->getRadius();
 
-    // collect difference in positions
-    auto diff = xt::view(pos, xt::all(), xt::newaxis(), xt::all()) - xt::view(pos, xt::newaxis(), xt::all(), xt::all());
-    auto dist2 = xt::sum(xt::pow(diff, 2), {2});
-
-    // collect radii
-    auto rsum = xt::view(radii, xt::all(), xt::newaxis()) + xt::view(radii, xt::newaxis(), xt::all());
-    auto rsum2 = xt::pow(rsum, 2);
-
-    // find differences
-    auto table = rsum2 - dist2;
-
-    // load collision pairs
-    for (uint i = 0; i < num_bodies; i++) {
-        for (uint j = i + 1; j < num_bodies; j++) {
-            if (table(i, j) > 0.0) {
+    float dx;
+    float dy;
+    float radsum;
+    for (uint i = 0; i < numBodies; i++) {
+        for (uint j = i + 1; j < numBodies; j++) {
+            dx = pos(i, 0) - pos(j, 0);
+            dy = pos(i, 1) - pos(j, 1);
+            radsum = radii(i) + radii(j);
+            if (radsum * radsum > dx * dx + dy * dy) {
                 collisionPairs.emplace_back(i, j);
             }
         }
@@ -122,19 +115,6 @@ void Solver::narrowCollision() {
             getStartPtr(rowB), getLength(rowB),
             xt::view(getIndexB(), insertIndex, xt::all())
         };
-
-        // check meshes
-        // print("A mesh");
-        // for (uint i = 0; i < a.length; i++) {
-        //     print(a.start[i]);
-        // }
-        // print("");
-
-        // print("B mesh");
-        // for (uint i = 0; i < b.length; i++) {
-        //     print(b.start[i]);
-        // }
-        // print("");
 
         auto minks = xt::view(getMinks(), insertIndex, xt::all(), xt::all());
         CollisionPair collisionPair = { insertIndex, {{minks(0, 0), minks(0, 1)}, {minks(1, 0), minks(1, 1)}, {minks(2, 0), minks(2, 1)}}};
@@ -171,19 +151,8 @@ bool Solver::gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeI
             return true;
         }
 
-        // print("gjk it");
-        // for(int i = 0; i < freeIndex; i++) {
-        //     print(pair.minks[i]);
-        // }
-        // print("dir");
-        // print(pair.dir);
-
         // get next support point
         addSupport(a, b, pair, freeIndex);
-
-        // print("adding");
-        // print(pair.minks[freeIndex]);
-        // print("");
 
         // if the point we found didn't cross the origin, we are not colliding
         if (glm::dot(pair.minks[freeIndex], pair.dir) < COLLISION_MARGIN) {
@@ -272,21 +241,6 @@ uint Solver::handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     return -1;
 }
 
-uint Solver::getFar(const vec2* verts, uint length, const vec2& dir) {
-    uint farIndex = 0;
-    float maxDot = glm::dot(verts[0], dir);
-
-    for (uint i = 1; i < length; ++i) {
-        float d = glm::dot(verts[i], dir);
-        if (d > maxDot) {
-            maxDot = d;
-            farIndex = i;
-        }
-    }
-
-    return farIndex;
-}
-
 void Solver::addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint insertIndex) {
     // direct search vector into local space
     vec2 dirA = a.imat *  pair.dir;
@@ -305,25 +259,7 @@ void Solver::addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uin
     pair.minks[insertIndex] = worldA - worldB;
 }
 
-void Solver::epa() {
-
-}
-
-void Solver::sat() {
-    
-}
-
-void Solver::draw() {
-    // TODO draw everything
-}
-
-/**
- * @brief Finds the index of the vertex with the highest dot product with dir. Uses hill climbing for optimization over vectorization. 
- * 
- * @param rigid 
- * @param dir 
- * @return uint
- */
+// TODO find the error in this hill climbing, not 100% accurate
 // uint Solver::getFar(const vec2* verts, uint length, const vec2& dir) {
 //     uint cur = 0;
 //     float here = glm::dot(dir, verts[0]);
@@ -367,3 +303,54 @@ void Solver::draw() {
 
 //     return cur;
 // }
+
+uint Solver::getFar(const vec2* verts, uint length, const vec2& dir) {
+    uint farIndex = 0;
+    float maxDot = glm::dot(verts[0], dir);
+
+    for (uint i = 1; i < length; ++i) {
+        float d = glm::dot(verts[i], dir);
+        if (d > maxDot) {
+            maxDot = d;
+            farIndex = i;
+        }
+    }
+
+    return farIndex;
+}
+
+void Solver::epa(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
+    
+}
+
+ushort Solver::manageHorizonCloud(SpSet& spSet, ushort spIndex, ushort setSize) {
+
+}
+
+bool Solver::discardHorizon(SpSet& spSet, ushort spIndex, ushort setSize) {
+
+}
+
+ushort Solver::polytopeFront(Polytope& polytope, ushort setSize) {
+
+}
+
+void Solver::removeFace(Polytope& polytope, ushort index, ushort size) {
+
+}
+
+void Solver::supportMinkOnly(ColliderRow& a, ColliderRow& b, std::array<vec2, EPA_ITERATIONS + 3> sps, uint insertIndex) {
+
+}
+
+void Solver::buildFace(Polytope& polytope, ushort indexA, ushort indexB, ushort indexL) {
+
+}
+
+void Solver::sat() {
+    
+}
+
+void Solver::draw() {
+    // TODO draw everything
+}

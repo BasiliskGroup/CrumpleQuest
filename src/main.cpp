@@ -12,7 +12,7 @@ int main() {
 
     // create a list of rigids
     std::vector<Rigid*> objects;
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 100; i++) {
         objects.push_back(new Rigid(solver, {uniform(-dx, dx), uniform(-dx, dx), uniform(0, dr)}, {1, 1}, 1, 0.4, {0, 0, 0}, cubeMesh));
     }
 

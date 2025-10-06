@@ -9,11 +9,11 @@
 #include <stdexcept>
 
 // standard data structures
-#include <vector>
 #include <array>
 #include <set>
-#include <unordered_map>
 #include <tuple>
+#include <unordered_map>
+#include <vector>
 
 // helpful stuff
 #include <memory> // I forgor what this does but it was in the 3d version somewhere

@@ -41,7 +41,17 @@ target_link_libraries(engine
 )
 
 # -----------------------
-# Resources
+# compile options
+# -----------------------
+
+# target_compile_options(engine PRIVATE
+#     -O3
+#     -ffast-math
+#     -march=native
+# )
+
+# -----------------------
+# resources
 # -----------------------
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shaders)
