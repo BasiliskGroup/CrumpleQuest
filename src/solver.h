@@ -65,6 +65,7 @@ private:
             : normal(normal), distance(distance), va(va), vb(vb) {}
     };
 
+    using Simplex = std::array<vec2, 3>;
     using SpSet = std::array<ushort, EPA_ITERATIONS + 3>;
     using SpArray = std::array<vec2, EPA_ITERATIONS + 3>;
     using Polytope = std::array<PolytopeFace, EPA_ITERATIONS + 3>;
@@ -72,7 +73,7 @@ private:
     struct CollisionPair {
         // gjk
         uint insertIndex;
-        std::vector<vec2> minks;
+        Simplex minks;
         vec2 dir;
 
         // epa
@@ -81,7 +82,7 @@ private:
         SpSet spSet;
         Polytope polytope;
 
-        CollisionPair(uint insertIndex, std::vector<vec2> minks)
+        CollisionPair(uint insertIndex, Simplex minks)
             : insertIndex(insertIndex), minks(minks) {}
     };
     
@@ -122,7 +123,7 @@ private:
     void sphericalCollision();
     void narrowCollision();
     bool gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeIndex);
-    void epa(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
+    ushort epa(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
     void sat();
 
     // gjk methods helper functions
@@ -135,12 +136,12 @@ private:
     uint getFar(const vec2* verts, uint length, const vec2& dir);
 
     // epa helper methods
-    ushort manageHorizonCloud(SpSet& spSet, ushort spIndex, ushort setSize);
+    ushort insertHorizon(SpSet& spSet, ushort spIndex, ushort setSize);
     bool discardHorizon(SpSet& spSet, ushort spIndex, ushort setSize);
-    ushort polytopeFront(Polytope& polytope, ushort setSize);
-    void removeFace(Polytope& polytope, ushort index, ushort size);
-    void supportMinkOnly(ColliderRow& a, ColliderRow& b, SpArray sps, uint insertIndex);
-    void buildFace(Polytope& polytope, ushort indexA, ushort indexB, ushort indexL);
+    ushort polytopeFront(const Polytope& polytope, ushort numFaces);
+    void removeFace(Polytope& polytope, ushort index, ushort numFaces);
+    void supportSpOnly(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint insertIndex);
+    void buildFace(CollisionPair& pair, ushort indexA, ushort indexB, ushort indexL);
 
     // sat helper functions
 };
