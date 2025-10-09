@@ -23,9 +23,16 @@ private:
     xt::xtensor<float, 3> simplex;
     xt::xtensor<uint, 1> forceIndex;
 
+    // arrays for holding extra compute space
+    xt::xtensor<float, 2> tangent;
+    xt::xtensor<float, 3> basis;
+    xt::xtensor<float, 2> z;
+
 public:
     ManifoldSoA(ForceSoA* forceSoA, uint capacity);
     ~ManifoldSoA() = default;
+
+    void warmstart();
 
     xt::xtensor<float, 2>& getNormal() { return normal; }
     xt::xtensor<float, 3>& getRA() { return rA; }
@@ -38,7 +45,6 @@ public:
     uint reserve(uint numPairs);
     void resize(uint new_capacity) override;
     void compact() override;
-    void insert();
     void remove(uint index);
 };
 

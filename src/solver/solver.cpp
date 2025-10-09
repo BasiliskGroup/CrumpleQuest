@@ -62,6 +62,10 @@ void Solver::step(float dt) {
     forceSoA->compact();
     printDurationUS(beforeCompact, timeNow(), "Force Compact:\t\t");
 
+    auto beforeManifoldWarm = timeNow();
+    getManifoldSoA()->warmstart();
+    printDurationUS(beforeManifoldWarm, timeNow(), "Manifold Warm:\t\t");
+
     // NOTE bodies and forces are compact after this point
     print("------------------------------------------");
     printDurationUS(beforeStep, timeNow(), "Total: ");

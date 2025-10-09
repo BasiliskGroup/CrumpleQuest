@@ -10,13 +10,18 @@ ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA)
     C0         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
     rA         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
     rB         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-    normal     = xt::xtensor<float, 2>::from_shape({capacity, 3});
+    normal     = xt::xtensor<float, 2>::from_shape({capacity, 2});
     friction   = xt::xtensor<float, 1>::from_shape({capacity});
     stick      = xt::xtensor<bool, 1>::from_shape({capacity});
     indexA     = xt::xtensor<uint, 2>::from_shape({capacity, 3});
     indexB     = xt::xtensor<uint, 2>::from_shape({capacity, 3});
     simplex    = xt::xtensor<float, 3>::from_shape({capacity, 3, 2});
     forceIndex = xt::xtensor<uint, 1>::from_shape({capacity});
+
+    // arrays for holding extra compute space
+    tangent = xt::xtensor<float, 2>::from_shape({capacity, 2});
+    basis   = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
+    z       = xt::xtensor<float, 2>::from_shape({capacity, 2});
 }
 
 /**
@@ -52,7 +57,7 @@ void ManifoldSoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity,
-        toDelete, C0, rA, rB, normal, friction, stick, indexA, indexB, forceIndex, simplex
+        toDelete, C0, rA, rB, normal, friction, stick, indexA, indexB, forceIndex, simplex, tangent, basis, z
     );
 
     // update capacity
@@ -67,8 +72,7 @@ void ManifoldSoA::compact() {
     }
 
     compactTensors(toDelete, size,
-        C0, rA, rB, normal, friction, stick,
-        indexA, indexB, forceIndex, simplex
+        C0, rA, rB, normal, friction, stick, indexA, indexB, forceIndex, simplex, tangent, basis, z
     );
 
     size = active;
@@ -80,8 +84,19 @@ void ManifoldSoA::compact() {
     }
 }
 
-void ManifoldSoA::insert() {
+void ManifoldSoA::warmstart() {
+    // operate only on the first 'size' rows
+    for (size_t i = 0; i < size; ++i) {
+        // tangent = [normal.y, -normal.x]
+        tangent(i, 0) = normal(i, 1);
+        tangent(i, 1) = -normal(i, 0);
 
+        // basis = [[normal.x, normal.y], [tangent.x, tangent.y]]
+        basis(i, 0, 0) = normal(i, 0);
+        basis(i, 0, 1) = normal(i, 1);
+        basis(i, 1, 0) = tangent(i, 0);
+        basis(i, 1, 1) = tangent(i, 1);
+    }
 }
 
 void ManifoldSoA::remove(uint index) {

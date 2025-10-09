@@ -85,9 +85,7 @@ void ForceSoA::compact() {
 
     // todo write new compact function
     compactTensors(toDelete, size, 
-        forces, JA, JB, C, motor, stiffness, 
-        fracture, fmax,fmin, penalty, lambda, 
-        HA, HB, type, specialIndex, bodyIndex
+        forces, JA, JB, C, motor, stiffness, fracture, fmax,fmin, penalty, lambda, HA, HB, type, specialIndex, bodyIndex
     );
 
     size = active;
