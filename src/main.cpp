@@ -23,9 +23,6 @@ int main() {
     for (int i = 0; i < 10; i++) {
         solver->step(1.0 / 60.0);
     }
-    print("finished stepping");
-
-    print(deleteIndex);
 
     deleteIndex = randrange(0, objects.size());
     delete objects[deleteIndex];
