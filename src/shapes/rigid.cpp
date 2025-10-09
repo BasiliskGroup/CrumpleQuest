@@ -1,7 +1,7 @@
 #include "physics.h"
 
 
-Rigid::Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction, vec3 vel, Mesh* mesh) : solver(solver) {
+Rigid::Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction, vec3 vel, Mesh* mesh) : solver(solver), forces(nullptr) {
     // Add to linked list
     next = solver->getBodies();
     solver->getBodies() = this;
@@ -12,7 +12,7 @@ Rigid::Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction
     float moment = mass * glm::dot(scale, scale) / 12.0f; // TODO replace with mesh moment
     float radius = glm::length(scale * 0.5f);
 
-    index = getBodySoA()->insert(pos, vel, scale, friction, mass, mesh->getIndex(), radius);
+    index = getBodySoA()->insert(this, pos, vel, scale, friction, mass, mesh->getIndex(), radius);
 }   
 
 Rigid::~Rigid() {
@@ -22,6 +22,10 @@ Rigid::~Rigid() {
         p = &(*p)->next;
     }
     *p = next;
+
+    while (forces) {
+        delete forces;
+    }
 
     // remove from SoA
     getBodySoA()->remove(index);

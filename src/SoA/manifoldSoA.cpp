@@ -5,12 +5,8 @@
 ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA) {
     this->capacity = capacity;
 
-    // fill freeIndices
-    for (uint i = 0; i < capacity; ++i) {
-        freeIndices.insert(i);
-    }
-
     // create all xtensors
+    toDelete   = xt::xtensor<bool, 1>::from_shape({capacity});
     C0         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
     rA         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
     rB         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
@@ -24,20 +20,27 @@ ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA)
 }
 
 /**
- * @brief Reserves enough space to the next power of 2 to insert numPairs rows. Assumes that the SoA is compact. 
+ * @brief Reserves enough space to the next power of 2 to insert numPairs rows. Assumes that the SoA is compact. This function should only be called by the ForceSoa
  * 
- * @param numPairs 
+ * @param numPairs
  * @return the next free index in the SoA. 
  */
 uint ManifoldSoA::reserve(uint numPairs) {
     // calculate next 2^n to hold all space
     uint neededSpace = pow(2, ceil(log2(size + numPairs)));
-    if (neededSpace < capacity) {
-        return size;
+    
+    if (neededSpace >= capacity) {
+        resize(neededSpace);
     }
 
-    resize(neededSpace);
-    return size;
+    // remove indices for reserveed elements
+    for (uint i = size; i < size + numPairs; i++) {
+        toDelete(i) = false;
+    }
+
+    uint nextFree = size;
+    size += numPairs;
+    return nextFree;
 }
 
 /**
@@ -48,45 +51,32 @@ uint ManifoldSoA::reserve(uint numPairs) {
 void ManifoldSoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
-    expandTensor(C0,         size, newCapacity);
-    expandTensor(rA,         size, newCapacity);
-    expandTensor(rB,         size, newCapacity);
-    expandTensor(normal,     size, newCapacity);
-    expandTensor(friction,   size, newCapacity);
-    expandTensor(stick,      size, newCapacity);
-    expandTensor(indexA,     size, newCapacity);
-    expandTensor(indexB,     size, newCapacity);
-    expandTensor(forceIndex, size, newCapacity);
-    expandTensor(simplex,    size, newCapacity);
-
-    // add all new indices to freeIndices
-    for (uint i = capacity; i < newCapacity; ++i) {
-        freeIndices.insert(i);
-    }
+    expandTensors(size, newCapacity,
+        toDelete, C0, rA, rB, normal, friction, stick, indexA, indexB, forceIndex, simplex
+    );
 
     // update capacity
     capacity = newCapacity;
 }
 
 void ManifoldSoA::compact() {
-    if (freeIndices.empty()) return; // nothing to remove
+    // do a quick check to see if we need to run more complex compact function
+    uint active = numValid(toDelete, size);
+    if (active == 0) {
+        return;
+    }
 
-    compactTensors(freeIndices, capacity, forceFKs,
+    compactTensors(toDelete, size,
         C0, rA, rB, normal, friction, stick,
         indexA, indexB, forceIndex, simplex
     );
 
-    // go through and write all foreign keys back into ForceSoA
-    auto special = forceSoA->getSpecial();
-    for (const auto& pair : forceFKs) {
-        // update force keys to match our rows
-        special(pair.second) = pair.first;
-    }
+    size = active;
 
-    // update freeIndices
-    freeIndices.clear();
-    for (uint i = size; i < capacity; i++) {
-        freeIndices.insert(i);
+    // TODO update foreign keys to forceSoA
+    // reset values for toDelete since they were not mutated in the compact
+    for (uint i = 0; i < size; i++) {
+        toDelete(i) = false;
     }
 }
 
@@ -95,7 +85,5 @@ void ManifoldSoA::insert() {
 }
 
 void ManifoldSoA::remove(uint index) {
-    freeIndices.insert(index);
-    forceFKs.erase(index);
-    size--;
+    toDelete(index) = true;
 }

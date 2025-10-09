@@ -10,10 +10,10 @@ class ManifoldSoA;
 class ForceSoA : public SoA {
 private:
     ManifoldSoA* manifoldSoA;
-    std::unordered_map<uint, Indexed*> forces;
-    std::unordered_map<uint, uint> specialFKs;
 
     // xtensor TODO fix dimensions
+    xt::xtensor<Indexed*, 1> forces;
+    xt::xtensor<bool, 1> toDelete;
     xt::xtensor<float, 3> JA;
     xt::xtensor<float, 3> JB;
     xt::xtensor<float, 4> HA;
@@ -26,9 +26,7 @@ private:
     xt::xtensor<float, 2> fmin;
     xt::xtensor<float, 2> penalty;
     xt::xtensor<float, 2> lambda;
-
     xt::xtensor<ushort, 1> type;
-
     xt::xtensor<uint, 1> specialIndex;
     xt::xtensor<uint, 1> bodyIndex;
 
@@ -36,9 +34,11 @@ public:
     ForceSoA(uint capacity);
     ~ForceSoA();
 
+    void markForDeletion(uint index) { toDelete(index) = true; }
     xt::xtensor<uint, 1>& getSpecial() { return specialIndex; }
     ManifoldSoA* getManifoldSoA() { return manifoldSoA; }
 
+    void reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldIndex);
     void resize(uint newCapacity) override;
     void compact() override;
     int insert();

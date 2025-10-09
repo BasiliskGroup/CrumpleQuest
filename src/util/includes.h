@@ -21,6 +21,7 @@
 #include <utility> // for std::move and std::pair
 #include <cmath>
 #include <algorithm>
+#include <functional>
 
 // import glad and glfw
 #include <glad/glad.h>

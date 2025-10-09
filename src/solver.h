@@ -11,8 +11,6 @@
 #include "SoA/meshSoA.h"
 
 
-
-
 class Rigid;
 class Force;
 class Manifold;
@@ -47,6 +45,7 @@ private:
         const vec2* start;
         uint length;
         xt::xview<xt::xtensor<uint, 2>&, uint, xt::xall<size_t>> index;
+        std::array<float, 4> dots; // TODO this needs to be at least the length of the mesh
         
         ColliderRow(float x, float y, mat2x2& mat, mat2x2& imat, vec2* start, uint length, decltype(index) index_view)
             : pos({x, y}), mat(mat), imat(imat), start(start), length(length), index(index_view) {}
@@ -72,7 +71,6 @@ private:
 
     struct CollisionPair {
         // gjk
-        uint insertIndex;
         Simplex minks;
         vec2 dir;
 
@@ -82,8 +80,11 @@ private:
         SpSet spSet;
         Polytope polytope;
 
-        CollisionPair(uint insertIndex, Simplex minks)
-            : insertIndex(insertIndex), minks(minks) {}
+        // sat
+        // std::vector<float> dotsA;
+        // std::vector<float> dotsB;
+
+        CollisionPair() = default;
     };
     
 public:
@@ -122,9 +123,10 @@ private:
     // collision functions
     void sphericalCollision();
     void narrowCollision();
+    
     bool gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeIndex);
     ushort epa(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
-    void sat();
+    void sat(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
 
     // gjk methods helper functions
     uint handleSimplex(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeIndex);
@@ -143,7 +145,18 @@ private:
     void supportSpOnly(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint insertIndex);
     void buildFace(CollisionPair& pair, ushort indexA, ushort indexB, ushort indexL);
 
+    using Dots = std::array<float, 4>;
+
     // sat helper functions
+    void intersect(ColliderRow& a, ColliderRow& b, CollisionPair& pair, const vec2& mtv);
+    void clampToEdge(const vec2& edge, vec2& toClamp);
+    void dotEdgeIntersect(const vec2* verts, uint start, Dots dots, float thresh);
+
+    template <typename Compare> // std::greater_equal<int>()) // std::less_equal<int>()) // if (cmp(a, b))
+    void findBounds(Dots dots, const float thresh, uint& begin, uint& end, Compare cmp);
+
+    template <typename Compare>
+    void findExtremes(Dots dots, uint& begin, uint& end, Compare cmp);
 };
 
 #endif

@@ -10,4 +10,3 @@ void printDurationUS(std::chrono::time_point<std::chrono::high_resolution_clock>
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
     std::cout << title << duration.count() << "us" << std::endl;
 }
-

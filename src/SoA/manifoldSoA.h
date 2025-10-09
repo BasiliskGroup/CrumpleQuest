@@ -9,9 +9,9 @@ class ForceSoA;
 class ManifoldSoA : public SoA {
 private:
     ForceSoA* forceSoA;
-    std::unordered_map<uint, uint> forceFKs;
 
     // xtensor
+    xt::xtensor<bool, 1> toDelete;
     xt::xtensor<float, 3> C0;
     xt::xtensor<float, 3> rA;
     xt::xtensor<float, 3> rB;

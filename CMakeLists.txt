@@ -19,7 +19,10 @@ include(FetchContent)
 add_subdirectory(include)
 
 # Executable
-file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE SRC_FILES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/**/*.cpp
+)
 
 add_executable(engine ${SRC_FILES})
 target_include_directories(engine PUBLIC

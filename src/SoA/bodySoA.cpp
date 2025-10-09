@@ -3,12 +3,10 @@
 BodySoA::BodySoA(uint capacity) {
     this->capacity = capacity;
 
-    // fill freeIndices
-    for (uint i = 0; i < capacity; ++i) {
-        freeIndices.insert(i);
-    }
-
     // create all xtensors
+    bodies = xt::xtensor<Indexed*, 1>::from_shape({capacity});
+    toDelete = xt::xtensor<bool, 1>::from_shape({capacity});
+
     pos      = xt::xtensor<float, 2>::from_shape({capacity, 3});
     initial  = xt::xtensor<float, 2>::from_shape({capacity, 3});
     inertial = xt::xtensor<float, 2>::from_shape({capacity, 3});
@@ -64,28 +62,9 @@ void BodySoA::computeTransforms() {
 void BodySoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
-    expandTensor(pos,      size, newCapacity);
-    expandTensor(initial,  size, newCapacity);
-    expandTensor(inertial, size, newCapacity);
-    expandTensor(vel,      size, newCapacity);
-    expandTensor(prevVel,  size, newCapacity);
-    expandTensor(scale,    size, newCapacity);
-    expandTensor(friction, size, newCapacity);
-    expandTensor(radius,   size, newCapacity);
-    expandTensor(mass,     size, newCapacity);
-    expandTensor(moment,   size, newCapacity);
-    expandTensor(mesh,     size, newCapacity);
-    expandTensor(mat,      size, newCapacity);
-    expandTensor(imat,     size, newCapacity);
-    expandTensor(updated,  size, newCapacity);
-    expandTensor(color,    size, newCapacity);
-    expandTensor(degree,   size, newCapacity);
-    expandTensor(satur,    size, newCapacity);
-
-    // add all new indices to freeIndices
-    for (uint i = size; i < newCapacity; ++i) {
-        freeIndices.insert(i);
-    }
+    expandTensors(size, newCapacity,
+        bodies, toDelete, pos, initial, inertial, vel, prevVel, scale, friction, radius, mass, moment, mesh, mat, imat, updated, color, degree, satur
+    );
 
     // update capacity
     capacity = newCapacity;
@@ -94,64 +73,58 @@ void BodySoA::resize(uint newCapacity) {
 // NOTE this function is very expensive but should only be called once per frame
 // if needed, find a cheaper solution
 void BodySoA::compact() {
-    if (freeIndices.empty()) return; // nothing to remove
+    // do a quick check to see if we need to run more complex compact function
+    uint active = numValid(toDelete, size);
+    if (active == 0) {
+        return;
+    }
 
-    compactTensors(freeIndices, capacity, bodies,
-        pos, initial, inertial, vel, prevVel,
+    compactTensors(toDelete, size,
+        bodies, pos, initial, inertial, vel, prevVel,
         scale, friction, radius, mass, moment,
         mesh, mat, imat, updated, color, degree, satur
     );
 
-    // update maps
-    for (const auto& pair : bodies) {
-        pair.second->setIndex(pair.first);
-    }
+    size = active;
 
-    // update freeIndices
-    freeIndices.clear();
-    for (uint i = size; i < capacity; i++) {
-        freeIndices.insert(i);
+    for (uint i = 0; i < size; i++) {
+        toDelete(i) = false;
     }
 }
 
-int BodySoA::insert(vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius) {
-    if (freeIndices.empty()) {
+uint BodySoA::insert(Indexed* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius) {
+    if (size == capacity) {
         resize(capacity * 2);
     }
 
-    // pop a random element from the set
-    auto it = freeIndices.begin();
-    uint index = *it;
-    freeIndices.erase(it);
-
     // insert into row
-    this->pos(index, 0) = pos.x;
-    this->pos(index, 1) = pos.y;
-    this->pos(index, 2) = pos.z;
+    this->bodies(size) = body;
+    this->toDelete(size) = false;
 
-    this->vel(index, 0) = vel.x;
-    this->vel(index, 1) = vel.y;
-    this->vel(index, 2) = vel.z;
+    this->pos(size, 0) = pos.x;
+    this->pos(size, 1) = pos.y;
+    this->pos(size, 2) = pos.z;
 
-    this->scale(index, 0) = scale.x;
-    this->scale(index, 1) = scale.y;
+    this->vel(size, 0) = vel.x;
+    this->vel(size, 1) = vel.y;
+    this->vel(size, 2) = vel.z;
 
-    this->friction(index) = friction;
-    this->mass(index) = mass;
-    this->mesh(index) = mesh;
-    this->radius(index) = radius;
+    this->scale(size, 0) = scale.x;
+    this->scale(size, 1) = scale.y;
 
-    this->updated(index) = false;
+    this->friction(size) = friction;
+    this->mass(size) = mass;
+    this->mesh(size) = mesh;
+    this->radius(size) = radius;
+
+    this->updated(size) = false;
 
     // increment size
-    size += 1;
-    return index;
+    return size++;
 }
 
 void BodySoA::remove(uint index) {
-    freeIndices.insert(index);
-    bodies.erase(index);
-    size--;
+    toDelete(index) = true;
 }
 
 void BodySoA::printRigids() {

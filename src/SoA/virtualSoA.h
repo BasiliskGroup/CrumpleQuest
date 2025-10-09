@@ -3,12 +3,13 @@
 
 #include "util/includes.h"
 #include "SoA/helper.h"
+#include "SoA/expandTensor.h"
+#include "SoA/compactTensor.h"
 
 class SoA {
 protected:
     uint size = 0;
     uint capacity = 0;
-    std::set<uint> freeIndices;
 
 public:
     virtual void resize(uint new_capacity) = 0;

@@ -7,10 +7,11 @@
 
 // NOTE we do not need copy or move constructor as we will only have one of these
 class BodySoA : public SoA {
-private:
-    std::unordered_map<uint, Indexed*> bodies;
-    
-    // xtensors
+private: 
+    // xtensors    
+    xt::xtensor<Indexed*, 1> bodies;
+    xt::xtensor<bool, 1> toDelete;
+
     xt::xtensor<float, 2> pos;
     xt::xtensor<float, 2> initial;
     xt::xtensor<float, 2> inertial;
@@ -40,6 +41,7 @@ public:
 
     void computeTransforms();
 
+    xt::xtensor<Indexed*, 1>& getBodies() { return bodies; }
     xt::xtensor<float, 2>& getPos() { return pos; }
     xt::xtensor<float, 2>& getInitial() { return initial; }
     xt::xtensor<float, 2>& getInertial() { return inertial; }
@@ -65,7 +67,7 @@ public:
 
     void resize(uint newCapacity) override;
     void compact() override;
-    int insert(vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius);
+    uint insert(Indexed* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius);
     void remove(uint index);
     void printRigids();
 };

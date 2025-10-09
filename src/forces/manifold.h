@@ -10,7 +10,7 @@ private:
     uint contactIndex;
 
 public:
-    Manifold(Solver* solver, Rigid* bodyA, Rigid* bodyB);
+    Manifold(Solver* solver, Rigid* bodyA, Rigid* bodyB, uint index);
     ~Manifold();
 
     int rows() const override { return 4; }
