@@ -120,14 +120,14 @@ void Solver::narrowCollision() {
             getPos()(rowA, 0), getPos()(rowA, 1),
             getMat()(rowA), getIMat()(rowA),
             getStartPtr(rowA), getLength(rowA),
-            xt::view(getIndexA(), manifoldIndex, xt::all())
+            getIndexA().data() + manifoldIndex * getIndexA().shape(1)
         };
 
         ColliderRow b = {
             getPos()(rowB, 0), getPos()(rowB, 1),
             getMat()(rowB), getIMat()(rowB),
             getStartPtr(rowB), getLength(rowB),
-            xt::view(getIndexB(), manifoldIndex, xt::all())
+            getIndexB().data() + manifoldIndex * getIndexB().shape(1)
         };
 
         CollisionPair collisionPair = CollisionPair(forceIndex, manifoldIndex);

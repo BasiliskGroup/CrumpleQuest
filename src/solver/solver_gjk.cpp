@@ -74,8 +74,8 @@ uint Solver::handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     perpTowards(AB, CO, perp);
     if (glm::dot(perp, AO) > -COLLISION_MARGIN) {
         // remove 0
-        a.index(0)    = a.index(2);
-        b.index(0)    = b.index(2);
+        a.index[0]    = a.index[2];
+        b.index[0]    = b.index[2];
         pair.minks[0] = pair.minks[2];
 
         pair.dir = perp;
@@ -86,8 +86,8 @@ uint Solver::handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     perpTowards(AC, BO, perp);
     if (glm::dot(perp, AO) > -COLLISION_MARGIN) {
         // remove 1
-        a.index(1)    = a.index(2);
-        b.index(1)    = b.index(2);
+        a.index[1]    = a.index[2];
+        b.index[1]    = b.index[2];
         pair.minks[1] = pair.minks[2];
 
         pair.dir = perp;

@@ -44,11 +44,11 @@ private:
         const mat2x2& imat;
         const vec2* start;
         uint length;
-        xt::xview<xt::xtensor<uint, 2>&, uint, xt::xall<size_t>> index;
+        uint* index;
         std::array<float, 4> dots; // TODO this needs to be at least the length of the mesh
         
-        ColliderRow(float x, float y, mat2x2& mat, mat2x2& imat, vec2* start, uint length, decltype(index) index_view)
-            : pos({x, y}), mat(mat), imat(imat), start(start), length(length), index(index_view) {}
+        ColliderRow(float x, float y, mat2x2& mat, mat2x2& imat, vec2* start, uint length, uint* index)
+            : pos({x, y}), mat(mat), imat(imat), start(start), length(length), index(index) {}
     };
 
     struct PolytopeFace {
