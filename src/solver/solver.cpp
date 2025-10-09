@@ -1,4 +1,4 @@
-#include "physics.h"
+#include "solver/physics.h"
 
 
 Solver::Solver() : forces(nullptr), bodies(nullptr) {
@@ -56,8 +56,6 @@ void Solver::step(float dt) {
     narrowCollision(); // -> uncompacts manifolds
     printDurationUS(beforeNarrow, timeNow(), "Narrow Collision: ");
 
-    // TODO batch create manifolds
-
     // warmstart forces -> uncompacts forces
     auto beforeCompact = timeNow();
     forceSoA->compact();
@@ -65,8 +63,6 @@ void Solver::step(float dt) {
 
     // NOTE bodies and forces are compact after this point
     print("------------------------------------------");
-    print(forceSoA->getSize());
-    print(forceSoA->getCapacity());
     printDurationUS(beforeStep, timeNow(), "Total: ");
     print("");
 }

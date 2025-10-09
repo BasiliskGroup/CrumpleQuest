@@ -1,4 +1,4 @@
-#include "physics.h"
+#include "solver/physics.h"
 
 bool Solver::gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeIndex) {
     for (uint _ = 0; _ < GJK_ITERATIONS; ++_) {
@@ -15,14 +15,12 @@ bool Solver::gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeI
 
         // if the point we found didn't cross the origin, we are not colliding
         if (glm::dot(pair.minks[freeIndex], pair.dir) < COLLISION_MARGIN) {
-            std::cout << "no cross " << freeIndex << std::endl;
             return false;
         }
 
         freeIndex++;
     }
-
-    std::cout << "time out" << std::endl;
+    
     return false;
 }
 

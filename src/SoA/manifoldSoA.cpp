@@ -62,7 +62,7 @@ void ManifoldSoA::resize(uint newCapacity) {
 void ManifoldSoA::compact() {
     // do a quick check to see if we need to run more complex compact function
     uint active = numValid(toDelete, size);
-    if (active == 0) {
+    if (active == size) {
         return;
     }
 

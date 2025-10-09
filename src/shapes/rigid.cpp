@@ -1,4 +1,4 @@
-#include "physics.h"
+#include "solver/physics.h"
 
 
 Rigid::Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction, vec3 vel, Mesh* mesh) : solver(solver), forces(nullptr) {

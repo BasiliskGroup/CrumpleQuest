@@ -14,6 +14,6 @@
 #include "shapes/rigid.h"
 #include "shapes/mesh.h"
 
-#include "solver.h"
+#include "solver/solver.h"
 
 #endif

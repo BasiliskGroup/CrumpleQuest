@@ -1,4 +1,4 @@
-#include "physics.h"
+#include "solver/physics.h"
 
 Force::Force(Solver* solver, Rigid* bodyA, Rigid* bodyB) 
 : solver(solver), bodyA(bodyA), bodyB(bodyB), nextA(0), nextB(0) {

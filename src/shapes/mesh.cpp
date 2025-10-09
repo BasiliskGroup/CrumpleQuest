@@ -1,4 +1,4 @@
-#include "physics.h"
+#include "solver/physics.h"
 
 Mesh::Mesh(Solver* solver, std::vector<vec2> verts) : solver(solver) {
     index = getMeshSoA()->insert(verts);

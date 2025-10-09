@@ -1,5 +1,7 @@
 #include "SoA/forceSoAs.h"
 #include "util/constants.h"
+#include "util/print.h"
+
 
 ForceSoA::ForceSoA(uint capacity) {
     this->capacity = capacity;
@@ -64,7 +66,8 @@ void ForceSoA::resize(uint newCapacity) {
 void ForceSoA::compact() {
     // do a quick check to see if we need to run more complex compact function
     uint active = numValid(toDelete, size);
-    if (active == 0) {
+    if (active == size) {
+        // nothing to delete
         return;
     }
 
