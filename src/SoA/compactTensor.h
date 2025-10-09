@@ -12,9 +12,9 @@ void compactTensors(
     uint dst = 0;
 
     for (uint src = 0; src < size; ++src) {
-        if (!toDelete(src)) {
+        if (toDelete(src) == false) {
             if (dst != src) {
-                // Move all tensors' row src → dst
+                // Move all tensors' row src to dst
                 ((xt::view(tensors, dst) = xt::view(tensors, src)), ...);
             }
             ++dst;

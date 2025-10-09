@@ -34,8 +34,10 @@ public:
     ForceSoA(uint capacity);
     ~ForceSoA();
 
-    void markForDeletion(uint index) { toDelete(index) = true; }
+    void markForDeletion(uint index);
+    
     xt::xtensor<uint, 1>& getSpecial() { return specialIndex; }
+    xt::xtensor<Indexed*, 1>& getForces() { return forces; };
     ManifoldSoA* getManifoldSoA() { return manifoldSoA; }
 
     void reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldIndex);

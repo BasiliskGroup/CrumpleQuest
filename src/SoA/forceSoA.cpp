@@ -33,6 +33,11 @@ ForceSoA::~ForceSoA() {
     delete manifoldSoA;
 }
 
+void ForceSoA::markForDeletion(uint index) { 
+    toDelete(index) = true; 
+    forces(index) = nullptr;
+}
+
 void ForceSoA::reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldIndex) {
     manifoldIndex = manifoldSoA->reserve(numPairs);
     uint neededSpace = pow(2, ceil(log2(size + numPairs)));
@@ -73,7 +78,7 @@ void ForceSoA::compact() {
 
     // delete marked forces before we lose them in compact
     for(uint i = 0; i < size; i++) {
-        if (toDelete(i) == true) {
+        if (toDelete(i) == true && forces(i) != nullptr) {
             delete forces(i);
         }
     }
@@ -90,28 +95,10 @@ void ForceSoA::compact() {
     // update maps
     for (uint i = 0; i < size; i++) {
         // update force object
-        // TODO add in force handling for graphs
         forces(i)->setIndex(i);
 
         // reset values for toDelete since they were not mutated in the compact
         toDelete(i) = false;
-
-        // TODO determine if we need back references from foreign tables
-        // switch (type(i)) {
-        //     case 0: // null
-        //         break; 
-        //     case 1: // manifold
-        //         manifoldSoA->getForceIndex()(specialIndex(i)) = i;
-        //         break;
-        //     case 2: // joint
-        //         break; 
-        //     case 3: // spring
-        //         break; 
-        //     case 4: // ignoreCollision
-        //         break; 
-        //     default:
-        //         throw std::runtime_error("Force not recognized.");
-        // }
     }
 
     // compact special tables

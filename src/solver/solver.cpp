@@ -77,13 +77,6 @@ void Solver::sphericalCollision() {
     auto pos = bodySoA->getPos();
     auto radii = bodySoA->getRadius();
 
-    int count = 0;
-    for (Rigid* b = bodies; b != nullptr; b = b->getNext()) {
-        count++;
-    }
-    printf("Bodies in list: %d\n", count);
-
-
     float dx;
     float dy;
     float radsum;
@@ -157,7 +150,7 @@ void Solver::narrowCollision() {
         sat(a, b, collisionPair);
 
         // create manifold force in graph
-        new Manifold(this, (Rigid*) bodySoA->getBodies()(rowA), (Rigid*) bodySoA->getBodies()(rowB), forceIndex);
+        forceSoA->getForces()(forceIndex) = new Manifold(this, (Rigid*) bodySoA->getBodies()(rowA), (Rigid*) bodySoA->getBodies()(rowB), forceIndex);
 
         // increment enumeration
         forceIndex++;
