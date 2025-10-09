@@ -27,6 +27,9 @@ public:
     ManifoldSoA(ForceSoA* forceSoA, uint capacity);
     ~ManifoldSoA() = default;
 
+    xt::xtensor<float, 2>& getNormal() { return normal; }
+    xt::xtensor<float, 3>& getRA() { return rA; }
+    xt::xtensor<float, 3>& getRB() { return rB; }
     xt::xtensor<uint, 1>& getForceIndex() { return forceIndex; }
     xt::xtensor<uint, 2>& getIndexA() { return indexA; }
     xt::xtensor<uint, 2>& getIndexB() { return indexB; }

@@ -89,6 +89,7 @@ void BodySoA::compact() {
 
     for (uint i = 0; i < size; i++) {
         toDelete(i) = false;
+        bodies(i)->setIndex(i);
     }
 }
 

@@ -29,6 +29,7 @@ public:
     Rigid*& getBodyB() { return bodyB; }
     ForceSoA* getForceSoA();
 
+    void markForDeletion();
     void disable();
 
     // number of jacobian rows (max = 4)

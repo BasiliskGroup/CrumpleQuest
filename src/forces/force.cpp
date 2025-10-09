@@ -1,7 +1,7 @@
 #include "solver/physics.h"
 
 Force::Force(Solver* solver, Rigid* bodyA, Rigid* bodyB) 
-: solver(solver), bodyA(bodyA), bodyB(bodyB), nextA(0), nextB(0) {
+: solver(solver), next(nullptr), bodyA(bodyA), bodyB(bodyB), nextA(nullptr), nextB(nullptr) {
     // Add to solver linked list
     next = solver->getForces();
     solver->getForces() = this;
@@ -25,25 +25,30 @@ Force::~Force()
 {
     // Remove from solver linked list
     Force** p = &solver->getForces();
-    while (*p != this)
+    while (*p != this) {
         p = &(*p)->next;
+    }
     *p = next;
 
     // Remove from body linked lists
-    if (bodyA)
-    {
+    if (bodyA) {
         p = &bodyA->getForces();
-        while (*p != this)
+        while (*p != this) {
             p = (*p)->bodyA == bodyA ? &(*p)->nextA : &(*p)->nextB;
-        *p = nextA;
+        }
+        if (*p == this) {
+            *p = nextA;
+        }
     }
 
-    if (bodyB)
-    {
+    if (bodyB) {
         p = &bodyB->getForces();
-        while (*p != this)
+        while (*p != this) {
             p = (*p)->bodyA == bodyB ? &(*p)->nextA : &(*p)->nextB;
-        *p = nextB;
+        }
+        if (*p == this) {
+            *p = nextB;
+        }
     }
 
     // remove self from SoA
@@ -51,8 +56,11 @@ Force::~Force()
     getForceSoA()->remove(index);
 }
 
-void Force::disable()
-{
+void Force::markForDeletion() {
+    getForceSoA()->markForDeletion(index);
+}
+
+void Force::disable() {
     // TODO disable force
 }
 

@@ -16,18 +16,19 @@ Solver::Solver() : forces(nullptr), bodies(nullptr) {
 }
 
 Solver::~Solver() {
-    // delete linked lists
-    while (forces) {
-        delete forces;
-    }
-
+    // delete bodies
     while (bodies) {
         delete bodies;
     }
 
-    // delete SoAs
-    delete forceSoA;
     delete bodySoA;
+
+    // delete forces
+    while (forces) {
+        delete forces;
+    }
+
+    delete forceSoA;
     delete meshSoA;
 }
 
@@ -39,27 +40,27 @@ Solver::~Solver() {
 void Solver::step(float dt) {
     auto beforeStep = timeNow();
     bodySoA->compact(); // compact bodies to increase cache hits
-    printDurationUS(beforeStep, timeNow(), "Body Compact: ");
+    printDurationUS(beforeStep, timeNow(), "Body Compact:\t\t");
 
     auto beforeTransform = timeNow();
     bodySoA->computeTransforms();
-    printDurationUS(beforeTransform, timeNow(), "Body Transform: ");
+    printDurationUS(beforeTransform, timeNow(), "Body Transform:\t\t");
 
     // NOTE bodies are compact after this point
 
     auto beforeBroad = timeNow();
     sphericalCollision(); // broad collision TODO replace with BVH
-    std::cout << "Broad Pairs: " << collisionPairs.size() << std::endl;
-    printDurationUS(beforeBroad, timeNow(), "Broad Collision: ");
+    std::cout << "Broad Pairs:\t\t" << collisionPairs.size() << std::endl;
+    printDurationUS(beforeBroad, timeNow(), "Broad Collision:\t");
 
     auto beforeNarrow = timeNow();
     narrowCollision(); // -> uncompacts manifolds
-    printDurationUS(beforeNarrow, timeNow(), "Narrow Collision: ");
+    printDurationUS(beforeNarrow, timeNow(), "Narrow Collision:\t");
 
     // warmstart forces -> uncompacts forces
     auto beforeCompact = timeNow();
     forceSoA->compact();
-    printDurationUS(beforeCompact, timeNow(), "Force Compact: ");
+    printDurationUS(beforeCompact, timeNow(), "Force Compact:\t\t");
 
     // NOTE bodies and forces are compact after this point
     print("------------------------------------------");
@@ -76,11 +77,26 @@ void Solver::sphericalCollision() {
     auto pos = bodySoA->getPos();
     auto radii = bodySoA->getRadius();
 
+    int count = 0;
+    for (Rigid* b = bodies; b != nullptr; b = b->getNext()) {
+        count++;
+    }
+    printf("Bodies in list: %d\n", count);
+
+
     float dx;
     float dy;
     float radsum;
-    for (uint i = 0; i < numBodies; i++) {
-        for (uint j = i + 1; j < numBodies; j++) {
+    for (Rigid* bodyA = bodies; bodyA != nullptr; bodyA = bodyA->getNext()) {
+        for (Rigid* bodyB = bodyA->getNext(); bodyB != nullptr; bodyB = bodyB->getNext()) {
+            // ignore collision flag
+            if (bodyA->constrainedTo(bodyB)) {
+                continue;
+            }
+
+            uint i = bodyA->getIndex();
+            uint j = bodyB->getIndex();
+
             dx = pos(i, 0) - pos(j, 0);
             dy = pos(i, 1) - pos(j, 1);
             radsum = radii(i) + radii(j);
@@ -93,7 +109,6 @@ void Solver::sphericalCollision() {
 
 void Solver::narrowCollision() {
     // reserve space to perform all collisions 
-    uint insertIndex = 0;
     uint forceIndex, manifoldIndex;
     forceSoA->reserveManifolds(collisionPairs.size(), forceIndex, manifoldIndex);
 
@@ -108,43 +123,48 @@ void Solver::narrowCollision() {
             getPos()(rowA, 0), getPos()(rowA, 1),
             getMat()(rowA), getIMat()(rowA),
             getStartPtr(rowA), getLength(rowA),
-            xt::view(getIndexA(), manifoldIndex + insertIndex, xt::all())
+            xt::view(getIndexA(), manifoldIndex, xt::all())
         };
 
         ColliderRow b = {
             getPos()(rowB, 0), getPos()(rowB, 1),
             getMat()(rowB), getIMat()(rowB),
             getStartPtr(rowB), getLength(rowB),
-            xt::view(getIndexB(), manifoldIndex + insertIndex, xt::all())
+            xt::view(getIndexB(), manifoldIndex, xt::all())
         };
 
-        CollisionPair collisionPair = CollisionPair();
+        CollisionPair collisionPair = CollisionPair(forceIndex, manifoldIndex);
 
         // determine if objects are colliding
         bool collided = gjk(a, b, collisionPair, 0);
 
         if (!collided) {
             // increment enumeration
-            forceSoA->markForDeletion(insertIndex + forceIndex);
-            insertIndex++;
+            forceSoA->markForDeletion(forceIndex);
+            forceIndex++;
+            manifoldIndex++;
             continue;
         }
 
         // determine collision normal
         count++;
         ushort frontIndex = epa(a, b, collisionPair);
-        // print(collisionPair.polytope[frontIndex].normal);
+        vec2 normal = collisionPair.polytope[frontIndex].normal;
+        getManifoldSoA()->getNormal()(manifoldIndex, 0) = normal.x;
+        getManifoldSoA()->getNormal()(manifoldIndex, 1) = normal.y;
 
         // determine object overlap
+        sat(a, b, collisionPair);
 
         // create manifold force in graph
-        new Manifold(this, (Rigid*) bodySoA->getBodies()(rowA), (Rigid*) bodySoA->getBodies()(rowB), insertIndex + forceIndex);
+        new Manifold(this, (Rigid*) bodySoA->getBodies()(rowA), (Rigid*) bodySoA->getBodies()(rowB), forceIndex);
 
         // increment enumeration
-        insertIndex++;
+        forceIndex++;
+        manifoldIndex++;
     }
 
-    std::cout << "Narrow: " << count << std::endl;
+    std::cout << "Positive Narrow:\t" << count << std::endl;
 }
 
 void Solver::draw() {

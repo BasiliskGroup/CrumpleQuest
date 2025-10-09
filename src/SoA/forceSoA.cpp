@@ -71,6 +71,13 @@ void ForceSoA::compact() {
         return;
     }
 
+    // delete marked forces before we lose them in compact
+    for(uint i = 0; i < size; i++) {
+        if (toDelete(i) == true) {
+            delete forces(i);
+        }
+    }
+
     // todo write new compact function
     compactTensors(toDelete, size, 
         forces, JA, JB, C, motor, stiffness, 
@@ -84,7 +91,7 @@ void ForceSoA::compact() {
     for (uint i = 0; i < size; i++) {
         // update force object
         // TODO add in force handling for graphs
-        // if (forces(i) != nullptr) forces(i)->setIndex(i);
+        forces(i)->setIndex(i);
 
         // reset values for toDelete since they were not mutated in the compact
         toDelete(i) = false;

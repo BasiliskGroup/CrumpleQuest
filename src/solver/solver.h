@@ -70,6 +70,9 @@ private:
     using Polytope = std::array<PolytopeFace, EPA_ITERATIONS + 3>;
 
     struct CollisionPair {
+        uint forceIndex;
+        uint manifoldIndex;
+
         // gjk
         Simplex minks;
         vec2 dir;
@@ -84,7 +87,7 @@ private:
         // std::vector<float> dotsA;
         // std::vector<float> dotsB;
 
-        CollisionPair() = default;
+        CollisionPair(uint forceIndex, uint manifoldIndex) : forceIndex(forceIndex), manifoldIndex(manifoldIndex) {}
     };
     
 public:
@@ -116,9 +119,9 @@ private:
     uint getLength(uint bodyIndex) { return meshSoA->getLength(bodySoA->getMesh()(bodyIndex)); }
     vec2* getStartPtr(uint bodyIndex) { return meshSoA->getStartPtr(bodySoA->getMesh()(bodyIndex)); }
 
-    auto& getIndexA() { return forceSoA->getManifoldSoA()->getIndexA(); }
-    auto& getIndexB() { return forceSoA->getManifoldSoA()->getIndexB(); }
-    auto& getMinks() { return forceSoA->getManifoldSoA()->getSimplex(); }
+    auto& getIndexA() { return getManifoldSoA()->getIndexA(); }
+    auto& getIndexB() { return getManifoldSoA()->getIndexB(); }
+    auto& getMinks() { return getManifoldSoA()->getSimplex(); }
 
     // collision functions
     void sphericalCollision();

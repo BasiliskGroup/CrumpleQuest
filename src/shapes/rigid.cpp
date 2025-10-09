@@ -1,7 +1,7 @@
 #include "solver/physics.h"
 
 
-Rigid::Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction, vec3 vel, Mesh* mesh) : solver(solver), forces(nullptr) {
+Rigid::Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction, vec3 vel, Mesh* mesh) : solver(solver), forces(nullptr), next(nullptr) {
     // Add to linked list
     next = solver->getBodies();
     solver->getBodies() = this;
@@ -16,15 +16,32 @@ Rigid::Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction
 }   
 
 Rigid::~Rigid() {
-    // remove from linked list
+    // remove from solver linked list
     Rigid** p = &solver->getBodies();
     while (*p != this) {
         p = &(*p)->next;
     }
     *p = next;
 
-    while (forces) {
-        delete forces;
+    // does not delete forces, that is the soa's job. Only decouple
+    Force* f = forces;
+    Force* fnext;
+    while(f != nullptr) {
+        fnext = (f->getBodyA() == this) ? f->getNextA() : f->getNextB();
+
+        f->markForDeletion();
+        if (f->getBodyA() == this) {
+            f->getBodyA() = nullptr;
+            f->getNextA() = nullptr;
+        }
+        
+        if (f->getBodyB() == this) {
+            f->getBodyB() = nullptr;
+            f->getNextB() = nullptr;
+        }
+
+        // move f along our list
+        f = fnext;
     }
 
     // remove from SoA
@@ -37,7 +54,10 @@ BodySoA* Rigid::getBodySoA() {
 
 bool Rigid::constrainedTo(Rigid* other) const {
     // check if this body is constrained to the other body
-    for (Force* f = forces; f != 0; f = f->getNext()) {
+    for (Force* f = forces; f != nullptr; f = f->getNext()) {
+        // print("constrained search");
+        // print(index);
+        // print(f->getIndex());
         if (f->getBodyB() == other || f->getBodyA() == other) {
             return true;
         }
