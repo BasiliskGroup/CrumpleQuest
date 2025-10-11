@@ -9,30 +9,30 @@
 class BodySoA : public SoA {
 private: 
     // xtensors    
-    xt::xtensor<Indexed*, 1> bodies;
-    xt::xtensor<bool, 1> toDelete;
-    xt::xtensor<float, 2> pos;
-    xt::xtensor<float, 2> initial;
-    xt::xtensor<float, 2> inertial;
-    xt::xtensor<float, 2> vel;
-    xt::xtensor<float, 2> prevVel;
-    xt::xtensor<float, 2> scale;
-    xt::xtensor<float, 1> friction;
-    xt::xtensor<float, 1> mass;
-    xt::xtensor<float, 1> moment;
-    xt::xtensor<float, 1> radius;
-    xt::xtensor<uint, 1> mesh;
-    xt::xtensor<mat2x2, 1> mat;
-    xt::xtensor<mat2x2, 1> imat;
-    xt::xtensor<mat2x2, 1> rmat;
-    xt::xtensor<bool, 1> updated;
-    xt::xtensor<ushort, 1> color;
-    xt::xtensor<ushort, 1> degree;
-    xt::xtensor<ushort, 1> satur;
+    std::vector<Indexed*> bodies;
+    std::vector<bool> toDelete;
+    std::vector<vec3> pos;
+    std::vector<vec3> initial;
+    std::vector<vec3> inertial;
+    std::vector<vec3> vel;
+    std::vector<vec3> prevVel;
+    std::vector<vec2> scale;
+    std::vector<float> friction;
+    std::vector<float> mass;
+    std::vector<float> moment;
+    std::vector<float> radius;
+    std::vector<uint> mesh;
+    std::vector<mat2x2> mat;
+    std::vector<mat2x2> imat;
+    std::vector<mat2x2> rmat;
+    std::vector<bool> updated;
+    std::vector<ushort> color;
+    std::vector<ushort> degree;
+    std::vector<ushort> satur;
 
     // updating forces
-    xt::xtensor<uint, 1> oldIndex;
-    xt::xtensor<uint, 1> inverseForceMap;
+    std::vector<uint> oldIndex;
+    std::vector<uint> inverseForceMap;
 
 public:
     BodySoA(uint capacity);
@@ -40,33 +40,31 @@ public:
 
     void computeTransforms();
 
-    xt::xtensor<Indexed*, 1>& getBodies() { return bodies; }
-    xt::xtensor<float, 2>& getPos() { return pos; }
-    xt::xtensor<float, 2>& getInitial() { return initial; }
-    xt::xtensor<float, 2>& getInertial() { return inertial; }
-    xt::xtensor<float, 2>& getVel() { return vel; }
-    xt::xtensor<float, 2>& getPrevVel() { return prevVel; }
-    xt::xtensor<float, 2>& getScale() { return scale; }
-    xt::xtensor<float, 1>& getFriction() { return friction; }
-    xt::xtensor<float, 1>& getMass() { return mass; }
-    xt::xtensor<float, 1>& getMoment() { return moment; }
-    xt::xtensor<float, 1>& getRadius() { return radius; }
-    xt::xtensor<uint, 1>& getMesh() { return mesh; }
-    xt::xtensor<mat2x2, 1>& getMat() { return mat; }
-    xt::xtensor<mat2x2, 1>& getIMat() { return imat; }
-    xt::xtensor<mat2x2, 1>& getRMat() { return rmat; }
-    xt::xtensor<bool, 1>& getUpdated() { return updated; }
-    xt::xtensor<ushort, 1>& getColor() { return color; }
-    xt::xtensor<ushort, 1>& getDegree() { return degree; }
-    xt::xtensor<ushort, 1>& getSatur() { return satur; }
-
-    xt::xtensor<uint, 1>& getInverseForceMap() { return inverseForceMap; }
+    auto& getBodies() { return bodies; }
+    auto& getPos() { return pos; }
+    auto& getInitial() { return initial; }
+    auto& getInertial() { return inertial; }
+    auto& getVel() { return vel; }
+    auto& getPrevVel() { return prevVel; }
+    auto& getScale() { return scale; }
+    auto& getFriction() { return friction; }
+    auto& getMass() { return mass; }
+    auto& getMoment() { return moment; }
+    auto& getRadius() { return radius; }
+    auto& getMesh() { return mesh; }
+    auto& getMat() { return mat; }
+    auto& getIMat() { return imat; }
+    auto& getRMat() { return rmat; }
+    auto& getUpdated() { return updated; }
+    auto& getColor() { return color; }
+    auto& getDegree() { return degree; }
+    auto& getSatur() { return satur; }
+    auto& getInverseForceMap() { return inverseForceMap; }
 
     void resize(uint newCapacity) override;
     void compact() override;
     uint insert(Indexed* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius);
     void remove(uint index);
-    void printRigids();
 };
 
 #endif

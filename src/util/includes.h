@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <functional>
 #include <numeric>
+#include <cstdint>
+#include <type_traits>
 
 // import glad and glfw
 #include <glad/glad.h>
@@ -55,6 +57,8 @@
 #include <assimp/scene.h>
 #include <stb/stb_image.h>
 
+#include "util/constants.h"
+
 #define DEBUG_PRINT true
 #define DEBUG_LINEAR_PRINT false
 
@@ -69,5 +73,11 @@ using quat = glm::quat;
 
 using uint = unsigned int;
 using ushort = unsigned short;
+
+using Vec2Triplet = std::array<vec2, 3>;
+using Vec2Pair = std::array<vec2, 2>;
+using Vec3ROWS = std::array<vec2, ROWS>;
+using Mat3x3ROWS = std::array<mat3x3, ROWS>;
+using FloatROWS = std::array<float, ROWS>;
 
 #endif

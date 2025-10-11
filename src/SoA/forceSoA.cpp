@@ -1,5 +1,4 @@
 #include "SoA/forceSoAs.h"
-#include "util/constants.h"
 #include "util/print.h"
 
 
@@ -7,22 +6,21 @@ ForceSoA::ForceSoA(uint capacity) {
     this->capacity = capacity;
 
     // create all xtensors
-    forces = xt::xtensor<Indexed*, 1>::from_shape({capacity});
-    toDelete = xt::xtensor<bool, 1>::from_shape({capacity});
-    J = xt::xtensor<float, 3>::from_shape({capacity, ROWS, 3});
-    H = xt::xtensor<float, 4>::from_shape({capacity, ROWS, 3, 3});
-    C = xt::xtensor<float, 2>::from_shape({capacity, ROWS});
-    motor = xt::xtensor<float, 2>::from_shape({capacity, ROWS});
-    stiffness = xt::xtensor<float, 2>::from_shape({capacity, ROWS});
-    fracture = xt::xtensor<float, 2>::from_shape({capacity, ROWS});
-    fmax = xt::xtensor<float, 2>::from_shape({capacity, ROWS});
-    fmin = xt::xtensor<float, 2>::from_shape({capacity, ROWS});
-    penalty = xt::xtensor<float, 2>::from_shape({capacity, ROWS});
-    lambda = xt::xtensor<float, 2>::from_shape({capacity, ROWS});
-    type = xt::xtensor<ushort, 1>::from_shape({capacity});
-    specialIndex = xt::xtensor<uint, 1>::from_shape({capacity});
-
-    bodyIndex = xt::xtensor<uint, 1>::from_shape({capacity});
+    forces.resize(capacity); 
+    toDelete.resize(capacity);
+    J.resize(capacity); 
+    H.resize(capacity); 
+    C.resize(capacity); 
+    motor.resize(capacity); 
+    stiffness.resize(capacity); 
+    fracture.resize(capacity); 
+    fmax.resize(capacity); 
+    fmin.resize(capacity); 
+    penalty.resize(capacity); 
+    lambda.resize(capacity); 
+    type.resize(capacity); 
+    specialIndex.resize(capacity);
+    bodyIndex.resize(capacity); 
 
     // create SoAs
     manifoldSoA = new ManifoldSoA(this, capacity);
@@ -33,8 +31,8 @@ ForceSoA::~ForceSoA() {
 }
 
 void ForceSoA::markForDeletion(uint index) { 
-    toDelete(index) = true; 
-    forces(index) = nullptr;
+    toDelete[index] = true; 
+    forces[index] = nullptr;
 }
 
 void ForceSoA::reserveManifolds(uint numBodies, uint& forceIndex, uint& manifoldIndex) {
@@ -47,7 +45,7 @@ void ForceSoA::reserveManifolds(uint numBodies, uint& forceIndex, uint& manifold
 
     // ensure reserved slots arent deleted
     for (uint i = size; i < size + numBodies; i++) {
-        toDelete(i) = false;
+        toDelete[i] = false;
     }
 
     forceIndex = size;
@@ -77,8 +75,8 @@ void ForceSoA::compact() {
 
     // delete marked forces before we lose them in compact
     for(uint i = 0; i < size; i++) {
-        if (toDelete(i) == true && forces(i) != nullptr) {
-            delete forces(i);
+        if (toDelete[i] == true && forces[i] != nullptr) {
+            delete forces[i];
         }
     }
 
@@ -92,10 +90,10 @@ void ForceSoA::compact() {
     // update maps
     for (uint i = 0; i < size; i++) {
         // update force object
-        forces(i)->setIndex(i);
+        forces[i]->setIndex(i);
 
         // reset values for toDelete since they were not mutated in the compact
-        toDelete(i) = false;
+        toDelete[i] = false;
     }
 
     // compact special tables
@@ -108,5 +106,5 @@ int ForceSoA::insert() {
 }
 
 void ForceSoA::remove(uint index) {
-    toDelete(index) = true;
+    toDelete[index] = true;
 }

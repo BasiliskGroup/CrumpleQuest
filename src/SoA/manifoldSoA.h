@@ -18,19 +18,19 @@ private:
     ForceSoA* forceSoA;
 
     // xtensor
-    xt::xtensor<bool, 1> toDelete;
-    xt::xtensor<float, 3> C0;
-    xt::xtensor<float, 3> r;
-    xt::xtensor<float, 2> normal;
-    xt::xtensor<float, 1> friction;
-    xt::xtensor<bool, 1> stick;
-    xt::xtensor<vec2, 2> simplex;
-    xt::xtensor<uint, 1> forceIndex;
+    std::vector<bool> toDelete;
+    std::vector<Vec2Pair> C0;
+    std::vector<Vec2Pair> r;
+    std::vector<vec2> normal;
+    std::vector<float> friction;
+    std::vector<bool> stick;
+    std::vector<Vec2Triplet> simplex;
+    std::vector<uint> forceIndex;
 
     // arrays for holding extra compute space
-    xt::xtensor<float, 2> tangent;
-    xt::xtensor<float, 3> basis;
-    xt::xtensor<float, 3> rW;
+    std::vector<vec2> tangent;
+    std::vector<mat2x2> basis;
+    std::vector<Vec2Pair> rW;
 
 public:
     ManifoldSoA(ForceSoA* forceSoA, uint capacity);
@@ -39,16 +39,14 @@ public:
     void warmstart();
 
     // getters
-    xt::xtensor<float, 2>& getNormal() { return normal; }
-    xt::xtensor<float, 3>& getR() { return r; }
-    xt::xtensor<uint, 1>& getForceIndex() { return forceIndex; }
-    xt::xtensor<vec2, 2>& getSimplex() { return simplex; }
+    auto& getNormal() { return normal; }
+    auto& getR() { return r; }
+    auto& getForceIndex() { return forceIndex; }
+    auto& getSimplex() { return simplex; }
+    vec2* getSimplexPtr(uint index) { return simplex[index].data(); }
 
     // setters
-    void setRW(const vec2& rW, uint index, ushort subIndex) {
-        r(index, subIndex, 0) = rW.x;
-        r(index, subIndex, 1) = rW.y;
-    }
+    void setRW(const vec2& rW, uint index, ushort subIndex) { r[index][subIndex] = rW; }
 
     uint reserve(uint numBodies);
     void resize(uint new_capacity) override;

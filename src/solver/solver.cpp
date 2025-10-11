@@ -81,16 +81,16 @@ void Solver::compactBodies() {
     bodySoA->compact();
 
     // route forces back to their correct bodies after standard compact
-    auto bodyIndices = forceSoA->getBodyIndex();
-    auto toDelete = forceSoA->getToDelete();
-    auto inverseForceMap = bodySoA->getInverseForceMap();
+    auto& bodyIndices = forceSoA->getBodyIndex();
+    auto& toDelete = forceSoA->getToDelete();
+    auto& inverseForceMap = bodySoA->getInverseForceMap();
 
     for (uint i = 0; i < forceSoA->getSize(); i++) {
         // will index out of bounds
-        if (toDelete(i) == true) {
+        if (toDelete[i] == true) {
             continue;
         }
-        bodyIndices(i) = inverseForceMap(bodyIndices(i));
+        bodyIndices[i] = inverseForceMap[bodyIndices[i]];
     }
 }
 
@@ -100,14 +100,13 @@ void Solver::compactForces() {
 
 // TODO replace this with BVH
 void Solver::sphericalCollision() {
+    auto& pos = bodySoA->getPos();
+    auto& radii = bodySoA->getRadius();
+
     // clear contact pairs from last frame
     collisionPairs.clear();
 
-    uint numBodies = bodySoA->getSize();
-    auto pos = bodySoA->getPos();
-    auto radii = bodySoA->getRadius();
-
-    float dx;
+    vec2 dpos;
     float dy;
     float radsum;
     for (Rigid* bodyA = bodies; bodyA != nullptr; bodyA = bodyA->getNext()) {
@@ -120,10 +119,9 @@ void Solver::sphericalCollision() {
             uint i = bodyA->getIndex();
             uint j = bodyB->getIndex();
 
-            dx = pos(i, 0) - pos(j, 0);
-            dy = pos(i, 1) - pos(j, 1);
-            radsum = radii(i) + radii(j);
-            if (radsum * radsum > dx * dx + dy * dy) {
+            dpos = pos[i] - pos[j];
+            radsum = radii[i] + radii[j];
+            if (radsum * radsum > glm::length2(dpos)) {
                 collisionPairs.emplace_back(i, j);
             }
         }
@@ -131,6 +129,11 @@ void Solver::sphericalCollision() {
 }
 
 void Solver::narrowCollision() {
+    auto& manifoldNormals = getManifoldSoA()->getNormal();
+    auto& forcePointers = forceSoA->getForces();
+    auto& bodyPointers = bodySoA->getBodies();
+    auto& specialIndices = forceSoA->getSpecial();
+
     // reserve space to perform all collisions 
     uint forceIndex, manifoldIndex;
     reserveForcesForCollision(forceIndex, manifoldIndex);
@@ -148,6 +151,16 @@ void Solver::narrowCollision() {
         collisionPair.forceIndex = forceIndex;
         collisionPair.manifoldIndex = manifoldIndex;
 
+        // print("Mesh A");
+        // for (uint i = 0; i < a.length; i++) {
+        //     print(a.start[i]);
+        // }
+
+        // print("Mesh B");
+        // for (uint i = 0; i < a.length; i++) {
+        //     print(a.start[i]);
+        // }
+
         // determine if objects are colliding
         bool collided = gjk(a, b, collisionPair, 0);
 
@@ -164,22 +177,20 @@ void Solver::narrowCollision() {
         count++;
         ushort frontIndex = epa(a, b, collisionPair);
         vec2 normal = collisionPair.polytope[frontIndex].normal;
-        getManifoldSoA()->getNormal()(manifoldIndex + 0, 0) = normal.x;
-        getManifoldSoA()->getNormal()(manifoldIndex + 0, 1) = normal.y;
 
-        getManifoldSoA()->getNormal()(manifoldIndex + 1, 0) = -normal.x;
-        getManifoldSoA()->getNormal()(manifoldIndex + 1, 1) = -normal.y;
+        manifoldNormals[manifoldIndex + 0] = normal;
+        manifoldNormals[manifoldIndex + 1] = -normal;
 
         // determine object overlap
         sat(a, b, collisionPair);
 
         // create manifold force in graph
         // TODO delay creation of these forces until after multithreading, these will insert into linked lists creating race conditions
-        forceSoA->getForces()(forceIndex + 0) = new Manifold(this, (Rigid*) bodySoA->getBodies()(rowA), (Rigid*) bodySoA->getBodies()(rowB), forceIndex + 0); // A -> B
-        forceSoA->getForces()(forceIndex + 1) = new Manifold(this, (Rigid*) bodySoA->getBodies()(rowB), (Rigid*) bodySoA->getBodies()(rowA), forceIndex + 1); // B -> A
+        forcePointers[forceIndex + 0] = new Manifold(this, (Rigid*) bodyPointers[rowA], (Rigid*) bodyPointers[rowB], forceIndex + 0); // A -> B
+        forcePointers[forceIndex + 1] = new Manifold(this, (Rigid*) bodyPointers[rowB], (Rigid*) bodyPointers[rowA], forceIndex + 1); // B -> A
 
-        forceSoA->getSpecial()(forceIndex + 0) = manifoldIndex + 0;
-        forceSoA->getSpecial()(forceIndex + 1) = manifoldIndex + 1;
+        specialIndices[forceIndex + 0] = manifoldIndex + 0;
+        specialIndices[forceIndex + 1] = manifoldIndex + 1;
 
         // increment enumeration
         forceIndex += 2;
@@ -190,26 +201,32 @@ void Solver::narrowCollision() {
 }
 
 void Solver::reserveForcesForCollision(uint& forceIndex, uint& manifoldIndex) {
+    auto& bodyIndices = forceSoA->getBodyIndex();
+
     forceSoA->reserveManifolds(collisionPairs.size() * 2, forceIndex, manifoldIndex);
 
     // assign forces their bodies
-    auto& bodyIndices = forceSoA->getBodyIndex();
     uint i = 0;
     for (const auto& pair : collisionPairs) {
-        bodyIndices(forceIndex + i + 0) = pair.first;
-        bodyIndices(forceIndex + i + 1) = pair.second;
+        bodyIndices[forceIndex + i + 0] = pair.first;
+        bodyIndices[forceIndex + i + 1] = pair.second;
         i += 2;
     }
 }
 
 void Solver::initColliderRow(uint row, uint manifoldIndex, ColliderRow& colliderRow) {
-    colliderRow.pos = { getPos()(row, 0), getPos()(row, 1) };
-    colliderRow.scale = { getScale()(row, 0), getScale()(row, 1) };
-    colliderRow.mat = getMat(row);
-    colliderRow.imat = getIMat(row);
-    colliderRow.start = getStartPtr(row);
-    colliderRow.length = getLength(row);
-    colliderRow.simplex = getSimplex().data() + manifoldIndex * getSimplex().shape(1);
+    colliderRow.pos = bodySoA->getPos()[row];
+    colliderRow.scale = bodySoA->getScale()[row];
+    colliderRow.mat = bodySoA->getMat()[row];
+    colliderRow.imat = bodySoA->getIMat()[row];
+    colliderRow.start = meshSoA->getStartPtr(meshSoA->getStart()[bodySoA->getMesh()[row]]);
+
+    // print("Mesh data");
+    // print(bodySoA->getMesh()[row]);
+    // print(meshSoA->getStart()[bodySoA->getMesh()[row]]);
+
+    colliderRow.length = meshSoA->getLength()[bodySoA->getMesh()[row]];
+    colliderRow.simplex = getManifoldSoA()->getSimplexPtr(manifoldIndex);
 }
 
 // TODO expand this to work with other force types or make specialized functions for each
@@ -218,27 +235,18 @@ void Solver::initColliderRow(uint row, uint manifoldIndex, ColliderRow& collider
  * 
  */
 void Solver::computeForceRWs() {
-    auto& pos = getPos();
+    auto& pos = bodySoA->getPos();
     auto& r = forceSoA->getManifoldSoA()->getR();
     auto& specials = forceSoA->getSpecial();
     auto& bodyIndices = forceSoA->getBodyIndex();
     auto& rmat = bodySoA->getRMat();
 
-    vec2 rTemp;
-    mat2x2 rmatTemp;
-
     for (uint i = 0; i < forceSoA->getSize(); i++) {
-        uint specialIndex = specials(i);
-        uint bodyIndex = bodyIndices(i);
-        rmatTemp = rmat(bodyIndex);
+        uint specialIndex = specials[i];
+        uint bodyIndex = bodyIndices[i];
 
-        // contact 0
-        rTemp = { r(specialIndex, 0, 0), r(specialIndex, 0, 1) };
-        forceSoA->getManifoldSoA()->setRW(rmatTemp * rTemp, specialIndex, 0);
-
-        // contact 1
-        rTemp = { r(specialIndex, 1, 0), r(specialIndex, 1, 1) };
-        forceSoA->getManifoldSoA()->setRW(rmatTemp * rTemp, specialIndex, 1);
+        forceSoA->getManifoldSoA()->setRW(rmat[bodyIndex] * r[specialIndex][0], specialIndex, 0);
+        forceSoA->getManifoldSoA()->setRW(rmat[bodyIndex] * r[specialIndex][1], specialIndex, 1);
     }
 }
 

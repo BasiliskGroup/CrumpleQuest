@@ -6,20 +6,19 @@ ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA)
     this->capacity = capacity;
 
     // create all xtensors
-    toDelete = xt::xtensor<bool, 1>::from_shape({capacity});
-    C0 = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-    r = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-    normal = xt::xtensor<float, 2>::from_shape({capacity, 2});
-    friction = xt::xtensor<float, 1>::from_shape({capacity});
-    stick = xt::xtensor<bool, 1>::from_shape({capacity});
-    simplex = xt::xtensor<vec2, 2>::from_shape({capacity, 3});
-    forceIndex = xt::xtensor<uint, 1>::from_shape({capacity});
+    toDelete.resize(capacity);
+    C0.resize(capacity); 
+    r.resize(capacity);
+    normal.resize(capacity);
+    friction.resize(capacity); 
+    stick.resize(capacity); 
+    simplex.resize(capacity); 
+    forceIndex.resize(capacity); 
 
     // arrays for holding extra compute space
-    tangent = xt::xtensor<float, 2>::from_shape({capacity, 2});
-    basis = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-    rW = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-
+    tangent.resize(capacity);
+    basis.resize(capacity);
+    rW.resize(capacity);
 }
 
 /**
@@ -38,7 +37,7 @@ uint ManifoldSoA::reserve(uint numBodies) {
 
     // remove indices for reserveed elements
     for (uint i = size; i < size + numBodies; i++) {
-        toDelete(i) = false;
+        toDelete[i] = false;
     }
 
     uint nextFree = size;
@@ -78,25 +77,18 @@ void ManifoldSoA::compact() {
     // TODO update foreign keys to forceSoA
     // reset values for toDelete since they were not mutated in the compact
     for (uint i = 0; i < size; i++) {
-        toDelete(i) = false;
+        toDelete[i] = false;
     }
 }
 
 void ManifoldSoA::warmstart() {
     // operate only on the first 'size' rows
     for (size_t i = 0; i < size; ++i) {
-        // tangent = [normal.y, -normal.x]
-        tangent(i, 0) = normal(i, 1);
-        tangent(i, 1) = -normal(i, 0);
-
-        // basis = [[normal.x, normal.y], [tangent.x, tangent.y]]
-        basis(i, 0, 0) = normal(i, 0);
-        basis(i, 0, 1) = normal(i, 1);
-        basis(i, 1, 0) = tangent(i, 0);
-        basis(i, 1, 1) = tangent(i, 1);
+        tangent[i] = { -normal[i].y, normal[i].x };
+        basis[i] = { normal[i], tangent[i] }; // TODO check this constructor
     }
 }
 
 void ManifoldSoA::remove(uint index) {
-    toDelete(index) = true;
+    toDelete[index] = true;
 }

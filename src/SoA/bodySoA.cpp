@@ -4,30 +4,30 @@ BodySoA::BodySoA(uint capacity) {
     this->capacity = capacity;
 
     // create all xtensors
-    bodies = xt::xtensor<Indexed*, 1>::from_shape({capacity});
-    toDelete = xt::xtensor<bool, 1>::from_shape({capacity});
-    pos      = xt::xtensor<float, 2>::from_shape({capacity, 3});
-    initial  = xt::xtensor<float, 2>::from_shape({capacity, 3});
-    inertial = xt::xtensor<float, 2>::from_shape({capacity, 3});
-    vel      = xt::xtensor<float, 2>::from_shape({capacity, 3});
-    prevVel  = xt::xtensor<float, 2>::from_shape({capacity, 3});
-    scale    = xt::xtensor<float, 2>::from_shape({capacity, 2});
-    friction = xt::xtensor<float, 1>::from_shape({capacity});
-    radius   = xt::xtensor<float, 1>::from_shape({capacity});
-    mass     = xt::xtensor<float, 1>::from_shape({capacity});
-    moment   = xt::xtensor<float, 1>::from_shape({capacity});
-    mesh = xt::xtensor<unsigned int, 1>::from_shape({capacity});
-    mat  = xt::xtensor<mat2x2, 1>::from_shape({capacity});
-    imat = xt::xtensor<mat2x2, 1>::from_shape({capacity});
-    rmat = xt::xtensor<mat2x2, 1>::from_shape({capacity});
+    bodies.resize(capacity);
+    toDelete.resize(capacity); 
+    pos.resize(capacity); 
+    initial.resize(capacity);
+    inertial.resize(capacity); 
+    vel.resize(capacity);  
+    prevVel.resize(capacity);
+    scale.resize(capacity);   
+    friction.resize(capacity); 
+    radius.resize(capacity); 
+    mass.resize(capacity);  
+    moment.resize(capacity);  
+    mesh.resize(capacity); 
+    mat.resize(capacity);
+    imat.resize(capacity);
+    rmat.resize(capacity);
 
-    updated = xt::xtensor<bool, 1>::from_shape({capacity});
-    color  = xt::xtensor<unsigned short, 1>::from_shape({capacity});
-    degree = xt::xtensor<unsigned short, 1>::from_shape({capacity});
-    satur  = xt::xtensor<unsigned short, 1>::from_shape({capacity});
+    updated.resize(capacity);
+    color.resize(capacity);
+    degree.resize(capacity);
+    satur.resize(capacity);
 
-    oldIndex = xt::xtensor<uint, 1>::from_shape({capacity});
-    inverseForceMap = xt::xtensor<uint, 1>::from_shape({capacity});
+    oldIndex.resize(capacity);
+    inverseForceMap.resize(capacity);
 }
 
 /**
@@ -36,20 +36,20 @@ BodySoA::BodySoA(uint capacity) {
  */
 void BodySoA::computeTransforms() {
     for (uint i = 0; i < size; i++) {
-        if (updated(i)) continue;
+        if (updated[i]) continue;
 
-        float angle = pos(i, 2);
-        float sx = scale(i, 0), sy = scale(i, 1);
+        float angle = pos[i].z;
+        float sx = scale[i].x, sy = scale[i].y;
         float isx = 1 / sx, isy = 1 / sy;
 
         float c = cos(angle);
         float s = sin(angle);
 
-        rmat(i) = { c, -s, s, c };
-        mat(i) = { c * sx, -s * sy, s * sx, c * sy };
-        imat(i) = { c * isx, s * isy, -s * isx, c * isy };
+        rmat[i] = { c, -s, s, c };
+        mat[i] = { c * sx, -s * sy, s * sx, c * sy };
+        imat[i] = { c * isx, s * isy, -s * isx, c * isy };
 
-        updated(i) = false;
+        updated[i] = false;
     }
 }
 
@@ -80,7 +80,7 @@ void BodySoA::compact() {
 
     // reset old indices
     for (uint i = 0; i < size; i++) {
-        oldIndex(i) = i;
+        oldIndex[i] = i;
     }
 
     // TODO check to see who needs to be compacted and who will just get cleared anyway
@@ -98,8 +98,8 @@ void BodySoA::compact() {
     size = active;
 
     for (uint i = 0; i < size; i++) {
-        toDelete(i) = false;
-        bodies(i)->setIndex(i);
+        toDelete[i] = false;
+        bodies[i]->setIndex(i);
     }
 }
 
@@ -109,37 +109,21 @@ uint BodySoA::insert(Indexed* body, vec3 pos, vec3 vel, vec2 scale, float fricti
     }
 
     // insert into row
-    this->bodies(size) = body;
-    this->toDelete(size) = false;
-
-    this->pos(size, 0) = pos.x;
-    this->pos(size, 1) = pos.y;
-    this->pos(size, 2) = pos.z;
-
-    this->vel(size, 0) = vel.x;
-    this->vel(size, 1) = vel.y;
-    this->vel(size, 2) = vel.z;
-
-    this->scale(size, 0) = scale.x;
-    this->scale(size, 1) = scale.y;
-
-    this->friction(size) = friction;
-    this->mass(size) = mass;
-    this->mesh(size) = mesh;
-    this->radius(size) = radius;
-
-    this->updated(size) = false;
+    this->bodies[size] = body;
+    this->toDelete[size] = false;
+    this->pos[size] = pos;
+    this->vel[size] = vel;
+    this->scale[size] = scale;
+    this->friction[size] = friction;
+    this->mass[size] = mass;
+    this->mesh[size] = mesh;
+    this->radius[size] = radius;
+    this->updated[size] = false;
 
     // increment size
     return size++;
 }
 
 void BodySoA::remove(uint index) {
-    toDelete(index) = true;
-}
-
-void BodySoA::printRigids() {
-    for(uint i = 0; i < size; i++) {
-        std::cout << "(" << pos(i, 0) << ", " << pos(i, 1) << ", " << pos(i, 2) << ")" << " <" << vel(i, 0) << ", " << vel(i, 1) << ", " << vel(i, 2) << ">" << std::endl;
-    }
+    toDelete[index] = true;
 }

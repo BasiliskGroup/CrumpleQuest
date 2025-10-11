@@ -3,10 +3,16 @@
 
 #include "util/includes.h"
 #include "util/indexed.h"
+#include "SoA/virtualSoA.h"
 #include "SoA/helper.h"
 
 class MeshSoA {
 private:
+    uint vertSize = 0;
+    uint vertCapacity;
+    uint meshSize = 0;
+    uint meshCapacity;
+
     std::unordered_map<uint, Indexed*> meshes;
     std::vector<uint> toDelete;
 
@@ -22,7 +28,7 @@ private:
     std::vector<float> moment;
 
 public:
-    MeshSoA(uint vertsCapacity, uint meshCapacity);
+    MeshSoA(uint vertCapacity, uint meshCapacity);
     ~MeshSoA() = default;
 
     std::vector<vec2>& getVerts() { return verts; }
@@ -34,6 +40,7 @@ public:
     uint getLength(uint index) { return length[index]; }
 
     void compact();
+    void resize(uint new_capacity); // TODO make a resize function for meshSoA
     void refreshPointers();
     uint insert(std::vector<vec2> verts);
     void remove(uint meshIndex);

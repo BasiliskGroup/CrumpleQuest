@@ -102,24 +102,6 @@ public:
     void draw();
 
 private:
-    // getters for accessing rows in a table
-    auto& getPos() { return bodySoA->getPos(); }
-    auto& getScale() { return bodySoA->getScale(); }
-    auto& getMat() { return bodySoA->getMat(); }
-    mat2x2 getMat(uint index) { return bodySoA->getMat()(index); }
-    mat2x2 getIMat(uint index) { return bodySoA->getIMat()(index); }
-    auto& getIMat() { return bodySoA->getIMat(); }
-
-    auto& getVerts() { return meshSoA->getVerts(); }
-    auto& getStart() { return meshSoA->getStart(); }
-    auto& getLength() { return meshSoA->getLength(); }
-
-    uint getStart(uint bodyIndex) { return meshSoA->getStart(bodySoA->getMesh()(bodyIndex)); }
-    uint getLength(uint bodyIndex) { return meshSoA->getLength(bodySoA->getMesh()(bodyIndex)); }
-    vec2* getStartPtr(uint bodyIndex) { return meshSoA->getStartPtr(bodySoA->getMesh()(bodyIndex)); }
-
-    auto& getSimplex() { return getManifoldSoA()->getSimplex(); }
-
     // manage storage functions
     void compactBodies();
     void compactForces();
