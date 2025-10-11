@@ -12,7 +12,6 @@ private:
     Solver* solver;
     Force* next;
     Force* nextA;
-    Force* nextB;
     Rigid* bodyA;
     Rigid* bodyB;
 
@@ -24,7 +23,6 @@ public:
     // getters 
     Force*& getNext()  { return next; }
     Force*& getNextA() { return nextA; }
-    Force*& getNextB() { return nextB; }
     Rigid*& getBodyA() { return bodyA; }
     Rigid*& getBodyB() { return bodyB; }
     ForceSoA* getForceSoA();

@@ -21,7 +21,9 @@ ForceSoA::ForceSoA(uint capacity) {
     lambda = xt::xtensor<float, 2>::from_shape({capacity, ROWS});
     type = xt::xtensor<ushort, 1>::from_shape({capacity});
     specialIndex = xt::xtensor<uint, 1>::from_shape({capacity});
+
     bodyIndex = xt::xtensor<uint, 1>::from_shape({capacity});
+    z = xt::xtensor<float, 2>::from_shape({capacity, 2});
 
     // create SoAs
     manifoldSoA = new ManifoldSoA(this, capacity);
@@ -57,7 +59,7 @@ void ForceSoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity, 
-        forces, toDelete, J, C, motor, stiffness, fracture, fmax, fmin, penalty, lambda, H, type, specialIndex, bodyIndex
+        forces, toDelete, J, C, motor, stiffness, fracture, fmax, fmin, penalty, lambda, H, type, specialIndex, bodyIndex, z
     );
 
     // NOTE we do not have to explicitly set our deletes to false since they outside of size
@@ -83,7 +85,7 @@ void ForceSoA::compact() {
 
     // todo write new compact function
     compactTensors(toDelete, size, 
-        forces, J, C, motor, stiffness, fracture, fmax,fmin, penalty, lambda, H, type, specialIndex, bodyIndex
+        forces, J, C, motor, stiffness, fracture, fmax,fmin, penalty, lambda, H, type, specialIndex, bodyIndex, z
     );
 
     size = active;

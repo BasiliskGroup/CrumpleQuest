@@ -166,6 +166,7 @@ void Solver::narrowCollision() {
         sat(a, b, collisionPair);
 
         // create manifold force in graph
+        // TODO delay creation of these forces until after multithreading, these will insert into linked lists creating race conditions
         forceSoA->getForces()(forceIndex + 0) = new Manifold(this, (Rigid*) bodySoA->getBodies()(rowA), (Rigid*) bodySoA->getBodies()(rowB), forceIndex + 0); // A -> B
         forceSoA->getForces()(forceIndex + 1) = new Manifold(this, (Rigid*) bodySoA->getBodies()(rowB), (Rigid*) bodySoA->getBodies()(rowA), forceIndex + 1); // B -> A
 

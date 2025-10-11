@@ -26,7 +26,7 @@ private:
     // arrays for holding extra compute space
     xt::xtensor<float, 2> tangent;
     xt::xtensor<float, 3> basis;
-    xt::xtensor<float, 2> z;
+
 
 public:
     ManifoldSoA(ForceSoA* forceSoA, uint capacity);

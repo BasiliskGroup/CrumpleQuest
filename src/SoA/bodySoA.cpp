@@ -69,7 +69,6 @@ void BodySoA::resize(uint newCapacity) {
 // NOTE this function is very expensive but should only be called once per frame
 // if needed, find a cheaper solution
 void BodySoA::compact() {
-    print("body compacting");
     // do a quick check to see if we need to run more complex compact function
     uint active = numValid(toDelete, size);
     if (active == size) {
@@ -89,15 +88,9 @@ void BodySoA::compact() {
     );
 
     // invert old indices so that forces can find their new indices
-    print("before loop");
     for (uint i = 0; i < size; i++) {
         inverseForceMap[oldIndex[i]] = i;
     }
-
-    print("Old size");
-    print(size);
-
-    print("after loop");
 
     size = active;
 

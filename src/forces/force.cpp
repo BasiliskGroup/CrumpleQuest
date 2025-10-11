@@ -1,7 +1,7 @@
 #include "solver/physics.h"
 
 Force::Force(Solver* solver, Rigid* bodyA, Rigid* bodyB) 
-: solver(solver), next(nullptr), bodyA(bodyA), bodyB(bodyB), nextA(nullptr), nextB(nullptr) {
+: solver(solver), next(nullptr), bodyA(bodyA), bodyB(bodyB), nextA(nullptr) {
     // Add to solver linked list
     next = solver->getForces();
     solver->getForces() = this;
@@ -10,11 +10,6 @@ Force::Force(Solver* solver, Rigid* bodyA, Rigid* bodyB)
     if (bodyA) {
         nextA = bodyA->getForces();
         bodyA->getForces() = this;
-    }
-
-    if (bodyB) {
-        nextB = bodyB->getForces();
-        bodyB->getForces() = this;
     }
 
     // TODO set default params
@@ -34,20 +29,10 @@ Force::~Force()
     if (bodyA) {
         p = &bodyA->getForces();
         while (*p != this) {
-            p = (*p)->bodyA == bodyA ? &(*p)->nextA : &(*p)->nextB;
+            p = &(*p)->nextA;
         }
         if (*p == this) {
             *p = nextA;
-        }
-    }
-
-    if (bodyB) {
-        p = &bodyB->getForces();
-        while (*p != this) {
-            p = (*p)->bodyA == bodyB ? &(*p)->nextA : &(*p)->nextB;
-        }
-        if (*p == this) {
-            *p = nextB;
         }
     }
 

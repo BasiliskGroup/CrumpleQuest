@@ -27,17 +27,12 @@ Rigid::~Rigid() {
     Force* f = forces;
     Force* fnext;
     while(f != nullptr) {
-        fnext = (f->getBodyA() == this) ? f->getNextA() : f->getNextB();
+        fnext = f->getNextA();
 
         f->markForDeletion();
         if (f->getBodyA() == this) {
             f->getBodyA() = nullptr;
             f->getNextA() = nullptr;
-        }
-        
-        if (f->getBodyB() == this) {
-            f->getBodyB() = nullptr;
-            f->getNextB() = nullptr;
         }
 
         // move f along our list
@@ -58,7 +53,7 @@ bool Rigid::constrainedTo(Rigid* other) const {
         // print("constrained search");
         // print(index);
         // print(f->getIndex());
-        if (f->getBodyB() == other || f->getBodyA() == other) {
+        if (f->getBodyB() == other) {
             return true;
         }
     }

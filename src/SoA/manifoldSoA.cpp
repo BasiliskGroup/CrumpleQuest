@@ -21,7 +21,7 @@ ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA)
     // arrays for holding extra compute space
     tangent = xt::xtensor<float, 2>::from_shape({capacity, 2});
     basis   = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-    z       = xt::xtensor<float, 2>::from_shape({capacity, 2});
+
 }
 
 /**
@@ -57,7 +57,7 @@ void ManifoldSoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity,
-        toDelete, C0, rA, rB, normal, friction, stick, indexA, indexB, forceIndex, simplex, tangent, basis, z
+        toDelete, C0, rA, rB, normal, friction, stick, indexA, indexB, forceIndex, simplex, tangent, basis
     );
 
     // update capacity
@@ -72,7 +72,7 @@ void ManifoldSoA::compact() {
     }
 
     compactTensors(toDelete, size,
-        C0, rA, rB, normal, friction, stick, indexA, indexB, forceIndex, simplex, tangent, basis, z
+        C0, rA, rB, normal, friction, stick, indexA, indexB, forceIndex, simplex, tangent, basis
     );
 
     size = active;
