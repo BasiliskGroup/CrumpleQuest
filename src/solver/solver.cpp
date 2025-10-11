@@ -195,7 +195,8 @@ void Solver::reserveForcesForCollision(uint& forceIndex, uint& manifoldIndex) {
 }
 
 void Solver::initColliderRow(uint row, uint manifoldIndex, ColliderRow& colliderRow) {
-    colliderRow.pos = {getPos()(row, 0), getPos()(row, 1)};
+    colliderRow.pos = { getPos()(row, 0), getPos()(row, 1) };
+    colliderRow.scale = { getScale()(row, 0), getScale()(row, 1) };
     colliderRow.mat = getMat(row);
     colliderRow.imat = getIMat(row);
     colliderRow.start = getStartPtr(row);

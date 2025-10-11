@@ -103,8 +103,8 @@ void Solver::addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uin
     vec2 dirA = a.imat *  pair.dir;
     vec2 dirB = b.imat * (-pair.dir);
 
-    getFar(a.start, a.length, dirA, a.simplex[insertIndex]);
-    getFar(b.start, b.length, dirB, b.simplex[insertIndex]);
+    getFar(a, dirA, a.simplex[insertIndex]);
+    getFar(b, dirB, b.simplex[insertIndex]);
 
     // Transform selected local vertices into world space
     vec2 localA = a.simplex[insertIndex];
@@ -161,17 +161,17 @@ void Solver::addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uin
 //     return cur;
 // }
 
-void Solver::getFar(const vec2* verts, uint length, const vec2& dir, vec2& simplexLocal) {
+void Solver::getFar(const ColliderRow& row, const vec2& dir, vec2& simplexLocal) {
     uint farIndex = 0;
-    float maxDot = glm::dot(verts[0], dir);
+    float maxDot = glm::dot(row.start[0], dir);
 
-    for (uint i = 1; i < length; ++i) {
-        float d = glm::dot(verts[i], dir);
+    for (uint i = 1; i < row.length; ++i) {
+        float d = glm::dot(row.start[i], dir);
         if (d > maxDot) {
             maxDot = d;
             farIndex = i;
         }
     }
 
-    simplexLocal = verts[farIndex];
+    simplexLocal = row.start[farIndex] * row.scale;
 }

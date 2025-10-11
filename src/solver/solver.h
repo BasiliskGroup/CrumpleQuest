@@ -40,6 +40,7 @@ private:
     // collision struct for hotloop caching
     struct ColliderRow {
         vec2 pos;
+        vec2 scale;
         mat2x2 mat;
         mat2x2 imat;
         vec2* start;
@@ -103,6 +104,7 @@ public:
 private:
     // getters for accessing rows in a table
     auto& getPos() { return bodySoA->getPos(); }
+    auto& getScale() { return bodySoA->getScale(); }
     auto& getMat() { return bodySoA->getMat(); }
     mat2x2 getMat(uint index) { return bodySoA->getMat()(index); }
     mat2x2 getIMat(uint index) { return bodySoA->getIMat()(index); }
@@ -140,7 +142,7 @@ private:
     uint handle2(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
     uint handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
     void addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint insertIndex);
-    void getFar(const vec2* verts, uint length, const vec2& dir, vec2& simplexLocal);
+    void getFar(const ColliderRow& row, const vec2& dir, vec2& simplexLocal);
 
     // epa helper methods
     ushort insertHorizon(SpSet& spSet, ushort spIndex, ushort setSize);

@@ -7,7 +7,7 @@ int main() {
     Solver* solver = new Solver();
     Mesh* cubeMesh = new Mesh(solver, {{-0.5, 0.5}, {-0.5, -0.5}, {0.5, -0.5}, {0.5, 0.5}});
 
-    float dx = 0.2;
+    float dx = 5;
     float dr = 2 * 3.14;
 
     // create a list of rigids
