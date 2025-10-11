@@ -164,8 +164,11 @@ void Solver::narrowCollision() {
         count++;
         ushort frontIndex = epa(a, b, collisionPair);
         vec2 normal = collisionPair.polytope[frontIndex].normal;
-        getManifoldSoA()->getNormal()(manifoldIndex, 0) = normal.x;
-        getManifoldSoA()->getNormal()(manifoldIndex, 1) = normal.y;
+        getManifoldSoA()->getNormal()(manifoldIndex + 0, 0) = normal.x;
+        getManifoldSoA()->getNormal()(manifoldIndex + 0, 1) = normal.y;
+
+        getManifoldSoA()->getNormal()(manifoldIndex + 1, 0) = -normal.x;
+        getManifoldSoA()->getNormal()(manifoldIndex + 1, 1) = -normal.y;
 
         // determine object overlap
         sat(a, b, collisionPair);

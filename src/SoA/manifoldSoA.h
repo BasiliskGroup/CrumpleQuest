@@ -5,6 +5,13 @@
 
 class ForceSoA;
 
+enum JType {
+    JN1,
+    JT1,
+    JN2,
+    JT2
+};
+
 // NOTE we do not need copy or move constructor as we will only have one of these
 class ManifoldSoA : public SoA {
 private:

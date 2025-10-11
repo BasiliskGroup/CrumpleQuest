@@ -47,11 +47,11 @@ target_link_libraries(engine
 # compile options
 # -----------------------
 
-# target_compile_options(engine PRIVATE
-#     -O3
-#     -ffast-math
-#     -march=native
-# )
+target_compile_options(engine PRIVATE
+    -O3
+    -ffast-math
+    -march=native
+)
 
 # -----------------------
 # resources
