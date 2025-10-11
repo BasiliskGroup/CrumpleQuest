@@ -16,17 +16,14 @@ int main() {
         objects.push_back(new Rigid(solver, {uniform(-dx, dx), uniform(-dx, dx), uniform(0, dr)}, {1, 1}, 1, 0.4, {0, 0, 0}, cubeMesh));
     }
 
-    int deleteIndex = randrange(0, objects.size());
-    delete objects[deleteIndex];
-    objects.erase(objects.begin() + deleteIndex);
-
     for (int i = 0; i < 10; i++) {
         solver->step(1.0 / 60.0);
-    }
 
-    deleteIndex = randrange(0, objects.size());
-    delete objects[deleteIndex];
-    objects.erase(objects.begin() + deleteIndex);
+        // testing mid simulation body deletion
+        int deleteIndex = randrange(0, objects.size());
+        delete objects[deleteIndex];
+        objects.erase(objects.begin() + deleteIndex);
+    }
 
     // delete mesh
     delete cubeMesh;

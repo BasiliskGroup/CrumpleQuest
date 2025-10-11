@@ -42,7 +42,7 @@ public:
     xt::xtensor<uint, 2>& getIndexB() { return indexB; }
     xt::xtensor<float, 3>& getSimplex() { return simplex; }
 
-    uint reserve(uint numPairs);
+    uint reserve(uint numBodies);
     void resize(uint new_capacity) override;
     void compact() override;
     void remove(uint index);

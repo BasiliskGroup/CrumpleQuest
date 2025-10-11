@@ -22,6 +22,7 @@
 #include <cmath>
 #include <algorithm>
 #include <functional>
+#include <numeric>
 
 // import glad and glfw
 #include <glad/glad.h>

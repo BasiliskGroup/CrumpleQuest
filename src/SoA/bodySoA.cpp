@@ -6,30 +6,26 @@ BodySoA::BodySoA(uint capacity) {
     // create all xtensors
     bodies = xt::xtensor<Indexed*, 1>::from_shape({capacity});
     toDelete = xt::xtensor<bool, 1>::from_shape({capacity});
-
     pos      = xt::xtensor<float, 2>::from_shape({capacity, 3});
     initial  = xt::xtensor<float, 2>::from_shape({capacity, 3});
     inertial = xt::xtensor<float, 2>::from_shape({capacity, 3});
     vel      = xt::xtensor<float, 2>::from_shape({capacity, 3});
     prevVel  = xt::xtensor<float, 2>::from_shape({capacity, 3});
-
     scale    = xt::xtensor<float, 2>::from_shape({capacity, 2});
-
     friction = xt::xtensor<float, 1>::from_shape({capacity});
     radius   = xt::xtensor<float, 1>::from_shape({capacity});
     mass     = xt::xtensor<float, 1>::from_shape({capacity});
     moment   = xt::xtensor<float, 1>::from_shape({capacity});
-
     mesh = xt::xtensor<unsigned int, 1>::from_shape({capacity});
-
     mat  = xt::xtensor<mat2x2, 1>::from_shape({capacity});
     imat = xt::xtensor<mat2x2, 1>::from_shape({capacity});
-
     updated = xt::xtensor<bool, 1>::from_shape({capacity});
-
     color  = xt::xtensor<unsigned short, 1>::from_shape({capacity});
     degree = xt::xtensor<unsigned short, 1>::from_shape({capacity});
     satur  = xt::xtensor<unsigned short, 1>::from_shape({capacity});
+
+    oldIndex = xt::xtensor<uint, 1>::from_shape({capacity});
+    inverseForceMap = xt::xtensor<uint, 1>::from_shape({capacity});
 }
 
 /**
@@ -63,7 +59,7 @@ void BodySoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity,
-        bodies, toDelete, pos, initial, inertial, vel, prevVel, scale, friction, radius, mass, moment, mesh, mat, imat, updated, color, degree, satur
+        bodies, toDelete, pos, initial, inertial, vel, prevVel, scale, friction, radius, mass, moment, mesh, mat, imat, updated, color, degree, satur, oldIndex, inverseForceMap
     );
 
     // update capacity
@@ -73,17 +69,35 @@ void BodySoA::resize(uint newCapacity) {
 // NOTE this function is very expensive but should only be called once per frame
 // if needed, find a cheaper solution
 void BodySoA::compact() {
+    print("body compacting");
     // do a quick check to see if we need to run more complex compact function
     uint active = numValid(toDelete, size);
     if (active == size) {
         return;
     }
 
+    // reset old indices
+    for (uint i = 0; i < size; i++) {
+        oldIndex(i) = i;
+    }
+
+    // TODO check to see who needs to be compacted and who will just get cleared anyway
     compactTensors(toDelete, size,
         bodies, pos, initial, inertial, vel, prevVel,
         scale, friction, radius, mass, moment,
-        mesh, mat, imat, updated, color, degree, satur
+        mesh, mat, imat, updated, color, degree, satur, oldIndex
     );
+
+    // invert old indices so that forces can find their new indices
+    print("before loop");
+    for (uint i = 0; i < size; i++) {
+        inverseForceMap[oldIndex[i]] = i;
+    }
+
+    print("Old size");
+    print(size);
+
+    print("after loop");
 
     size = active;
 

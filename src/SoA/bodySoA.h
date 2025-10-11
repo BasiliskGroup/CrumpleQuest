@@ -11,29 +11,27 @@ private:
     // xtensors    
     xt::xtensor<Indexed*, 1> bodies;
     xt::xtensor<bool, 1> toDelete;
-
     xt::xtensor<float, 2> pos;
     xt::xtensor<float, 2> initial;
     xt::xtensor<float, 2> inertial;
     xt::xtensor<float, 2> vel;
     xt::xtensor<float, 2> prevVel;
     xt::xtensor<float, 2> scale;
-
     xt::xtensor<float, 1> friction;
     xt::xtensor<float, 1> mass;
     xt::xtensor<float, 1> moment;
     xt::xtensor<float, 1> radius;
-
-    xt::xtensor<uint, 1> mesh; // vector
-
-    xt::xtensor<mat2x2, 1> mat; // list of 2x2 matrices
+    xt::xtensor<uint, 1> mesh;
+    xt::xtensor<mat2x2, 1> mat;
     xt::xtensor<mat2x2, 1> imat;
-
     xt::xtensor<bool, 1> updated;
-
     xt::xtensor<ushort, 1> color;
     xt::xtensor<ushort, 1> degree;
     xt::xtensor<ushort, 1> satur;
+
+    // updating forces
+    xt::xtensor<uint, 1> oldIndex;
+    xt::xtensor<uint, 1> inverseForceMap;
 
 public:
     BodySoA(uint capacity);
@@ -48,22 +46,19 @@ public:
     xt::xtensor<float, 2>& getVel() { return vel; }
     xt::xtensor<float, 2>& getPrevVel() { return prevVel; }
     xt::xtensor<float, 2>& getScale() { return scale; }
-
     xt::xtensor<float, 1>& getFriction() { return friction; }
     xt::xtensor<float, 1>& getMass() { return mass; }
     xt::xtensor<float, 1>& getMoment() { return moment; }
     xt::xtensor<float, 1>& getRadius() { return radius; }
-
     xt::xtensor<uint, 1>& getMesh() { return mesh; }
-
     xt::xtensor<mat2x2, 1>& getMat() { return mat; }
     xt::xtensor<mat2x2, 1>& getIMat() { return imat; }
-
     xt::xtensor<bool, 1>& getUpdated() { return updated; }
-
     xt::xtensor<ushort, 1>& getColor() { return color; }
     xt::xtensor<ushort, 1>& getDegree() { return degree; }
     xt::xtensor<ushort, 1>& getSatur() { return satur; }
+
+    xt::xtensor<uint, 1>& getInverseForceMap() { return inverseForceMap; }
 
     void resize(uint newCapacity) override;
     void compact() override;

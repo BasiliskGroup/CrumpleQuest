@@ -40,15 +40,14 @@ private:
     // collision struct for hotloop caching
     struct ColliderRow {
         vec2 pos;
-        const mat2x2& mat;
-        const mat2x2& imat;
-        const vec2* start;
+        mat2x2 mat;
+        mat2x2 imat;
+        vec2* start;
         uint length;
         uint* index;
         std::array<float, 4> dots; // TODO this needs to be at least the length of the mesh
-        
-        ColliderRow(float x, float y, mat2x2& mat, mat2x2& imat, vec2* start, uint length, uint* index)
-            : pos({x, y}), mat(mat), imat(imat), start(start), length(length), index(index) {}
+
+        ColliderRow() = default;
     };
 
     struct PolytopeFace {
@@ -87,7 +86,7 @@ private:
         // std::vector<float> dotsA;
         // std::vector<float> dotsB;
 
-        CollisionPair(uint forceIndex, uint manifoldIndex) : forceIndex(forceIndex), manifoldIndex(manifoldIndex) {}
+        CollisionPair() = default;
     };
     
 public:
@@ -109,6 +108,8 @@ private:
     // getters for accessing rows in a table
     auto& getPos() { return bodySoA->getPos(); }
     auto& getMat() { return bodySoA->getMat(); }
+    mat2x2 getMat(uint index) { return bodySoA->getMat()(index); }
+    mat2x2 getIMat(uint index) { return bodySoA->getIMat()(index); }
     auto& getIMat() { return bodySoA->getIMat(); }
 
     auto& getVerts() { return meshSoA->getVerts(); }
@@ -123,6 +124,11 @@ private:
     auto& getIndexB() { return getManifoldSoA()->getIndexB(); }
     auto& getMinks() { return getManifoldSoA()->getSimplex(); }
 
+    // manage storage functions
+    void compactBodies();
+    void compactForces();
+    void reserveForcesForCollision(uint& forceIndex, uint& manifoldIndex);
+
     // collision functions
     void sphericalCollision();
     void narrowCollision();
@@ -130,6 +136,8 @@ private:
     bool gjk(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeIndex);
     ushort epa(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
     void sat(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
+
+    void initColliderRow(uint row, uint manifoldIndex, ColliderRow& colliderRow);
 
     // gjk methods helper functions
     uint handleSimplex(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint freeIndex);

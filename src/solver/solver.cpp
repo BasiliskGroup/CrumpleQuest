@@ -39,7 +39,7 @@ Solver::~Solver() {
  */
 void Solver::step(float dt) {
     auto beforeStep = timeNow();
-    bodySoA->compact(); // compact bodies to increase cache hits
+    compactBodies();
     printDurationUS(beforeStep, timeNow(), "Body Compact:\t\t");
 
     auto beforeTransform = timeNow();
@@ -59,7 +59,7 @@ void Solver::step(float dt) {
 
     // warmstart forces -> uncompacts forces
     auto beforeCompact = timeNow();
-    forceSoA->compact();
+    compactForces();
     printDurationUS(beforeCompact, timeNow(), "Force Compact:\t\t");
 
     auto beforeManifoldWarm = timeNow();
@@ -70,6 +70,27 @@ void Solver::step(float dt) {
     print("------------------------------------------");
     printDurationUS(beforeStep, timeNow(), "Total: ");
     print("");
+}
+
+void Solver::compactBodies() {
+    bodySoA->compact();
+
+    // route forces back to their correct bodies after standard compact
+    auto bodyIndices = forceSoA->getBodyIndex();
+    auto toDelete = forceSoA->getToDelete();
+    auto inverseForceMap = bodySoA->getInverseForceMap();
+
+    for (uint i = 0; i < forceSoA->getSize(); i++) {
+        // will index out of bounds
+        if (toDelete(i) == true) {
+            continue;
+        }
+        bodyIndices(i) = inverseForceMap(bodyIndices(i));
+    }
+}
+
+void Solver::compactForces() {
+    forceSoA->compact();
 }
 
 // TODO replace this with BVH
@@ -107,7 +128,7 @@ void Solver::sphericalCollision() {
 void Solver::narrowCollision() {
     // reserve space to perform all collisions 
     uint forceIndex, manifoldIndex;
-    forceSoA->reserveManifolds(collisionPairs.size(), forceIndex, manifoldIndex);
+    reserveForcesForCollision(forceIndex, manifoldIndex);
 
     int count = 0; // TODO debug variable
 
@@ -115,31 +136,22 @@ void Solver::narrowCollision() {
         uint rowA = pair.first;
         uint rowB = pair.second;
 
-        // create collider rows for better caching
-        ColliderRow a = {
-            getPos()(rowA, 0), getPos()(rowA, 1),
-            getMat()(rowA), getIMat()(rowA),
-            getStartPtr(rowA), getLength(rowA),
-            getIndexA().data() + manifoldIndex * getIndexA().shape(1)
-        };
-
-        ColliderRow b = {
-            getPos()(rowB, 0), getPos()(rowB, 1),
-            getMat()(rowB), getIMat()(rowB),
-            getStartPtr(rowB), getLength(rowB),
-            getIndexB().data() + manifoldIndex * getIndexB().shape(1)
-        };
-
-        CollisionPair collisionPair = CollisionPair(forceIndex, manifoldIndex);
+        ColliderRow a, b;
+        CollisionPair collisionPair;
+        initColliderRow(rowA, manifoldIndex, a);
+        initColliderRow(rowB, manifoldIndex, b);
+        collisionPair.forceIndex = forceIndex;
+        collisionPair.manifoldIndex = manifoldIndex;
 
         // determine if objects are colliding
         bool collided = gjk(a, b, collisionPair, 0);
 
         if (!collided) {
             // increment enumeration
-            forceSoA->markForDeletion(forceIndex);
-            forceIndex++;
-            manifoldIndex++;
+            forceSoA->markForDeletion(forceIndex + 0);
+            forceSoA->markForDeletion(forceIndex + 1);
+            forceIndex += 2;
+            manifoldIndex += 2;
             continue;
         }
 
@@ -154,14 +166,37 @@ void Solver::narrowCollision() {
         sat(a, b, collisionPair);
 
         // create manifold force in graph
-        forceSoA->getForces()(forceIndex) = new Manifold(this, (Rigid*) bodySoA->getBodies()(rowA), (Rigid*) bodySoA->getBodies()(rowB), forceIndex);
+        forceSoA->getForces()(forceIndex + 0) = new Manifold(this, (Rigid*) bodySoA->getBodies()(rowA), (Rigid*) bodySoA->getBodies()(rowB), forceIndex + 0); // A -> B
+        forceSoA->getForces()(forceIndex + 1) = new Manifold(this, (Rigid*) bodySoA->getBodies()(rowB), (Rigid*) bodySoA->getBodies()(rowA), forceIndex + 1); // B -> A
 
         // increment enumeration
-        forceIndex++;
-        manifoldIndex++;
+        forceIndex += 2;
+        manifoldIndex += 2;
     }
 
     std::cout << "Positive Narrow:\t" << count << std::endl;
+}
+
+void Solver::reserveForcesForCollision(uint& forceIndex, uint& manifoldIndex) {
+    forceSoA->reserveManifolds(collisionPairs.size() * 2, forceIndex, manifoldIndex);
+
+    // assign forces their bodies
+    auto& bodyIndices = forceSoA->getBodyIndex();
+    uint i = 0;
+    for (const auto& pair : collisionPairs) {
+        bodyIndices(forceIndex + i + 0) = pair.first;
+        bodyIndices(forceIndex + i + 1) = pair.second;
+        i += 2;
+    }
+}
+
+void Solver::initColliderRow(uint row, uint manifoldIndex, ColliderRow& colliderRow) {
+    colliderRow.pos = {getPos()(row, 0), getPos()(row, 1)};
+    colliderRow.mat = getMat(row);
+    colliderRow.imat = getIMat(row);
+    colliderRow.start = getStartPtr(row);
+    colliderRow.length = getLength(row);
+    colliderRow.index = getIndexA().data() + manifoldIndex * getIndexA().shape(1);
 }
 
 void Solver::draw() {

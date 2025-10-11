@@ -25,26 +25,26 @@ ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA)
 }
 
 /**
- * @brief Reserves enough space to the next power of 2 to insert numPairs rows. Assumes that the SoA is compact. This function should only be called by the ForceSoa
+ * @brief Reserves enough space to the next power of 2 to insert numBodies rows. Assumes that the SoA is compact. This function should only be called by the ForceSoa
  * 
- * @param numPairs
+ * @param numBodies
  * @return the next free index in the SoA. 
  */
-uint ManifoldSoA::reserve(uint numPairs) {
+uint ManifoldSoA::reserve(uint numBodies) {
     // calculate next 2^n to hold all space
-    uint neededSpace = pow(2, ceil(log2(size + numPairs)));
+    uint neededSpace = pow(2, ceil(log2(size + numBodies)));
     
     if (neededSpace >= capacity) {
         resize(neededSpace);
     }
 
     // remove indices for reserveed elements
-    for (uint i = size; i < size + numPairs; i++) {
+    for (uint i = size; i < size + numBodies; i++) {
         toDelete(i) = false;
     }
 
     uint nextFree = size;
-    size += numPairs;
+    size += numBodies;
     return nextFree;
 }
 

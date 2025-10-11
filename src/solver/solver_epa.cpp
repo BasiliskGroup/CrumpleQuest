@@ -39,20 +39,44 @@ ushort Solver::epa(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
         // collect horizon edges
         setSize = 0;
         ushort i = 0;
+        // print("NUM FACES");
+        // print(numFaces);
         while (i < numFaces) {
-            if (glm::dot(pair.polytope[i].normal, pair.sps[cloudSize]) > 0) {
+            if (glm::dot(pair.polytope[i].normal, pair.sps[cloudSize]) > COLLISION_MARGIN * COLLISION_MARGIN) {
+                // print("adding face");
+                // print(pair.polytope[i].va);
+                // print(pair.polytope[i].vb);
+
                 setSize = insertHorizon(pair.spSet, pair.polytope[i].va, setSize);
-                setSize = insertHorizon(pair.spSet, pair.polytope[i].va, setSize);
+                setSize = insertHorizon(pair.spSet, pair.polytope[i].vb, setSize);
                 removeFace(pair.polytope, i, numFaces);
                 numFaces -= 1;
+
+                // print("SpSet after add face");
+                // for (ushort i = 0; i < setSize; i++) {
+                //     print(pair.spSet[i]);
+                // }
             } else {
                 i++;
             }
         }
 
+
+
+        // print("SpSet");
+        // for (ushort i = 0; i < setSize; i++) {
+        //     print(pair.spSet[i]);
+        // }
+
+        if (setSize != 2) {
+            print("Polytope horizon error");
+            return polytopeFront(pair.polytope, numFaces);
+            // throw std::runtime_error("EPA could not find horizon vertices");
+        }
+
         // there should be only 2 horizon vertices left, create new face
         buildFace(pair, pair.spSet[0], cloudSize, numFaces);
-        buildFace(pair, cloudSize, pair.spSet[1], numFaces);
+        buildFace(pair, cloudSize, pair.spSet[1], numFaces + 1);
         numFaces += 2;
 
         // we increment cloud size at the end to reduce subtractions in the middle of the loop
@@ -72,11 +96,26 @@ ushort Solver::epa(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
  * @return ushort 
  */
 ushort Solver::insertHorizon(SpSet& spSet, ushort spIndex, ushort setSize) {
+    // print("SpSet before discard");
+    // for (ushort i = 0; i < setSize; i++) {
+    //     print(spSet[i]);
+    // }
+
     if (discardHorizon(spSet, spIndex, setSize)) {
+        // print("SpSet before discarded");
+        // for (ushort i = 0; i < setSize; i++) {
+        //     print(spSet[i]);
+        // }
         return --setSize;
     }
+
     spSet[setSize] = spIndex;
-    return ++setSize;
+    setSize++;
+    // print("SpSet after add point");
+    // for (ushort i = 0; i < setSize; i++) {
+    //     print(spSet[i]);
+    // }
+    return setSize;
 }
 
 /**
@@ -89,16 +128,26 @@ ushort Solver::insertHorizon(SpSet& spSet, ushort spIndex, ushort setSize) {
  * @return false 
  */
 bool Solver::discardHorizon(SpSet& spSet, ushort spIndex, ushort setSize) {
+    // print("SpSet enter discard");
+    // for (ushort i = 0; i < setSize; i++) {
+    //     print(spSet[i]);
+    // }
     if (setSize == 0) {
         return false;
     }
 
     // uses setSize - 1 since swapping last index wouldn't move it
-    for (short i = 0; i < setSize - 1; i++) {
+    for (ushort i = 0; i < setSize - 1; i++) {
         if (spSet[i] == spIndex) {
-            spSet[i] = spSet[setSize - 1];
+            std::swap(spSet[i], spSet[setSize - 1]);
+            break;
         }
     }
+
+    // print("SpSet in discard");
+    // for (ushort i = 0; i < setSize; i++) {
+    //     print(spSet[i]);
+    // }
 
     // no need to swap last but we still need to check if it should be removed
     return spSet[setSize - 1] == spIndex;
@@ -175,15 +224,18 @@ void Solver::buildFace(CollisionPair& pair, ushort indexA, ushort indexB, ushort
     face.va = indexA;
     face.vb = indexB;
 
+    // print("face indices");
+    // print(indexB);
+    // print(indexA);
+
     vec2 edge = pair.sps[indexB] - pair.sps[indexA];
 
     // TODO check if we need midpoint or could just use vertex a
-    vec2 mid = pair.sps[indexA] + 0.5f * edge;
     vec2 normal = { -edge.y, edge.x };
-    if (glm::dot(mid, normal) < 0) {
+    if (glm::dot(pair.sps[indexA], normal) < 0) {
         normal *= -1.0f;
     }
 
     face.normal = glm::normalize(normal);
-    face.distance = glm::dot(normal, pair.sps[indexA]);
+    face.distance = glm::dot(face.normal, pair.sps[indexA]);
 }

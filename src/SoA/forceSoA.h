@@ -14,10 +14,8 @@ private:
     // xtensor TODO fix dimensions
     xt::xtensor<Indexed*, 1> forces;
     xt::xtensor<bool, 1> toDelete;
-    xt::xtensor<float, 3> JA;
-    xt::xtensor<float, 3> JB;
-    xt::xtensor<float, 4> HA;
-    xt::xtensor<float, 4> HB;
+    xt::xtensor<float, 3> J;
+    xt::xtensor<float, 4> H;
     xt::xtensor<float, 2> C;
     xt::xtensor<float, 2> motor;
     xt::xtensor<float, 2> stiffness;
@@ -36,11 +34,13 @@ public:
 
     void markForDeletion(uint index);
     
+    xt::xtensor<bool, 1>& getToDelete() { return toDelete; }
+    xt::xtensor<uint, 1>& getBodyIndex() { return bodyIndex; }
     xt::xtensor<uint, 1>& getSpecial() { return specialIndex; }
-    xt::xtensor<Indexed*, 1>& getForces() { return forces; };
+    xt::xtensor<Indexed*, 1>& getForces() { return forces; }
     ManifoldSoA* getManifoldSoA() { return manifoldSoA; }
 
-    void reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldIndex);
+    void reserveManifolds(uint numBodies, uint& forceIndex, uint& manifoldIndex);
     void resize(uint newCapacity) override;
     void compact() override;
     int insert();
