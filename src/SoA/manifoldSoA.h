@@ -19,11 +19,11 @@ private:
     xt::xtensor<bool, 1> stick;
     xt::xtensor<vec2, 2> simplex;
     xt::xtensor<uint, 1> forceIndex;
-    xt::xtensor<float, 2> z;
 
     // arrays for holding extra compute space
     xt::xtensor<float, 2> tangent;
     xt::xtensor<float, 3> basis;
+    xt::xtensor<float, 3> rW;
 
 public:
     ManifoldSoA(ForceSoA* forceSoA, uint capacity);
@@ -31,10 +31,17 @@ public:
 
     void warmstart();
 
+    // getters
     xt::xtensor<float, 2>& getNormal() { return normal; }
     xt::xtensor<float, 3>& getR() { return r; }
     xt::xtensor<uint, 1>& getForceIndex() { return forceIndex; }
     xt::xtensor<vec2, 2>& getSimplex() { return simplex; }
+
+    // setters
+    void setRW(const vec2& rW, uint index, ushort subIndex) {
+        r(index, subIndex, 0) = rW.x;
+        r(index, subIndex, 1) = rW.y;
+    }
 
     uint reserve(uint numBodies);
     void resize(uint new_capacity) override;

@@ -19,6 +19,8 @@ BodySoA::BodySoA(uint capacity) {
     mesh = xt::xtensor<unsigned int, 1>::from_shape({capacity});
     mat  = xt::xtensor<mat2x2, 1>::from_shape({capacity});
     imat = xt::xtensor<mat2x2, 1>::from_shape({capacity});
+    rmat = xt::xtensor<mat2x2, 1>::from_shape({capacity});
+
     updated = xt::xtensor<bool, 1>::from_shape({capacity});
     color  = xt::xtensor<unsigned short, 1>::from_shape({capacity});
     degree = xt::xtensor<unsigned short, 1>::from_shape({capacity});
@@ -43,6 +45,7 @@ void BodySoA::computeTransforms() {
         float c = cos(angle);
         float s = sin(angle);
 
+        rmat(i) = { c, -s, s, c };
         mat(i) = { c * sx, -s * sy, s * sx, c * sy };
         imat(i) = { c * isx, s * isy, -s * isx, c * isy };
 
@@ -59,7 +62,7 @@ void BodySoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity,
-        bodies, toDelete, pos, initial, inertial, vel, prevVel, scale, friction, radius, mass, moment, mesh, mat, imat, updated, color, degree, satur, oldIndex, inverseForceMap
+        bodies, toDelete, pos, initial, inertial, vel, prevVel, scale, friction, radius, mass, moment, mesh, mat, imat, rmat, updated, color, degree, satur, oldIndex, inverseForceMap
     );
 
     // update capacity
@@ -84,7 +87,7 @@ void BodySoA::compact() {
     compactTensors(toDelete, size,
         bodies, pos, initial, inertial, vel, prevVel,
         scale, friction, radius, mass, moment,
-        mesh, mat, imat, updated, color, degree, satur, oldIndex
+        mesh, mat, imat, rmat, updated, color, degree, satur, oldIndex
     );
 
     // invert old indices so that forces can find their new indices

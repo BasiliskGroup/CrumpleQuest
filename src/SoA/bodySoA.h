@@ -24,6 +24,7 @@ private:
     xt::xtensor<uint, 1> mesh;
     xt::xtensor<mat2x2, 1> mat;
     xt::xtensor<mat2x2, 1> imat;
+    xt::xtensor<mat2x2, 1> rmat;
     xt::xtensor<bool, 1> updated;
     xt::xtensor<ushort, 1> color;
     xt::xtensor<ushort, 1> degree;
@@ -53,6 +54,7 @@ public:
     xt::xtensor<uint, 1>& getMesh() { return mesh; }
     xt::xtensor<mat2x2, 1>& getMat() { return mat; }
     xt::xtensor<mat2x2, 1>& getIMat() { return imat; }
+    xt::xtensor<mat2x2, 1>& getRMat() { return rmat; }
     xt::xtensor<bool, 1>& getUpdated() { return updated; }
     xt::xtensor<ushort, 1>& getColor() { return color; }
     xt::xtensor<ushort, 1>& getDegree() { return degree; }

@@ -125,6 +125,9 @@ private:
     void compactForces();
     void reserveForcesForCollision(uint& forceIndex, uint& manifoldIndex);
 
+    // compute stages
+    void computeForceRWs();
+
     // collision functions
     void sphericalCollision();
     void narrowCollision();

@@ -62,7 +62,9 @@ void Solver::step(float dt) {
     compactForces();
     printDurationUS(beforeCompact, timeNow(), "Force Compact:\t\t");
 
-
+    auto beforeRWs = timeNow();
+    computeForceRWs();
+    printDurationUS(beforeRWs, timeNow(), "Force rWs:\t\t");
 
     // NOTE bodies and forces are compact after this point
 
@@ -173,6 +175,9 @@ void Solver::narrowCollision() {
         forceSoA->getForces()(forceIndex + 0) = new Manifold(this, (Rigid*) bodySoA->getBodies()(rowA), (Rigid*) bodySoA->getBodies()(rowB), forceIndex + 0); // A -> B
         forceSoA->getForces()(forceIndex + 1) = new Manifold(this, (Rigid*) bodySoA->getBodies()(rowB), (Rigid*) bodySoA->getBodies()(rowA), forceIndex + 1); // B -> A
 
+        forceSoA->getSpecial()(forceIndex + 0) = manifoldIndex + 0;
+        forceSoA->getSpecial()(forceIndex + 1) = manifoldIndex + 1;
+
         // increment enumeration
         forceIndex += 2;
         manifoldIndex += 2;
@@ -202,6 +207,36 @@ void Solver::initColliderRow(uint row, uint manifoldIndex, ColliderRow& collider
     colliderRow.start = getStartPtr(row);
     colliderRow.length = getLength(row);
     colliderRow.simplex = getSimplex().data() + manifoldIndex * getSimplex().shape(1);
+}
+
+// TODO expand this to work with other force types or make specialized functions for each
+/**
+ * @brief Computes the rW values for all active forces using positional data from the bodySoA
+ * 
+ */
+void Solver::computeForceRWs() {
+    auto& pos = getPos();
+    auto& r = forceSoA->getManifoldSoA()->getR();
+    auto& specials = forceSoA->getSpecial();
+    auto& bodyIndices = forceSoA->getBodyIndex();
+    auto& rmat = bodySoA->getRMat();
+
+    vec2 rTemp;
+    mat2x2 rmatTemp;
+
+    for (uint i = 0; i < forceSoA->getSize(); i++) {
+        uint specialIndex = specials(i);
+        uint bodyIndex = bodyIndices(i);
+        rmatTemp = rmat(bodyIndex);
+
+        // contact 0
+        rTemp = { r(specialIndex, 0, 0), r(specialIndex, 0, 1) };
+        forceSoA->getManifoldSoA()->setRW(rmatTemp * rTemp, specialIndex, 0);
+
+        // contact 1
+        rTemp = { r(specialIndex, 1, 0), r(specialIndex, 1, 1) };
+        forceSoA->getManifoldSoA()->setRW(rmatTemp * rTemp, specialIndex, 1);
+    }
 }
 
 void Solver::draw() {
