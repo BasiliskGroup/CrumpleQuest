@@ -29,10 +29,10 @@ void Solver::sat(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     vec2 rA2 = secondDepth - firstDepth > COLLISION_MARGIN ? a.start[secondIndex] : a.start[firstIndex];
 
     // write contact points to manifold index
-    getManifoldSoA()->getRA()(pair.manifoldIndex, 0, 0) = rA1.x;
-    getManifoldSoA()->getRA()(pair.manifoldIndex, 0, 1) = rA1.y;
-    getManifoldSoA()->getRA()(pair.manifoldIndex, 1, 0) = rA2.x;
-    getManifoldSoA()->getRA()(pair.manifoldIndex, 1, 1) = rA2.y;
+    getManifoldSoA()->getR()(pair.manifoldIndex + 0, 0, 0) = rA1.x;
+    getManifoldSoA()->getR()(pair.manifoldIndex + 0, 0, 1) = rA1.y;
+    getManifoldSoA()->getR()(pair.manifoldIndex + 0, 1, 0) = rA2.x;
+    getManifoldSoA()->getR()(pair.manifoldIndex + 0, 1, 1) = rA2.y;
 
     // ########################################################################################
 
@@ -63,10 +63,10 @@ void Solver::sat(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     vec2 rB2 = secondDepth - firstDepth > COLLISION_MARGIN ? b.start[secondIndex] : b.start[firstIndex];
 
     // write contact points to manifold index
-    getManifoldSoA()->getRB()(pair.manifoldIndex, 0, 0) = rB1.x;
-    getManifoldSoA()->getRB()(pair.manifoldIndex, 0, 1) = rB1.y;
-    getManifoldSoA()->getRB()(pair.manifoldIndex, 1, 0) = rB2.x;
-    getManifoldSoA()->getRB()(pair.manifoldIndex, 1, 1) = rB2.y;
+    getManifoldSoA()->getR()(pair.manifoldIndex + 1, 0, 0) = rB1.x;
+    getManifoldSoA()->getR()(pair.manifoldIndex + 1, 0, 1) = rB1.y;
+    getManifoldSoA()->getR()(pair.manifoldIndex + 1, 1, 0) = rB2.x;
+    getManifoldSoA()->getR()(pair.manifoldIndex + 1, 1, 1) = rB2.y;
 }
 
 void Solver::intersect(ColliderRow& a, ColliderRow& b, CollisionPair& pair, const vec2& mtv) {

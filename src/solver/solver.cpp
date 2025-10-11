@@ -62,11 +62,14 @@ void Solver::step(float dt) {
     compactForces();
     printDurationUS(beforeCompact, timeNow(), "Force Compact:\t\t");
 
+
+
+    // NOTE bodies and forces are compact after this point
+
     auto beforeManifoldWarm = timeNow();
     getManifoldSoA()->warmstart();
     printDurationUS(beforeManifoldWarm, timeNow(), "Manifold Warm:\t\t");
 
-    // NOTE bodies and forces are compact after this point
     print("------------------------------------------");
     printDurationUS(beforeStep, timeNow(), "Total: ");
     print("");
@@ -197,7 +200,7 @@ void Solver::initColliderRow(uint row, uint manifoldIndex, ColliderRow& collider
     colliderRow.imat = getIMat(row);
     colliderRow.start = getStartPtr(row);
     colliderRow.length = getLength(row);
-    colliderRow.index = getIndexA().data() + manifoldIndex * getIndexA().shape(1);
+    colliderRow.simplex = getSimplex().data() + manifoldIndex * getSimplex().shape(1);
 }
 
 void Solver::draw() {

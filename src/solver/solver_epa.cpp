@@ -201,8 +201,10 @@ void Solver::supportSpOnly(ColliderRow& a, ColliderRow& b, CollisionPair& pair, 
     vec2 dirB = b.imat * (-pair.dir);
 
     // Transform selected local vertices into world space
-    vec2 localA = a.start[getFar(a.start, a.length, dirA)]; // TODO replace these with a transform function
-    vec2 localB = b.start[getFar(b.start, b.length, dirB)];
+    vec2 localA; // TODO replace these with a transform function
+    getFar(a.start, a.length, dirA, localA);
+    vec2 localB;
+    getFar(b.start, b.length, dirB, localB);
     vec2 worldA = a.pos + a.mat * localA;
     vec2 worldB = b.pos + b.mat * localB;
 

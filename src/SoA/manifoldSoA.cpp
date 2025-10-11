@@ -6,17 +6,15 @@ ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA)
     this->capacity = capacity;
 
     // create all xtensors
-    toDelete   = xt::xtensor<bool, 1>::from_shape({capacity});
-    C0         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-    rA         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-    rB         = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
-    normal     = xt::xtensor<float, 2>::from_shape({capacity, 2});
-    friction   = xt::xtensor<float, 1>::from_shape({capacity});
-    stick      = xt::xtensor<bool, 1>::from_shape({capacity});
-    indexA     = xt::xtensor<uint, 2>::from_shape({capacity, 3});
-    indexB     = xt::xtensor<uint, 2>::from_shape({capacity, 3});
-    simplex    = xt::xtensor<float, 3>::from_shape({capacity, 3, 2});
+    toDelete = xt::xtensor<bool, 1>::from_shape({capacity});
+    C0 = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
+    r = xt::xtensor<float, 3>::from_shape({capacity, 2, 2});
+    normal = xt::xtensor<float, 2>::from_shape({capacity, 2});
+    friction = xt::xtensor<float, 1>::from_shape({capacity});
+    stick = xt::xtensor<bool, 1>::from_shape({capacity});
+    simplex = xt::xtensor<vec2, 2>::from_shape({capacity, 3});
     forceIndex = xt::xtensor<uint, 1>::from_shape({capacity});
+    z = xt::xtensor<float, 2>::from_shape({capacity, 2});
 
     // arrays for holding extra compute space
     tangent = xt::xtensor<float, 2>::from_shape({capacity, 2});
@@ -57,7 +55,7 @@ void ManifoldSoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity,
-        toDelete, C0, rA, rB, normal, friction, stick, indexA, indexB, forceIndex, simplex, tangent, basis
+        toDelete, C0, r, normal, friction, stick, simplex, forceIndex, z, tangent, basis
     );
 
     // update capacity
@@ -72,7 +70,7 @@ void ManifoldSoA::compact() {
     }
 
     compactTensors(toDelete, size,
-        C0, rA, rB, normal, friction, stick, indexA, indexB, forceIndex, simplex, tangent, basis
+        C0, r, normal, friction, stick, simplex, forceIndex, tangent, z, basis
     );
 
     size = active;

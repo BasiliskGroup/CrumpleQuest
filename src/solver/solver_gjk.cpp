@@ -74,8 +74,8 @@ uint Solver::handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     perpTowards(AB, CO, perp);
     if (glm::dot(perp, AO) > -COLLISION_MARGIN) {
         // remove 0
-        a.index[0]    = a.index[2];
-        b.index[0]    = b.index[2];
+        a.simplex[0]    = a.simplex[2];
+        b.simplex[0]    = b.simplex[2];
         pair.minks[0] = pair.minks[2];
 
         pair.dir = perp;
@@ -86,8 +86,8 @@ uint Solver::handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     perpTowards(AC, BO, perp);
     if (glm::dot(perp, AO) > -COLLISION_MARGIN) {
         // remove 1
-        a.index[1]    = a.index[2];
-        b.index[1]    = b.index[2];
+        a.simplex[1]    = a.simplex[2];
+        b.simplex[1]    = b.simplex[2];
         pair.minks[1] = pair.minks[2];
 
         pair.dir = perp;
@@ -103,12 +103,12 @@ void Solver::addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uin
     vec2 dirA = a.imat *  pair.dir;
     vec2 dirB = b.imat * (-pair.dir);
 
-    a.index[insertIndex] = getFar(a.start, a.length, dirA);
-    b.index[insertIndex] = getFar(b.start, b.length, dirB);
+    getFar(a.start, a.length, dirA, a.simplex[insertIndex]);
+    getFar(b.start, b.length, dirB, b.simplex[insertIndex]);
 
     // Transform selected local vertices into world space
-    vec2 localA = a.start[a.index[insertIndex]];
-    vec2 localB = b.start[b.index[insertIndex]];
+    vec2 localA = a.simplex[insertIndex];
+    vec2 localB = b.simplex[insertIndex];
     vec2 worldA = a.pos + a.mat * localA;
     vec2 worldB = b.pos + b.mat * localB;
 
@@ -161,7 +161,7 @@ void Solver::addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uin
 //     return cur;
 // }
 
-uint Solver::getFar(const vec2* verts, uint length, const vec2& dir) {
+void Solver::getFar(const vec2* verts, uint length, const vec2& dir, vec2& simplexLocal) {
     uint farIndex = 0;
     float maxDot = glm::dot(verts[0], dir);
 
@@ -173,5 +173,5 @@ uint Solver::getFar(const vec2* verts, uint length, const vec2& dir) {
         }
     }
 
-    return farIndex;
+    simplexLocal = verts[farIndex];
 }

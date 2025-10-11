@@ -13,20 +13,17 @@ private:
     // xtensor
     xt::xtensor<bool, 1> toDelete;
     xt::xtensor<float, 3> C0;
-    xt::xtensor<float, 3> rA;
-    xt::xtensor<float, 3> rB;
+    xt::xtensor<float, 3> r;
     xt::xtensor<float, 2> normal;
     xt::xtensor<float, 1> friction;
     xt::xtensor<bool, 1> stick;
-    xt::xtensor<uint, 2> indexA;
-    xt::xtensor<uint, 2> indexB;
-    xt::xtensor<float, 3> simplex;
+    xt::xtensor<vec2, 2> simplex;
     xt::xtensor<uint, 1> forceIndex;
+    xt::xtensor<float, 2> z;
 
     // arrays for holding extra compute space
     xt::xtensor<float, 2> tangent;
     xt::xtensor<float, 3> basis;
-
 
 public:
     ManifoldSoA(ForceSoA* forceSoA, uint capacity);
@@ -35,12 +32,9 @@ public:
     void warmstart();
 
     xt::xtensor<float, 2>& getNormal() { return normal; }
-    xt::xtensor<float, 3>& getRA() { return rA; }
-    xt::xtensor<float, 3>& getRB() { return rB; }
+    xt::xtensor<float, 3>& getR() { return r; }
     xt::xtensor<uint, 1>& getForceIndex() { return forceIndex; }
-    xt::xtensor<uint, 2>& getIndexA() { return indexA; }
-    xt::xtensor<uint, 2>& getIndexB() { return indexB; }
-    xt::xtensor<float, 3>& getSimplex() { return simplex; }
+    xt::xtensor<vec2, 2>& getSimplex() { return simplex; }
 
     uint reserve(uint numBodies);
     void resize(uint new_capacity) override;

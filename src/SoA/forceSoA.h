@@ -28,7 +28,7 @@ private:
     xt::xtensor<uint, 1> specialIndex;
 
     xt::xtensor<uint, 1> bodyIndex;
-    xt::xtensor<float, 2> z;
+    
 
 public:
     ForceSoA(uint capacity);

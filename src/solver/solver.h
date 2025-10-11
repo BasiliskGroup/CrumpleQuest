@@ -44,7 +44,7 @@ private:
         mat2x2 imat;
         vec2* start;
         uint length;
-        uint* index;
+        vec2* simplex;
         std::array<float, 4> dots; // TODO this needs to be at least the length of the mesh
 
         ColliderRow() = default;
@@ -82,10 +82,6 @@ private:
         SpSet spSet;
         Polytope polytope;
 
-        // sat
-        // std::vector<float> dotsA;
-        // std::vector<float> dotsB;
-
         CollisionPair() = default;
     };
     
@@ -120,9 +116,7 @@ private:
     uint getLength(uint bodyIndex) { return meshSoA->getLength(bodySoA->getMesh()(bodyIndex)); }
     vec2* getStartPtr(uint bodyIndex) { return meshSoA->getStartPtr(bodySoA->getMesh()(bodyIndex)); }
 
-    auto& getIndexA() { return getManifoldSoA()->getIndexA(); }
-    auto& getIndexB() { return getManifoldSoA()->getIndexB(); }
-    auto& getMinks() { return getManifoldSoA()->getSimplex(); }
+    auto& getSimplex() { return getManifoldSoA()->getSimplex(); }
 
     // manage storage functions
     void compactBodies();
@@ -146,7 +140,7 @@ private:
     uint handle2(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
     uint handle3(ColliderRow& a, ColliderRow& b, CollisionPair& pair);
     void addSupport(ColliderRow& a, ColliderRow& b, CollisionPair& pair, uint insertIndex);
-    uint getFar(const vec2* verts, uint length, const vec2& dir);
+    void getFar(const vec2* verts, uint length, const vec2& dir, vec2& simplexLocal);
 
     // epa helper methods
     ushort insertHorizon(SpSet& spSet, ushort spIndex, ushort setSize);
