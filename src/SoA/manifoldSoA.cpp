@@ -39,7 +39,7 @@ void ManifoldSoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity,
-        toDelete, C0, rA, rB, normal, friction, stick, simplex, forceIndex, tangent, basis, rAW, rBW
+        toDelete, C0, rA, rB, normal, friction, stick, simplex, forceIndex, tangent, basis, rAW, rBW, dpA, dpB
     );
 
     // update capacity
@@ -54,7 +54,7 @@ void ManifoldSoA::compact() {
     }
 
     compactTensors(toDelete, size,
-        C0, rA, rB, normal, friction, stick, simplex, forceIndex, tangent, basis, rAW, rBW
+        C0, rA, rB, normal, friction, stick, simplex, forceIndex, tangent, basis, rAW, rBW, dpA, dpB
     );
 
     size = active;

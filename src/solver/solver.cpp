@@ -76,9 +76,14 @@ void Solver::step(float dt) {
     warmstartBodies(dt);
     printDurationUS(beforeBodyWarm, timeNow(), "Body Warm:\t\t");
 
+    auto beforeMainPreload = timeNow();
+    mainloopPreload();
+    printDurationUS(beforeMainPreload, timeNow(), "Preload:\t\t");
+
     print("-----------------------------------------");
 
     // main solver loop
+    auto beforeMain = timeNow();
     for (ushort iter = 0; iter < iterations; iter++) {
         auto beforePrimal = timeNow();
         primalUpdate(dt);
@@ -88,6 +93,7 @@ void Solver::step(float dt) {
         dualUpdate(dt);
         printDualDuration(beforeDual, timeNow());
     }
+    printDurationUS(beforeMain, timeNow(), "Main Loop:\t\t");
 
     auto beforeVel = timeNow();
     updateVelocities(dt);
@@ -311,6 +317,11 @@ void Solver::updateVelocities(float dt) {
     bodySoA->updateVelocities(dt);
 }
 
+void Solver::mainloopPreload() {
+    // set up all current dpX values since we do halfloads for compute constraints
+    loadDpX(0, forceSoA->getSize());
+}
+
 void Solver::primalUpdate(float dt) {
     auto& rhs = bodySoA->getRHS();
     auto& lhs = bodySoA->getLHS();
@@ -318,10 +329,78 @@ void Solver::primalUpdate(float dt) {
     auto& inertial = bodySoA->getInertial();
     auto& mass = bodySoA->getMass();
     auto& moment = bodySoA->getMoment();
+    auto& bodyPtrs = bodySoA->getBodies();
+
+    for (uint b = 0; b < bodySoA->getSize(); b++) {
+        // this is our falg for immovable objects
+        if (mass[b] <= 0) {
+            continue;
+        }
+
+        lhs[b] = glm::diagonal3x3(vec3{ mass[b], mass[b], moment[b] } / (dt * dt));
+        rhs[b] = lhs[b] * (pos[b] - inertial[b]);
+
+        // TODO replace this with known counting sort
+        Rigid* body = (Rigid*) bodyPtrs[b];
+        for (Force* f = body->getForces(); f != nullptr; f = f->getNextA()) {
+            uint forceIndex = f->getIndex();
+
+            computeConstraints(forceIndex, forceIndex + 1, MANIFOLD);
+        }
+    }
 }
 
 void Solver::dualUpdate(float dt) {
 
+}
+
+void Solver::computeConstraints(uint start, uint end, ushort type) {
+    auto& pos = bodySoA->getPos();
+    auto& initial = bodySoA->getInitial();
+    auto& C0 = getManifoldSoA()->getC0();
+    auto& J = forceSoA->getJ();
+    auto& friction = getManifoldSoA()->getFriction();
+    auto& fmax = forceSoA->getFmax();
+    auto& fmin = forceSoA->getFmin();
+
+    // other dp will already be loaded, only focus on self
+    loadDpX(start, end);
+
+    for (uint i = start; i < end; i++) {
+        // Compute the Taylor series approximation of the constraint function C(x) (Sec 4)
+        
+
+        // TODO add force stick
+    }
+}
+
+void Solver::coputeDerivatives(uint start, uint end, ushort type) {
+    // Manifolds do not need to compute derivatives
+    if (type == 0) {
+        return;
+    }
+
+    for (uint i = start; i < end; i++) {
+
+    }
+}
+
+void Solver::loadDpX(uint start, uint end) {
+    auto& pos = bodySoA->getPos();
+    auto& initial = bodySoA->getInitial();
+    auto& bodyIndices = forceSoA->getBodyIndex();
+    auto& specialIndices = forceSoA->getSpecial();
+    auto& isA = forceSoA->getIsA();
+    auto& dpA = getManifoldSoA()->getDpA();
+    auto& dpB = getManifoldSoA()->getDpB();
+
+    for (uint i = start; i < end; i++) {
+        uint special = specialIndices[i];
+        uint body = bodyIndices[i];
+
+        vec3& dpX = isA[i] ? dpA[special] : dpB[special];
+        dpX = pos[body] - initial[body];
+    }
 }
 
 void Solver::draw() {

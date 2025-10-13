@@ -85,4 +85,12 @@ enum JType {
     JT,
 };
 
+enum ForceType {
+    NULL_FORCE,
+    MANIFOLD,
+    JOINT,
+    SPRING,
+    IGNORE_COLLISION
+};
+
 #endif

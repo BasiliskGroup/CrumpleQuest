@@ -41,6 +41,8 @@ public:
     auto& getJ() { return J; }
     auto& getH() { return H; }
     auto& getC() { return C; }
+    auto& getFmax() { return fmax; }
+    auto& getFmin() { return fmin; }
     auto& getToDelete() { return toDelete; }
     auto& getBodyIndex() { return bodyIndex; }
     auto& getSpecial() { return specialIndex; }

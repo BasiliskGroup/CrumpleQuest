@@ -26,6 +26,8 @@ private:
     std::vector<mat2x2> basis;
     std::vector<Vec2Pair> rAW;
     std::vector<Vec2Pair> rBW;
+    std::vector<vec3> dpA;
+    std::vector<vec3> dpB;
 
 public:
     ManifoldSoA(ForceSoA* forceSoA, uint capacity);
@@ -44,6 +46,9 @@ public:
     auto& getC0() { return C0; }
     auto& getForceIndex() { return forceIndex; }
     auto& getSimplex() { return simplex; }
+    auto& getFriction() { return friction; }
+    auto& getDpA() { return dpA; }
+    auto& getDpB() { return dpB; }
     vec2* getSimplexPtr(uint index) { return simplex[index].data(); }
 
     uint reserve(uint numBodies);

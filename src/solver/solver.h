@@ -112,8 +112,13 @@ private:
     void warmstartForces();
     void warmstartBodies(float dt);
     void updateVelocities(float dt);
+    void mainloopPreload();
     void primalUpdate(float dt);
     void dualUpdate(float dt);
+
+    void computeConstraints(uint start, uint end, ushort type);
+    void coputeDerivatives(uint start, uint end, ushort type);
+    void loadDpX(uint start, uint end);
 
     // collision functions
     void sphericalCollision();
