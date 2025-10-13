@@ -383,7 +383,32 @@ void Solver::primalUpdate(float dt) {
 }
 
 void Solver::dualUpdate(float dt) {
+    auto& lambdas = forceSoA->getLambda();
+    auto& stiffness = forceSoA->getStiffness();
+    auto& penalty = forceSoA->getPenalty();
+    auto& fmax = forceSoA->getFmax();
+    auto& fmin = forceSoA->getFmin();
+    auto& C = forceSoA->getC();
 
+    for (uint forceIndex = 0; forceIndex < forceSoA->getSize(); forceIndex++) {
+        computeConstraints(forceIndex, forceIndex + 1, MANIFOLD);
+
+        for (uint j = 0; j < MANIFOLD_ROWS; j++) {
+            // Use lambda as 0 if it's not a hard constraint
+            float lambda = isinf(stiffness[forceIndex][j]) ? lambdas[forceIndex][j] : 0.0f;
+
+            // Update lambda (Eq 11)
+            // Note that we don't include non-conservative forces (ie motors) in the lambda update, as they are not part of the dual problem.
+            float f = glm::clamp(penalty[forceIndex][j] * C[forceIndex][j] + lambda, fmin[forceIndex][j], fmax[forceIndex][j]);
+
+            // TODO add fracture
+    
+            // Update the penalty parameter and clamp to material stiffness if we are within the force bounds (Eq. 16)
+            if (lambdas[forceIndex][j] > fmin[forceIndex][j] && lambdas[forceIndex][j] < fmax[forceIndex][j]) {
+                penalty[forceIndex][j] = glm::min(penalty[forceIndex][j] + beta * abs(C[forceIndex][j]), PENALTY_MAX, stiffness[forceIndex][j]);
+            }
+        }
+    }
 }
 
 void Solver::computeConstraints(uint start, uint end, ushort type) {
