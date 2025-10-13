@@ -10,3 +10,13 @@ void printDurationUS(std::chrono::time_point<std::chrono::high_resolution_clock>
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
     std::cout << title << duration.count() << "us" << std::endl;
 }
+
+void printPrimalDuration(std::chrono::time_point<std::chrono::high_resolution_clock> t1, std::chrono::time_point<std::chrono::high_resolution_clock> t2) {
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+    std::cout << "Primal: " << duration.count() << "us" << "\t";
+}
+
+void printDualDuration(std::chrono::time_point<std::chrono::high_resolution_clock> t1, std::chrono::time_point<std::chrono::high_resolution_clock> t2) {
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+    std::cout << "Dual:\t" << duration.count() << "us" << std::endl;
+}

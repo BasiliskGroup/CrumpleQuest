@@ -1,33 +1,7 @@
 #include "bodySoA.h"
 
 BodySoA::BodySoA(uint capacity) {
-    this->capacity = capacity;
-
-    // create all xtensors
-    bodies.resize(capacity);
-    toDelete.resize(capacity); 
-    pos.resize(capacity); 
-    initial.resize(capacity);
-    inertial.resize(capacity); 
-    vel.resize(capacity);  
-    prevVel.resize(capacity);
-    scale.resize(capacity);   
-    friction.resize(capacity); 
-    radius.resize(capacity); 
-    mass.resize(capacity);  
-    moment.resize(capacity);  
-    mesh.resize(capacity); 
-    mat.resize(capacity);
-    imat.resize(capacity);
-    rmat.resize(capacity);
-
-    updated.resize(capacity);
-    color.resize(capacity);
-    degree.resize(capacity);
-    satur.resize(capacity);
-
-    oldIndex.resize(capacity);
-    inverseForceMap.resize(capacity);
+    resize(capacity);
 }
 
 /**
@@ -71,6 +45,17 @@ void BodySoA::warmstartBodies(const float dt, const float gravity) {
     }
 }
 
+void BodySoA::updateVelocities(float dt) {
+    float invdt = 1 / dt;
+
+    for (uint i = 0; i < size; i++) {
+        prevVel[i] = vel[i];
+        if (mass[i] > 0) {
+            vel[i] = invdt * (pos[i] - initial[i]);
+        }
+    }
+}
+
 /**
  * @brief Resizes each tensor in the system up to the specified size. 
  * 
@@ -80,7 +65,7 @@ void BodySoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity,
-        bodies, toDelete, pos, initial, inertial, vel, prevVel, scale, friction, radius, mass, moment, mesh, mat, imat, rmat, updated, color, degree, satur, oldIndex, inverseForceMap
+        bodies, toDelete, pos, initial, inertial, vel, prevVel, scale, friction, radius, mass, moment, mesh, mat, imat, rmat, updated, color, degree, satur, oldIndex, inverseForceMap, lhs, rhs
     );
 
     // update capacity
@@ -105,7 +90,7 @@ void BodySoA::compact() {
     compactTensors(toDelete, size,
         bodies, pos, initial, inertial, vel, prevVel,
         scale, friction, radius, mass, moment,
-        mesh, mat, imat, rmat, updated, color, degree, satur, oldIndex
+        mesh, mat, imat, rmat, updated, color, degree, satur, oldIndex, lhs, rhs
     );
 
     // invert old indices so that forces can find their new indices

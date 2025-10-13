@@ -3,25 +3,7 @@
 
 
 ForceSoA::ForceSoA(uint capacity) {
-    this->capacity = capacity;
-
-    // create all xtensors
-    forces.resize(capacity); 
-    toDelete.resize(capacity);
-    J.resize(capacity); 
-    H.resize(capacity); 
-    C.resize(capacity); 
-    motor.resize(capacity); 
-    stiffness.resize(capacity); 
-    fracture.resize(capacity); 
-    fmax.resize(capacity); 
-    fmin.resize(capacity); 
-    penalty.resize(capacity); 
-    lambda.resize(capacity); 
-    type.resize(capacity); 
-    specialIndex.resize(capacity);
-    bodyIndex.resize(capacity); 
-    isA.resize(capacity);
+    resize(capacity);
 
     // create SoAs
     manifoldSoA = new ManifoldSoA(this, capacity);
@@ -34,6 +16,16 @@ ForceSoA::~ForceSoA() {
 void ForceSoA::markForDeletion(uint index) { 
     toDelete[index] = true; 
     forces[index] = nullptr;
+}
+
+void ForceSoA::warmstart(float alpha, float gamma) {
+    for (uint i = 0; i < size; i++) {
+        for (uint j = 0; j < ROWS; j++) {
+            lambda[i][j] *= alpha * gamma;
+            penalty[i][j] = glm::clamp(penalty[i][j] * gamma, PENALTY_MIN, PENALTY_MAX);
+            penalty[i][j] = glm::min(penalty[i][j], stiffness[i][j]);
+        }
+    }
 }
 
 void ForceSoA::reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldIndex) {

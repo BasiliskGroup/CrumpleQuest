@@ -3,24 +3,7 @@
 
 
 ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA) {
-    this->capacity = capacity;
-
-    // create all xtensors
-    toDelete.resize(capacity);
-    C0.resize(capacity); 
-    rA.resize(capacity);
-    rB.resize(capacity);
-    normal.resize(capacity);
-    friction.resize(capacity); 
-    stick.resize(capacity); 
-    simplex.resize(capacity); 
-    forceIndex.resize(capacity); 
-
-    // arrays for holding extra compute space
-    tangent.resize(capacity);
-    basis.resize(capacity);
-    rAW.resize(capacity);
-    rBW.resize(capacity);
+    resize(capacity);
 }
 
 /**

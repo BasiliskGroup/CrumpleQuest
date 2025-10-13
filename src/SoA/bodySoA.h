@@ -34,12 +34,17 @@ private:
     std::vector<uint> oldIndex;
     std::vector<uint> inverseForceMap;
 
+    // solving
+    std::vector<vec3> rhs;
+    std::vector<mat3x3> lhs;
+
 public:
     BodySoA(uint capacity);
     ~BodySoA() = default;
 
     void computeTransforms();
     void warmstartBodies(const float dt, const float gravity);
+    void updateVelocities(float dt);
 
     auto& getBodies() { return bodies; }
     auto& getPos() { return pos; }
@@ -60,6 +65,8 @@ public:
     auto& getColor() { return color; }
     auto& getDegree() { return degree; }
     auto& getSatur() { return satur; }
+    auto& getRHS() { return rhs; }
+    auto& getLHS() { return lhs; }
     auto& getInverseForceMap() { return inverseForceMap; }
 
     void resize(uint newCapacity) override;

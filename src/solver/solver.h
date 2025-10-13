@@ -109,7 +109,11 @@ private:
 
     // compute stages
     void warmstartManifolds();
+    void warmstartForces();
     void warmstartBodies(float dt);
+    void updateVelocities(float dt);
+    void primalUpdate(float dt);
+    void dualUpdate(float dt);
 
     // collision functions
     void sphericalCollision();

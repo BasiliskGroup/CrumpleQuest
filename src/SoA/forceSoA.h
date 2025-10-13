@@ -35,6 +35,7 @@ public:
     ~ForceSoA();
 
     void markForDeletion(uint index);
+    void warmstart(float alpha, float gamma);
     
     auto& getIsA() { return isA; }
     auto& getJ() { return J; }

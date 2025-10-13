@@ -68,9 +68,30 @@ void Solver::step(float dt) {
     warmstartManifolds();
     printDurationUS(beforeManifoldWarm, timeNow(), "Manifold Warm:\t\t");
 
+    auto beforeForceWarm = timeNow();
+    void warmstartForces();
+    printDurationUS(beforeForceWarm, timeNow(), "Force Warm:\t\t");
+
     auto beforeBodyWarm = timeNow();
     warmstartBodies(dt);
     printDurationUS(beforeBodyWarm, timeNow(), "Body Warm:\t\t");
+
+    print("-----------------------------------------");
+
+    // main solver loop
+    for (ushort iter = 0; iter < iterations; iter++) {
+        auto beforePrimal = timeNow();
+        primalUpdate(dt);
+        printPrimalDuration(beforePrimal, timeNow());
+
+        auto beforeDual = timeNow();
+        dualUpdate(dt);
+        printDualDuration(beforeDual, timeNow());
+    }
+
+    auto beforeVel = timeNow();
+    updateVelocities(dt);
+    printDurationUS(beforeVel, timeNow(), "Velocities:\t\t");
 
     print("------------------------------------------");
     printDurationUS(beforeStep, timeNow(), "Total: ");
@@ -278,8 +299,29 @@ void Solver::warmstartManifolds() {
     }
 }
 
+void Solver::warmstartForces() {
+    forceSoA->warmstart(alpha, gamma);
+}
+
 void Solver::warmstartBodies(float dt) {
     bodySoA->warmstartBodies(dt, gravity);
+}
+
+void Solver::updateVelocities(float dt) {
+    bodySoA->updateVelocities(dt);
+}
+
+void Solver::primalUpdate(float dt) {
+    auto& rhs = bodySoA->getRHS();
+    auto& lhs = bodySoA->getLHS();
+    auto& pos = bodySoA->getPos();
+    auto& inertial = bodySoA->getInertial();
+    auto& mass = bodySoA->getMass();
+    auto& moment = bodySoA->getMoment();
+}
+
+void Solver::dualUpdate(float dt) {
+
 }
 
 void Solver::draw() {
