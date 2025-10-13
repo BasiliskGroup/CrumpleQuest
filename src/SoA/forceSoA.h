@@ -43,6 +43,10 @@ public:
     auto& getC() { return C; }
     auto& getFmax() { return fmax; }
     auto& getFmin() { return fmin; }
+    auto& getLambda() { return lambda; }
+    auto& getStiffness() { return stiffness; }
+    auto& getPenalty() { return penalty; }
+    auto& getMotor() { return motor; }
     auto& getToDelete() { return toDelete; }
     auto& getBodyIndex() { return bodyIndex; }
     auto& getSpecial() { return specialIndex; }

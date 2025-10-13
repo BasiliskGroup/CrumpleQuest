@@ -117,8 +117,8 @@ private:
     void dualUpdate(float dt);
 
     void computeConstraints(uint start, uint end, ushort type);
-    void coputeDerivatives(uint start, uint end, ushort type);
-    void loadDpX(uint start, uint end);
+    void computeDerivatives(uint start, uint end, ushort type);
+    void loadCdX(uint start, uint end);
 
     // collision functions
     void sphericalCollision();

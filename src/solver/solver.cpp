@@ -297,8 +297,10 @@ void Solver::warmstartManifolds() {
         for (uint j = 0; j < 2; j++) {
             const vec2& rW = isA[i] ? rAWs[specialIndex][j] : rBWs[specialIndex][j];
 
-            Js[i][JN + j] = vec3{ basis[0][0], basis[0][1], cross(rW, normal) };
-            Js[i][JT + j] = vec3{ basis[0][0], basis[0][1], cross(rW, tangent) };
+            // Precompute the constraint and derivatives at C(x-), since we use a truncated Taylor series for contacts (Sec 4).
+            // Note that we discard the second order term, since it is insignificant for contacts
+            Js[i][2 * j + JN] = vec3{ basis[0][0], basis[0][1], cross(rW, normal) };
+            Js[i][2 * j + JT] = vec3{ basis[1][0], basis[1][1], cross(rW, tangent) };
 
             C0s[specialIndex][j] += bases[specialIndex] * (xy(pos[bodyIndices[i]]) + rW) * (float) (2 * isA[i] - 1);
         }
@@ -319,7 +321,7 @@ void Solver::updateVelocities(float dt) {
 
 void Solver::mainloopPreload() {
     // set up all current dpX values since we do halfloads for compute constraints
-    loadDpX(0, forceSoA->getSize());
+    loadCdX(0, forceSoA->getSize());
 }
 
 void Solver::primalUpdate(float dt) {
@@ -330,6 +332,15 @@ void Solver::primalUpdate(float dt) {
     auto& mass = bodySoA->getMass();
     auto& moment = bodySoA->getMoment();
     auto& bodyPtrs = bodySoA->getBodies();
+    auto& lambdas = forceSoA->getLambda();
+    auto& stiffness = forceSoA->getStiffness();
+    auto& penalty = forceSoA->getPenalty();
+    auto& C = forceSoA->getC();
+    auto& motor = forceSoA->getMotor();
+    auto& fmax = forceSoA->getFmax();
+    auto& fmin = forceSoA->getFmin();
+    auto& H = forceSoA->getH();
+    auto& J = forceSoA->getJ();
 
     for (uint b = 0; b < bodySoA->getSize(); b++) {
         // this is our falg for immovable objects
@@ -346,7 +357,28 @@ void Solver::primalUpdate(float dt) {
             uint forceIndex = f->getIndex();
 
             computeConstraints(forceIndex, forceIndex + 1, MANIFOLD);
+            computeDerivatives(forceIndex, forceIndex + 1, MANIFOLD);
+
+            for (uint j = 0; j < MANIFOLD_ROWS; j++) {
+                // Use lambda as 0 if it's not a hard constraint
+                float lambda = isinf(stiffness[forceIndex][j]) ? lambdas[forceIndex][j] : 0.0f;
+
+                // Compute the clamped force magnitude (Sec 3.2)
+                float f = glm::clamp(penalty[forceIndex][j] * C[forceIndex][j] + lambda + motor[forceIndex][j], fmin[forceIndex][j], fmax[forceIndex][j]);
+
+                // Compute the diagonally lumped geometric stiffness term (Sec 3.5)
+                mat3x3 G = glm::diagonal3x3(vec3{ glm::length(H[forceIndex][j][0]), glm::length(H[forceIndex][j][1]), glm::length(H[forceIndex][j][2]) }) * abs(f);
+
+                // Accumulate force (Eq. 13) and hessian (Eq. 17)
+                rhs[b] += J[forceIndex][j] * f;
+                lhs[b] += glm::outerProduct(J[forceIndex][j], J[forceIndex][j] * penalty[forceIndex][j]) + G;
+            }
         }
+
+        // Solve the SPD linear system using LDL and apply the update (Eq. 4)
+        vec3 x;
+        solve(lhs[b], x, rhs[b]);
+        pos[b] -= x;
     }
 }
 
@@ -357,24 +389,35 @@ void Solver::dualUpdate(float dt) {
 void Solver::computeConstraints(uint start, uint end, ushort type) {
     auto& pos = bodySoA->getPos();
     auto& initial = bodySoA->getInitial();
-    auto& C0 = getManifoldSoA()->getC0();
     auto& J = forceSoA->getJ();
     auto& friction = getManifoldSoA()->getFriction();
     auto& fmax = forceSoA->getFmax();
     auto& fmin = forceSoA->getFmin();
+    auto& C = forceSoA->getC();
+    auto& lambda = forceSoA->getLambda();
+    auto& C0 = getManifoldSoA()->getC0();
+    auto& cdA = getManifoldSoA()->getCdA();
+    auto& cdB = getManifoldSoA()->getCdB();
 
     // other dp will already be loaded, only focus on self
-    loadDpX(start, end);
+    loadCdX(start, end);
 
     for (uint i = start; i < end; i++) {
-        // Compute the Taylor series approximation of the constraint function C(x) (Sec 4)
-        
+        for (uint j = 0; j < 2; j++) {
+            // Compute the Taylor series approximation of the constraint function C(x) (Sec 4)
+            C[i][2 * j + JN] = C0[i][j].x * (1 - alpha) + cdA[i][2 * j + JN] + cdB[i][2 * j + JN];
+            C[i][2 * j + JT] = C0[i][j].y * (1 - alpha) + cdA[i][2 * j + JT] + cdB[i][2 * j + JT];
 
-        // TODO add force stick
+            float frictionBound = abs(lambda[i][2 * j] * friction[i]);
+            fmax[i][2 * j + JT] = frictionBound;
+            fmin[i][2 * j + JT] = frictionBound;
+
+            // TODO add force stick
+        }
     }
 }
 
-void Solver::coputeDerivatives(uint start, uint end, ushort type) {
+void Solver::computeDerivatives(uint start, uint end, ushort type) {
     // Manifolds do not need to compute derivatives
     if (type == 0) {
         return;
@@ -385,21 +428,26 @@ void Solver::coputeDerivatives(uint start, uint end, ushort type) {
     }
 }
 
-void Solver::loadDpX(uint start, uint end) {
+void Solver::loadCdX(uint start, uint end) {
     auto& pos = bodySoA->getPos();
     auto& initial = bodySoA->getInitial();
     auto& bodyIndices = forceSoA->getBodyIndex();
     auto& specialIndices = forceSoA->getSpecial();
     auto& isA = forceSoA->getIsA();
-    auto& dpA = getManifoldSoA()->getDpA();
-    auto& dpB = getManifoldSoA()->getDpB();
+    auto& J = forceSoA->getJ();
+    auto& cdA = getManifoldSoA()->getCdA();
+    auto& cdB = getManifoldSoA()->getCdB();
 
     for (uint i = start; i < end; i++) {
         uint special = specialIndices[i];
         uint body = bodyIndices[i];
 
-        vec3& dpX = isA[i] ? dpA[special] : dpB[special];
-        dpX = pos[body] - initial[body];
+        FloatROWS& cdX = isA[i] ? cdA[special] : cdB[special];
+
+        for (ushort j = 0; j < 2; j++) {
+            cdX[2 * j + JN] = glm::dot(J[i][2 * j + JN], pos[body] - initial[body]);
+            cdX[2 * j + JT] = glm::dot(J[i][2 * j + JT], pos[body] - initial[body]);
+        }
     }
 }
 

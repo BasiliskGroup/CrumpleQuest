@@ -76,7 +76,8 @@ using ushort = unsigned short;
 
 using Vec2Triplet = std::array<vec2, 3>;
 using Vec2Pair = std::array<vec2, 2>;
-using Vec3ROWS = std::array<vec2, ROWS>;
+using FloatPair = std::array<float, 2>;
+using Vec3ROWS = std::array<vec3, ROWS>;
 using Mat3x3ROWS = std::array<mat3x3, ROWS>;
 using FloatROWS = std::array<float, ROWS>;
 
