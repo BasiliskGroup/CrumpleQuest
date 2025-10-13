@@ -3,7 +3,7 @@
 
 Solver::Solver() : forces(nullptr), bodies(nullptr) {
     // set default params
-    gravity = { 0, -10 };
+    gravity = -10.0f;
     iterations = 10;
     beta = 100000.0f;
     alpha = 0.99f;
@@ -62,15 +62,15 @@ void Solver::step(float dt) {
     compactForces();
     printDurationUS(beforeCompact, timeNow(), "Force Compact:\t\t");
 
-    auto beforeRWs = timeNow();
-    computeForceRWs();
-    printDurationUS(beforeRWs, timeNow(), "Force rWs:\t\t");
-
     // NOTE bodies and forces are compact after this point
 
     auto beforeManifoldWarm = timeNow();
-    getManifoldSoA()->warmstart();
+    warmstartManifolds();
     printDurationUS(beforeManifoldWarm, timeNow(), "Manifold Warm:\t\t");
+
+    auto beforeBodyWarm = timeNow();
+    warmstartBodies(dt);
+    printDurationUS(beforeBodyWarm, timeNow(), "Body Warm:\t\t");
 
     print("------------------------------------------");
     printDurationUS(beforeStep, timeNow(), "Total: ");
@@ -140,26 +140,16 @@ void Solver::narrowCollision() {
 
     int count = 0; // TODO debug variable
 
+    ColliderRow a, b;
+    CollisionPair collisionPair;
     for (const auto& pair : collisionPairs) {
         uint rowA = pair.first;
         uint rowB = pair.second;
 
-        ColliderRow a, b;
-        CollisionPair collisionPair;
         initColliderRow(rowA, manifoldIndex, a);
         initColliderRow(rowB, manifoldIndex, b);
         collisionPair.forceIndex = forceIndex;
         collisionPair.manifoldIndex = manifoldIndex;
-
-        // print("Mesh A");
-        // for (uint i = 0; i < a.length; i++) {
-        //     print(a.start[i]);
-        // }
-
-        // print("Mesh B");
-        // for (uint i = 0; i < a.length; i++) {
-        //     print(a.start[i]);
-        // }
 
         // determine if objects are colliding
         bool collided = gjk(a, b, collisionPair, 0);
@@ -169,7 +159,7 @@ void Solver::narrowCollision() {
             forceSoA->markForDeletion(forceIndex + 0);
             forceSoA->markForDeletion(forceIndex + 1);
             forceIndex += 2;
-            manifoldIndex += 2;
+            manifoldIndex++;
             continue;
         }
 
@@ -178,8 +168,7 @@ void Solver::narrowCollision() {
         ushort frontIndex = epa(a, b, collisionPair);
         vec2 normal = collisionPair.polytope[frontIndex].normal;
 
-        manifoldNormals[manifoldIndex + 0] = normal;
-        manifoldNormals[manifoldIndex + 1] = -normal;
+        manifoldNormals[manifoldIndex] = normal;
 
         // determine object overlap
         sat(a, b, collisionPair);
@@ -189,12 +178,13 @@ void Solver::narrowCollision() {
         forcePointers[forceIndex + 0] = new Manifold(this, (Rigid*) bodyPointers[rowA], (Rigid*) bodyPointers[rowB], forceIndex + 0); // A -> B
         forcePointers[forceIndex + 1] = new Manifold(this, (Rigid*) bodyPointers[rowB], (Rigid*) bodyPointers[rowA], forceIndex + 1); // B -> A
 
-        specialIndices[forceIndex + 0] = manifoldIndex + 0;
-        specialIndices[forceIndex + 1] = manifoldIndex + 1;
+        // set special indices in each constructor, maybe set this ina constructor
+        specialIndices[forceIndex + 0] = manifoldIndex;
+        specialIndices[forceIndex + 1] = manifoldIndex;
 
         // increment enumeration
         forceIndex += 2;
-        manifoldIndex += 2;
+        manifoldIndex++;
     }
 
     std::cout << "Positive Narrow:\t" << count << std::endl;
@@ -203,7 +193,7 @@ void Solver::narrowCollision() {
 void Solver::reserveForcesForCollision(uint& forceIndex, uint& manifoldIndex) {
     auto& bodyIndices = forceSoA->getBodyIndex();
 
-    forceSoA->reserveManifolds(collisionPairs.size() * 2, forceIndex, manifoldIndex);
+    forceSoA->reserveManifolds(collisionPairs.size(), forceIndex, manifoldIndex);
 
     // assign forces their bodies
     uint i = 0;
@@ -229,25 +219,67 @@ void Solver::initColliderRow(uint row, uint manifoldIndex, ColliderRow& collider
     colliderRow.simplex = getManifoldSoA()->getSimplexPtr(manifoldIndex);
 }
 
-// TODO expand this to work with other force types or make specialized functions for each
-/**
- * @brief Computes the rW values for all active forces using positional data from the bodySoA
- * 
- */
-void Solver::computeForceRWs() {
+void Solver::warmstartManifolds() {
+    // manifolds compute tangent and basis
+    getManifoldSoA()->warmstart();
+
+    // compute rW
     auto& pos = bodySoA->getPos();
-    auto& r = forceSoA->getManifoldSoA()->getR();
+    auto& rmat = bodySoA->getRMat();
+    auto& rAs = getManifoldSoA()->getRA();
+    auto& rBs = getManifoldSoA()->getRB();
     auto& specials = forceSoA->getSpecial();
     auto& bodyIndices = forceSoA->getBodyIndex();
-    auto& rmat = bodySoA->getRMat();
+    auto& isA = forceSoA->getIsA();
 
     for (uint i = 0; i < forceSoA->getSize(); i++) {
         uint specialIndex = specials[i];
         uint bodyIndex = bodyIndices[i];
 
-        forceSoA->getManifoldSoA()->setRW(rmat[bodyIndex] * r[specialIndex][0], specialIndex, 0);
-        forceSoA->getManifoldSoA()->setRW(rmat[bodyIndex] * r[specialIndex][1], specialIndex, 1);
+        if (isA[i]) {
+            rAs[specialIndex][0] = rmat[bodyIndex] * rAs[specialIndex][0];
+            rAs[specialIndex][1] = rmat[bodyIndex] * rAs[specialIndex][1];
+        } else {
+            rBs[specialIndex][0] = rmat[bodyIndex] * rBs[specialIndex][0];
+            rBs[specialIndex][1] = rmat[bodyIndex] * rBs[specialIndex][1];
+        }
     }
+
+    auto& bases = getManifoldSoA()->getBasis();
+    auto& tangents = getManifoldSoA()->getTangent();
+    auto& normals = getManifoldSoA()->getNormal();
+    auto& rAWs = getManifoldSoA()->getRAW();
+    auto& rBWs = getManifoldSoA()->getRBW();
+    auto& C0s = getManifoldSoA()->getC0();
+    auto& Js = forceSoA->getJ();
+
+    // set all C0 to zero
+    for (uint i = 0; i < getManifoldSoA()->getSize(); i++) {
+        C0s[i] = Vec2Pair(); // TODO check if this defaults to zero
+    }
+
+    for (uint i = 0; i < forceSoA->getSize(); i++) {
+        uint specialIndex = specials[i];
+        uint bodyIndex = bodyIndices[i];
+
+        const mat2x2& basis = bases[specialIndex];
+        const vec2& normal = normals[specialIndex];
+        const vec2& tangent = tangents[specialIndex];
+
+        // compute jacobians
+        for (uint j = 0; j < 2; j++) {
+            const vec2& rW = isA[i] ? rAWs[specialIndex][j] : rBWs[specialIndex][j];
+
+            Js[i][JN + j] = vec3{ basis[0][0], basis[0][1], cross(rW, normal) };
+            Js[i][JT + j] = vec3{ basis[0][0], basis[0][1], cross(rW, tangent) };
+
+            C0s[specialIndex][j] += bases[specialIndex] * (xy(pos[bodyIndices[i]]) + rW) * (float) (2 * isA[i] - 1);
+        }
+    }
+}
+
+void Solver::warmstartBodies(float dt) {
+    bodySoA->warmstartBodies(dt, gravity);
 }
 
 void Solver::draw() {

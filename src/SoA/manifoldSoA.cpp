@@ -8,7 +8,8 @@ ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA)
     // create all xtensors
     toDelete.resize(capacity);
     C0.resize(capacity); 
-    r.resize(capacity);
+    rA.resize(capacity);
+    rB.resize(capacity);
     normal.resize(capacity);
     friction.resize(capacity); 
     stick.resize(capacity); 
@@ -18,7 +19,8 @@ ManifoldSoA::ManifoldSoA(ForceSoA* forceSoA, uint capacity) : forceSoA(forceSoA)
     // arrays for holding extra compute space
     tangent.resize(capacity);
     basis.resize(capacity);
-    rW.resize(capacity);
+    rAW.resize(capacity);
+    rBW.resize(capacity);
 }
 
 /**
@@ -54,7 +56,7 @@ void ManifoldSoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity,
-        toDelete, C0, r, normal, friction, stick, simplex, forceIndex, tangent, basis, rW
+        toDelete, C0, rA, rB, normal, friction, stick, simplex, forceIndex, tangent, basis, rAW, rBW
     );
 
     // update capacity
@@ -69,7 +71,7 @@ void ManifoldSoA::compact() {
     }
 
     compactTensors(toDelete, size,
-        C0, r, normal, friction, stick, simplex, forceIndex, tangent, basis, rW
+        C0, rA, rB, normal, friction, stick, simplex, forceIndex, tangent, basis, rAW, rBW
     );
 
     size = active;
@@ -86,6 +88,8 @@ void ManifoldSoA::warmstart() {
     for (size_t i = 0; i < size; ++i) {
         tangent[i] = { -normal[i].y, normal[i].x };
         basis[i] = { normal[i], tangent[i] }; // TODO check this constructor
+
+        
     }
 }
 

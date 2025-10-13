@@ -25,8 +25,10 @@ private:
     std::vector<Indexed*> forces;
     std::vector<bool> toDelete;
     std::vector<ushort> type;
+
     std::vector<uint> specialIndex;
     std::vector<uint> bodyIndex;
+    std::vector<bool> isA;
 
 public:
     ForceSoA(uint capacity);
@@ -34,13 +36,17 @@ public:
 
     void markForDeletion(uint index);
     
+    auto& getIsA() { return isA; }
+    auto& getJ() { return J; }
+    auto& getH() { return H; }
+    auto& getC() { return C; }
     auto& getToDelete() { return toDelete; }
     auto& getBodyIndex() { return bodyIndex; }
     auto& getSpecial() { return specialIndex; }
     auto& getForces() { return forces; }
     ManifoldSoA* getManifoldSoA() { return manifoldSoA; }
 
-    void reserveManifolds(uint numBodies, uint& forceIndex, uint& manifoldIndex);
+    void reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldIndex);
     void resize(uint newCapacity) override;
     void compact() override;
     int insert();

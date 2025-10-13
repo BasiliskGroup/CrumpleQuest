@@ -5,13 +5,6 @@
 
 class ForceSoA;
 
-enum JType {
-    JN1,
-    JT1,
-    JN2,
-    JT2
-};
-
 // NOTE we do not need copy or move constructor as we will only have one of these
 class ManifoldSoA : public SoA {
 private:
@@ -20,7 +13,8 @@ private:
     // xtensor
     std::vector<bool> toDelete;
     std::vector<Vec2Pair> C0;
-    std::vector<Vec2Pair> r;
+    std::vector<Vec2Pair> rA;
+    std::vector<Vec2Pair> rB;
     std::vector<vec2> normal;
     std::vector<float> friction;
     std::vector<bool> stick;
@@ -30,7 +24,8 @@ private:
     // arrays for holding extra compute space
     std::vector<vec2> tangent;
     std::vector<mat2x2> basis;
-    std::vector<Vec2Pair> rW;
+    std::vector<Vec2Pair> rAW;
+    std::vector<Vec2Pair> rBW;
 
 public:
     ManifoldSoA(ForceSoA* forceSoA, uint capacity);
@@ -39,14 +34,17 @@ public:
     void warmstart();
 
     // getters
+    auto& getBasis() { return basis; }
+    auto& getTangent() { return tangent; }
     auto& getNormal() { return normal; }
-    auto& getR() { return r; }
+    auto& getRA() { return rA; }
+    auto& getRB() { return rB; } 
+    auto& getRAW() { return rAW; } 
+    auto& getRBW() { return rBW; }
+    auto& getC0() { return C0; }
     auto& getForceIndex() { return forceIndex; }
     auto& getSimplex() { return simplex; }
     vec2* getSimplexPtr(uint index) { return simplex[index].data(); }
-
-    // setters
-    void setRW(const vec2& rW, uint index, ushort subIndex) { r[index][subIndex] = rW; }
 
     uint reserve(uint numBodies);
     void resize(uint new_capacity) override;

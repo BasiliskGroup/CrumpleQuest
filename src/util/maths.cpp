@@ -24,3 +24,7 @@ void perpTowards(const vec2& v, const vec2& to, vec2& perp) {
 void transform(const vec2& pos, const mat2x2& mat, vec2& v) {
     v = mat * v + pos;
 }
+
+float cross(const vec2& a, const vec2& b) {
+    return a.x * b.y - a.y * b.x;
+}

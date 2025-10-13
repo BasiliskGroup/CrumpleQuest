@@ -21,6 +21,7 @@ ForceSoA::ForceSoA(uint capacity) {
     type.resize(capacity); 
     specialIndex.resize(capacity);
     bodyIndex.resize(capacity); 
+    isA.resize(capacity);
 
     // create SoAs
     manifoldSoA = new ManifoldSoA(this, capacity);
@@ -35,8 +36,10 @@ void ForceSoA::markForDeletion(uint index) {
     forces[index] = nullptr;
 }
 
-void ForceSoA::reserveManifolds(uint numBodies, uint& forceIndex, uint& manifoldIndex) {
-    manifoldIndex = manifoldSoA->reserve(numBodies);
+void ForceSoA::reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldIndex) {
+    manifoldIndex = manifoldSoA->reserve(numPairs);
+    uint numBodies = 2 * numPairs;
+    
     uint neededSpace = pow(2, ceil(log2(size + numBodies)));
 
     if (neededSpace >= capacity) {
@@ -56,7 +59,7 @@ void ForceSoA::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity, 
-        forces, toDelete, J, C, motor, stiffness, fracture, fmax, fmin, penalty, lambda, H, type, specialIndex, bodyIndex
+        forces, toDelete, J, C, motor, stiffness, fracture, fmax, fmin, penalty, lambda, H, type, specialIndex, bodyIndex, isA
     );
 
     // NOTE we do not have to explicitly set our deletes to false since they outside of size
@@ -82,7 +85,7 @@ void ForceSoA::compact() {
 
     // todo write new compact function
     compactTensors(toDelete, size, 
-        forces, J, C, motor, stiffness, fracture, fmax,fmin, penalty, lambda, H, type, specialIndex, bodyIndex
+        forces, J, C, motor, stiffness, fracture, fmax,fmin, penalty, lambda, H, type, specialIndex, bodyIndex, isA
     );
 
     size = active;

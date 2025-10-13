@@ -18,7 +18,7 @@ class Mesh;
 
 class Solver {
 private:
-    vec2 gravity;      // Gravity
+    float gravity;      // Gravity
     int iterations;     // Solver iterations
 
     float alpha;        // Stabilization parameter
@@ -108,7 +108,8 @@ private:
     void reserveForcesForCollision(uint& forceIndex, uint& manifoldIndex);
 
     // compute stages
-    void computeForceRWs();
+    void warmstartManifolds();
+    void warmstartBodies(float dt);
 
     // collision functions
     void sphericalCollision();

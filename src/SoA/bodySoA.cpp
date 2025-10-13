@@ -53,6 +53,24 @@ void BodySoA::computeTransforms() {
     }
 }
 
+void BodySoA::warmstartBodies(const float dt, const float gravity) {
+    for (uint i = 0; i < size; i++) {
+
+        // Compute inertial position (Eq 2)
+        inertial[i] = pos[i] + vel[i] * dt + gravity * (dt * dt) * (float) (mass[i] > 0);
+
+        // Adaptive warmstart (See original VBD paper) TODO
+        vec3 accel = (vel[i] - prevVel[i]) / dt;
+        float accelExt = accel.y * glm::sign(gravity);
+        float accelWeight = glm::clamp(accelExt / abs(gravity), 0.0f, 1.0f);
+        accelWeight = isfinite(accelWeight) ? accelWeight : 0.0f;
+
+        // Save initial position (x-) and compute warmstarted position (See original VBD paper)
+        initial[i] = pos[i];
+        pos[i] += vel[i] * dt + gravity * (accelWeight * dt * dt);
+    }
+}
+
 /**
  * @brief Resizes each tensor in the system up to the specified size. 
  * 

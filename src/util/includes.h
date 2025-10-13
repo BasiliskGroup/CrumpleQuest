@@ -80,4 +80,9 @@ using Vec3ROWS = std::array<vec2, ROWS>;
 using Mat3x3ROWS = std::array<mat3x3, ROWS>;
 using FloatROWS = std::array<float, ROWS>;
 
+enum JType {
+    JN,
+    JT,
+};
+
 #endif

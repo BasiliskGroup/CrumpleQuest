@@ -39,6 +39,7 @@ public:
     ~BodySoA() = default;
 
     void computeTransforms();
+    void warmstartBodies(const float dt, const float gravity);
 
     auto& getBodies() { return bodies; }
     auto& getPos() { return pos; }
