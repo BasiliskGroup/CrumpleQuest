@@ -35,7 +35,7 @@ private:
     MeshSoA* meshSoA;
 
     // broad collision detection
-    std::vector<std::pair<uint, uint>> collisionPairs;
+    std::vector<CollisionIndexPair> collisionPairs;
 
     // collision struct for hotloop caching
     struct ColliderRow {

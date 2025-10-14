@@ -14,6 +14,9 @@ private:
     Force* forces;
     Rigid* next;
 
+    // used to cache relations on system graph
+    std::vector<std::pair<uint, ushort>> relations;
+
 public:
     Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction, vec3 vel, Mesh* mesh);
     ~Rigid();
@@ -24,7 +27,8 @@ public:
     BodySoA* getBodySoA();
 
     // determines if two objects are constrained (no collision needed)
-    bool constrainedTo(Rigid* other) const;
+    void precomputeRelations();
+    ushort constrainedTo(uint other) const;
     void draw();
 };
 

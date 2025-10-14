@@ -133,18 +133,28 @@ void Solver::sphericalCollision() {
     // clear contact pairs from last frame
     collisionPairs.clear();
 
+    uint bodyCount = 0;
+    for (Rigid* body = bodies; body != nullptr; body = body->getNext()) {
+        bodyCount++;
+    }
+
+    // load body-force relations
+    for (Rigid* body = bodies; body != nullptr; body = body->getNext()) {
+        body->precomputeRelations();
+    }
+
     vec2 dpos;
     float dy;
     float radsum;
     for (Rigid* bodyA = bodies; bodyA != nullptr; bodyA = bodyA->getNext()) {
         for (Rigid* bodyB = bodyA->getNext(); bodyB != nullptr; bodyB = bodyB->getNext()) {
-            // ignore collision flag
-            if (bodyA->constrainedTo(bodyB)) {
-                continue;
-            }
-
             uint i = bodyA->getIndex();
             uint j = bodyB->getIndex();
+
+            // ignore collision flag
+            if (bodyA->constrainedTo(j) == MANIFOLD) {
+                continue;
+            }
 
             dpos = pos[i] - pos[j];
             radsum = radii[i] + radii[j];
@@ -160,6 +170,7 @@ void Solver::narrowCollision() {
     auto& forcePointers = forceSoA->getForces();
     auto& bodyPointers = bodySoA->getBodies();
     auto& specialIndices = forceSoA->getSpecial();
+    auto& types = forceSoA->getType();
 
     // reserve space to perform all collisions 
     uint forceIndex, manifoldIndex;
@@ -170,8 +181,8 @@ void Solver::narrowCollision() {
     ColliderRow a, b;
     CollisionPair collisionPair;
     for (const auto& pair : collisionPairs) {
-        uint rowA = pair.first;
-        uint rowB = pair.second;
+        uint rowA = pair.bodyA;
+        uint rowB = pair.bodyB;
 
         initColliderRow(rowA, manifoldIndex, a);
         initColliderRow(rowB, manifoldIndex, b);
@@ -209,6 +220,9 @@ void Solver::narrowCollision() {
         specialIndices[forceIndex + 0] = manifoldIndex;
         specialIndices[forceIndex + 1] = manifoldIndex;
 
+        types[forceIndex + 0] = MANIFOLD;
+        types[forceIndex + 1] = MANIFOLD;
+
         // increment enumeration
         forceIndex += 2;
         manifoldIndex++;
@@ -225,8 +239,8 @@ void Solver::reserveForcesForCollision(uint& forceIndex, uint& manifoldIndex) {
     // assign forces their bodies
     uint i = 0;
     for (const auto& pair : collisionPairs) {
-        bodyIndices[forceIndex + i + 0] = pair.first;
-        bodyIndices[forceIndex + i + 1] = pair.second;
+        bodyIndices[forceIndex + i + 0] = pair.bodyA;
+        bodyIndices[forceIndex + i + 1] = pair.bodyB;
         i += 2;
     }
 }

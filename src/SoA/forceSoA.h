@@ -51,6 +51,7 @@ public:
     auto& getBodyIndex() { return bodyIndex; }
     auto& getSpecial() { return specialIndex; }
     auto& getForces() { return forces; }
+    auto& getType() { return type; } 
     ManifoldSoA* getManifoldSoA() { return manifoldSoA; }
 
     void reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldIndex);

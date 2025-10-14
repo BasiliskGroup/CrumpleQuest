@@ -20,9 +20,9 @@ int main() {
         solver->step(1.0 / 60.0);
 
         // testing mid simulation body deletion
-        int deleteIndex = randrange(0, objects.size());
-        delete objects[deleteIndex];
-        objects.erase(objects.begin() + deleteIndex);
+        // int deleteIndex = randrange(0, objects.size());
+        // delete objects[deleteIndex];
+        // objects.erase(objects.begin() + deleteIndex);
     }
 
     // delete mesh

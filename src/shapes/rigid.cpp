@@ -30,10 +30,8 @@ Rigid::~Rigid() {
         fnext = f->getNextA();
 
         f->markForDeletion();
-        if (f->getBodyA() == this) {
-            f->getBodyA() = nullptr;
-            f->getNextA() = nullptr;
-        }
+        f->getBodyA() = nullptr;
+        f->getNextA() = nullptr;
 
         // move f along our list
         f = fnext;
@@ -47,17 +45,23 @@ BodySoA* Rigid::getBodySoA() {
     return solver->getBodySoA(); 
 }
 
-bool Rigid::constrainedTo(Rigid* other) const {
-    // check if this body is constrained to the other body
+void Rigid::precomputeRelations() {
+    relations.clear();
+
+    uint i = 0;
     for (Force* f = forces; f != nullptr; f = f->getNext()) {
-        // print("constrained search");
-        // print(index);
-        // print(f->getIndex());
-        if (f->getBodyB() == other) {
-            return true;
+        relations.emplace_back(f->getBodyB()->getIndex(), f->getType());
+    }
+}
+
+ushort Rigid::constrainedTo(uint other) const {
+    // check if this body is constrained to the other body
+    for (const auto& rel : relations) {
+        if (rel.first == other) {
+            return rel.second;
         }
     }
-    return false;
+    return -1;
 }
 
 void Rigid::draw() {

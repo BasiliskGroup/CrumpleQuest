@@ -25,9 +25,11 @@ public:
     Force*& getNextA() { return nextA; }
     Rigid*& getBodyA() { return bodyA; }
     Rigid*& getBodyB() { return bodyB; }
+    ushort getType();
     ForceSoA* getForceSoA();
 
     void markForDeletion();
+    void unlink();
     void disable();
 
     // number of jacobian rows (max = 4)
