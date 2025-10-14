@@ -12,6 +12,7 @@ private:
     Solver* solver;
     Force* next;
     Force* nextA;
+    Force* twin;
     Rigid* bodyA;
     Rigid* bodyB;
 
@@ -27,6 +28,9 @@ public:
     Rigid*& getBodyB() { return bodyB; }
     ushort getType();
     ForceSoA* getForceSoA();
+
+    // setters
+    void setTwin(Force* twin) { this->twin = twin; }
 
     void markForDeletion();
     void unlink();

@@ -1,7 +1,7 @@
 #include "solver/physics.h"
 
 Force::Force(Solver* solver, Rigid* bodyA, Rigid* bodyB) 
-: solver(solver), next(nullptr), bodyA(bodyA), bodyB(bodyB), nextA(nullptr) {
+: solver(solver), next(nullptr), bodyA(bodyA), bodyB(bodyB), nextA(nullptr), twin(nullptr) {
     // Add to solver linked list
     next = solver->getForces();
     solver->getForces() = this;
@@ -42,6 +42,14 @@ void Force::unlink() {
         if (*p == this) {
             *p = nextA;
         }
+    }
+
+    // remove self from twin and mark for deletion
+    if (twin != nullptr) {
+        twin->markForDeletion();
+        twin->bodyB = nullptr;
+        twin->twin = nullptr;
+        twin = nullptr;
     }
 }
 

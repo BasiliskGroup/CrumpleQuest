@@ -213,8 +213,14 @@ void Solver::narrowCollision() {
 
         // create manifold force in graph
         // TODO delay creation of these forces until after multithreading, these will insert into linked lists creating race conditions
-        forcePointers[forceIndex + 0] = new Manifold(this, (Rigid*) bodyPointers[rowA], (Rigid*) bodyPointers[rowB], forceIndex + 0); // A -> B
-        forcePointers[forceIndex + 1] = new Manifold(this, (Rigid*) bodyPointers[rowB], (Rigid*) bodyPointers[rowA], forceIndex + 1); // B -> A
+        Manifold* aToB = new Manifold(this, (Rigid*) bodyPointers[rowA], (Rigid*) bodyPointers[rowB], forceIndex + 0); // A -> B
+        Manifold* bToA = new Manifold(this, (Rigid*) bodyPointers[rowB], (Rigid*) bodyPointers[rowA], forceIndex + 1); // B -> A
+        forcePointers[forceIndex + 0] = aToB;
+        forcePointers[forceIndex + 1] = bToA;
+
+        // set twins to allow for proper deletion
+        aToB->setTwin(bToA);
+        bToA->setTwin(aToB);
 
         // set special indices in each constructor, maybe set this ina constructor
         specialIndices[forceIndex + 0] = manifoldIndex;

@@ -32,6 +32,7 @@ Rigid::~Rigid() {
         f->markForDeletion();
         f->getBodyA() = nullptr;
         f->getNextA() = nullptr;
+        f->unlink();
 
         // move f along our list
         f = fnext;
@@ -50,7 +51,12 @@ void Rigid::precomputeRelations() {
 
     uint i = 0;
     for (Force* f = forces; f != nullptr; f = f->getNext()) {
-        relations.emplace_back(f->getBodyB()->getIndex(), f->getType());
+        Rigid* other = f->getBodyB();
+        if (other == nullptr) {
+            continue;
+        }
+
+        relations.emplace_back(other->getIndex(), f->getType());
     }
 }
 
