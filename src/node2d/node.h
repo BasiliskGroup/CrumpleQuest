@@ -6,10 +6,13 @@
 class Scene;
 
 class Node {
+    // stored in tree
     Scene* scene;
     Node* parent;
     std::vector<Node*> children;
-    int fart = 0;
+    
+    // in table
+    uint index;
 
 public: 
     Node(Scene* scene);
@@ -22,10 +25,10 @@ public:
     //getters
     Node* getParent() { return parent; }
     Scene* getScene() { return scene; }
-    int getFart() { return fart; }
+    uint getIndex() { return index; }
 
     // setters
-    void setFart(int fart) { this->fart = fart; }
+    void setIndex(uint fart) { this->index = index; }
 
     void add(Node* child);
     void remove(Node* child);

@@ -1,4 +1,4 @@
-#include "bodySoA.h"
+#include "tables/bodySoA.h"
 
 BodySoA::BodySoA(uint capacity) {
     resize(capacity);

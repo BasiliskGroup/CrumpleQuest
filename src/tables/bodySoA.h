@@ -1,7 +1,7 @@
 #ifndef BODYSOA_H
 #define BODYSOA_H
 
-#include "SoA/virtualSoA.h"
+#include "tables/virtualSoA.h"
 #include "util/indexed.h"
 #include "util/print.h"
 

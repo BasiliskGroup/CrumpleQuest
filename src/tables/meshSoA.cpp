@@ -1,4 +1,4 @@
-#include "SoA/meshSoA.h"
+#include "tables/meshSoA.h"
 #include "util/print.h"
 
 MeshSoA::MeshSoA(uint vertCapacity, uint meshCapacity) {

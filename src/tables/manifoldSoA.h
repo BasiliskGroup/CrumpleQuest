@@ -1,7 +1,7 @@
 #ifndef MANIFOLDSOA_H
 #define MANIFOLDSOA_H
 
-#include "SoA/virtualSoA.h"
+#include "tables/virtualSoA.h"
 
 class ForceSoA;
 

@@ -1,4 +1,4 @@
-#include "SoA/forceSoAs.h"
+#include "tables/forceSoAs.h"
 #include "util/print.h"
 
 

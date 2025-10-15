@@ -1,4 +1,4 @@
-#include "SoA/compactTensor.h"
+#include "tables/compactTensor.h"
 
 /**
  * @brief 

@@ -1,7 +1,7 @@
 #ifndef FORCESOA_H
 #define FORCESOA_H
 
-#include "SoA/virtualSoA.h"
+#include "tables/virtualSoA.h"
 #include "util/indexed.h"
 
 class ManifoldSoA;

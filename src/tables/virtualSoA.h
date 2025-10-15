@@ -2,9 +2,9 @@
 #define VIRTUALSOA_H
 
 #include "util/includes.h"
-#include "SoA/helper.h"
-#include "SoA/expandTensor.h"
-#include "SoA/compactTensor.h"
+#include "tables/helper.h"
+#include "tables/expandTensor.h"
+#include "tables/compactTensor.h"
 
 class SoA {
 protected:

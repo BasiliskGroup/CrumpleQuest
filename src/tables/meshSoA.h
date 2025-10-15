@@ -3,8 +3,8 @@
 
 #include "util/includes.h"
 #include "util/indexed.h"
-#include "SoA/virtualSoA.h"
-#include "SoA/helper.h"
+#include "tables/virtualSoA.h"
+#include "tables/helper.h"
 
 class MeshSoA {
 private:

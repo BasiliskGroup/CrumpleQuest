@@ -1,6 +1,8 @@
 #include "solver/physics.h"
 #include "util/random.h"
 #include "util/time.h"
+#include "crumpleQuest/character/character.h"
+#include "scene/basilisk.h"
 
 // int main() {
 //     Solver* solver = new Solver();
@@ -31,8 +33,6 @@
 //     delete solver;
 //     return 0;
 // }
-
-#include "scene/basilisk.h"
 
 int main() {
     Scene* scene = new Scene();
