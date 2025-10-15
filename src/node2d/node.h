@@ -28,7 +28,7 @@ public:
     uint getIndex() { return index; }
 
     // setters
-    void setIndex(uint fart) { this->index = index; }
+    void setIndex(uint index) { this->index = index; }
 
     void add(Node* child);
     void remove(Node* child);

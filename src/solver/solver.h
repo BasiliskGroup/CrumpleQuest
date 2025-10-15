@@ -6,9 +6,9 @@
 #include "util/time.h"
 #include "util/print.h"
 
-#include "SoA/bodySoA.h"
-#include "SoA/forceSoAs.h"
-#include "SoA/meshSoA.h"
+#include "tables/bodySoA.h"
+#include "tables/forceSoAs.h"
+#include "tables/meshSoA.h"
 
 
 class Rigid;
