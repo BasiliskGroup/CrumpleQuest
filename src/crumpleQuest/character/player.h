@@ -10,7 +10,7 @@ private:
 public:
     Player(int health, Weapon* weapon);
     
-    void onDamage(int damage) override;
+    void onDamage(int damage);
     void move() override;
 };
 

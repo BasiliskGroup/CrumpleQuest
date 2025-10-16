@@ -11,8 +11,9 @@ protected:
 public:
     Character(int health, Weapon* weapon);
 
+    void onDamage(int damage);
+
     // virtual methods
-    virtual void onDamage(int damage) = 0;
     virtual void move() = 0;
 };
 

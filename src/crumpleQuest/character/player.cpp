@@ -3,7 +3,7 @@
 Player::Player(int health, Weapon* weapon) : Character(health, weapon) {}
 
 void Player::onDamage(int damage) {
-    health -= damage;
+    Character::onDamage(damage);
 }
 
 void Player::move() {
