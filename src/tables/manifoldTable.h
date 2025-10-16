@@ -1,14 +1,14 @@
-#ifndef MANIFOLDSOA_H
-#define MANIFOLDSOA_H
+#ifndef MANIFOLD_TABLE_H
+#define MANIFOLD_TABLE_H
 
-#include "tables/virtualSoA.h"
+#include "tables/virtualTable.h"
 
-class ForceSoA;
+class ForceTable;
 
 // NOTE we do not need copy or move constructor as we will only have one of these
-class ManifoldSoA : public SoA {
+class ManifoldTable : public VirtualTable {
 private:
-    ForceSoA* forceSoA;
+    ForceTable* forceTable;
 
     // xtensor
     std::vector<bool> toDelete;
@@ -30,8 +30,8 @@ private:
     std::vector<FloatROWS> cdB;
 
 public:
-    ManifoldSoA(ForceSoA* forceSoA, uint capacity);
-    ~ManifoldSoA() = default;
+    ManifoldTable(ForceTable* forceTable, uint capacity);
+    ~ManifoldTable() = default;
 
     void warmstart();
 

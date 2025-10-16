@@ -1,12 +1,12 @@
-#ifndef BODYSOA_H
-#define BODYSOA_H
+#ifndef BODY_TABLE_H
+#define BODY_TABLE_H
 
-#include "tables/virtualSoA.h"
+#include "tables/virtualTable.h"
 #include "util/indexed.h"
 #include "util/print.h"
 
 // NOTE we do not need copy or move constructor as we will only have one of these
-class BodySoA : public SoA {
+class BodyTable : public VirtualTable {
 private: 
     // xtensors    
     std::vector<Indexed*> bodies;
@@ -39,8 +39,8 @@ private:
     std::vector<mat3x3> lhs;
 
 public:
-    BodySoA(uint capacity);
-    ~BodySoA() = default;
+    BodyTable(uint capacity);
+    ~BodyTable() = default;
 
     void computeTransforms();
     void warmstartBodies(const float dt, const float gravity);

@@ -4,7 +4,7 @@
 #include "util/indexed.h"
 
 class Solver;
-class MeshSoA;
+class MeshFlat;
 
 class Mesh : public Indexed {
 private:
@@ -14,7 +14,7 @@ public:
     Mesh(Solver* solver, std::vector<vec2> verts);
     ~Mesh();
 
-    MeshSoA* getMeshSoA();
+    MeshFlat* getMeshFlat();
 };
 
 #endif

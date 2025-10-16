@@ -3,7 +3,7 @@
 
 #include "util/indexed.h"
 
-class ForceSoA;
+class ForceTable;
 class Solver;
 class Rigid;
 
@@ -27,7 +27,7 @@ public:
     Rigid*& getBodyA() { return bodyA; }
     Rigid*& getBodyB() { return bodyB; }
     ushort getType();
-    ForceSoA* getForceSoA();
+    ForceTable* getForceTable();
 
     // setters
     void setTwin(Force* twin) { this->twin = twin; }
@@ -40,7 +40,7 @@ public:
     virtual int rows() const = 0;
     virtual void draw() const {};
 
-    // NOTE initialization and computations will be done in the ForceSoA for bulk operations
+    // NOTE initialization and computations will be done in the ForceTable for bulk operations
 };
 
 // --------------------------------------------- //

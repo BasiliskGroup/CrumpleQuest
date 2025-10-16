@@ -12,7 +12,7 @@ Rigid::Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction
     float moment = mass * glm::dot(scale, scale) / 12.0f; // TODO replace with mesh moment
     float radius = glm::length(scale * 0.5f);
 
-    index = getBodySoA()->insert(this, pos, vel, scale, friction, mass, mesh->getIndex(), radius);
+    index = getBodyTable()->insert(this, pos, vel, scale, friction, mass, mesh->getIndex(), radius);
 }   
 
 Rigid::~Rigid() {
@@ -23,7 +23,7 @@ Rigid::~Rigid() {
     }
     *p = next;
 
-    // does not delete forces, that is the soa's job. Only decouple
+    // does not delete forces, that is the Table's job. Only decouple
     Force* f = forces;
     Force* fnext;
     while(f != nullptr) {
@@ -38,12 +38,12 @@ Rigid::~Rigid() {
         f = fnext;
     }
 
-    // remove from SoA
-    getBodySoA()->remove(index);
+    // remove from Table
+    getBodyTable()->remove(index);
 }
 
-BodySoA* Rigid::getBodySoA() { 
-    return solver->getBodySoA(); 
+BodyTable* Rigid::getBodyTable() { 
+    return solver->getBodyTable(); 
 }
 
 void Rigid::precomputeRelations() {

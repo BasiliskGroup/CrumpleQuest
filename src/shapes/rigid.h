@@ -6,7 +6,7 @@
 class Solver;
 class Force;
 class Mesh;
-class BodySoA;
+class BodyTable;
 
 class Rigid : public Indexed {
 private:
@@ -24,7 +24,7 @@ public:
     // getters
     Rigid*& getNext()   { return next; }
     Force*& getForces() { return forces; }
-    BodySoA* getBodySoA();
+    BodyTable* getBodyTable();
 
     // determines if two objects are constrained (no collision needed)
     void precomputeRelations();

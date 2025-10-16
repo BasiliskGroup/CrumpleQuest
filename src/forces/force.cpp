@@ -13,16 +13,16 @@ Force::Force(Solver* solver, Rigid* bodyA, Rigid* bodyB)
     }
 
     // TODO set default params
-    // Probably flag SoA to set columns
+    // Probably flag Table to set columns
 }
 
 Force::~Force()
 {
     unlink();
 
-    // remove self from SoA
+    // remove self from Table
     // TODO check if this should be done in bulk
-    getForceSoA()->remove(index);
+    getForceTable()->remove(index);
 }
 
 void Force::unlink() {
@@ -54,17 +54,17 @@ void Force::unlink() {
 }
 
 void Force::markForDeletion() {
-    getForceSoA()->markForDeletion(index);
+    getForceTable()->markForDeletion(index);
 }
 
 ushort Force::getType() {
-    return getForceSoA()->getType()[index];
+    return getForceTable()->getType()[index];
 }
 
 void Force::disable() {
     // TODO disable force
 }
 
-ForceSoA* Force::getForceSoA() { 
-    return solver->getForceSoA(); 
+ForceTable* Force::getForceTable() { 
+    return solver->getForceTable(); 
 }

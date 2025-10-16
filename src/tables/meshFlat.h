@@ -1,12 +1,12 @@
-#ifndef MESHSOA_H
-#define MESHSOA_H
+#ifndef MESH_FLAT_H
+#define MESH_FLAT_H
 
 #include "util/includes.h"
 #include "util/indexed.h"
-#include "tables/virtualSoA.h"
+#include "tables/virtualTable.h"
 #include "tables/helper.h"
 
-class MeshSoA {
+class MeshFlat {
 private:
     uint vertSize = 0;
     uint vertCapacity;
@@ -28,8 +28,8 @@ private:
     std::vector<float> moment;
 
 public:
-    MeshSoA(uint vertCapacity, uint meshCapacity);
-    ~MeshSoA() = default;
+    MeshFlat(uint vertCapacity, uint meshCapacity);
+    ~MeshFlat() = default;
 
     std::vector<vec2>& getVerts() { return verts; }
     std::vector<uint>& getStart() { return start; }

@@ -1,15 +1,15 @@
-#ifndef FORCESOA_H
-#define FORCESOA_H
+#ifndef FORCE_TABLE_H
+#define FORCE_TABLE_H
 
-#include "tables/virtualSoA.h"
+#include "tables/virtualTable.h"
 #include "util/indexed.h"
 
-class ManifoldSoA;
+class ManifoldTable;
 
 // NOTE we do not need copy or move constructor as we will only have one of these
-class ForceSoA : public SoA {
+class ForceTable : public VirtualTable {
 private:
-    ManifoldSoA* manifoldSoA;
+    ManifoldTable* manifoldTable;
 
     std::vector<Vec3ROWS> J;
     std::vector<Mat3x3ROWS> H;
@@ -31,8 +31,8 @@ private:
     std::vector<bool> isA;
 
 public:
-    ForceSoA(uint capacity);
-    ~ForceSoA();
+    ForceTable(uint capacity);
+    ~ForceTable();
 
     void markForDeletion(uint index);
     void warmstart(float alpha, float gamma);
@@ -52,7 +52,7 @@ public:
     auto& getSpecial() { return specialIndex; }
     auto& getForces() { return forces; }
     auto& getType() { return type; } 
-    ManifoldSoA* getManifoldSoA() { return manifoldSoA; }
+    ManifoldTable* getManifoldTable() { return manifoldTable; }
 
     void reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldIndex);
     void resize(uint newCapacity) override;

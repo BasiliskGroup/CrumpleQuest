@@ -1,6 +1,6 @@
-#include "tables/bodySoA.h"
+#include "tables/bodyTable.h"
 
-BodySoA::BodySoA(uint capacity) {
+BodyTable::BodyTable(uint capacity) {
     resize(capacity);
 }
 
@@ -8,7 +8,7 @@ BodySoA::BodySoA(uint capacity) {
  * @brief Computes the scale and rotation matrix and its inverse. Assumes the tensor is compact.
  * 
  */
-void BodySoA::computeTransforms() {
+void BodyTable::computeTransforms() {
     for (uint i = 0; i < size; i++) {
         if (updated[i]) continue;
 
@@ -27,7 +27,7 @@ void BodySoA::computeTransforms() {
     }
 }
 
-void BodySoA::warmstartBodies(const float dt, const float gravity) {
+void BodyTable::warmstartBodies(const float dt, const float gravity) {
     for (uint i = 0; i < size; i++) {
 
         // Compute inertial position (Eq 2)
@@ -45,7 +45,7 @@ void BodySoA::warmstartBodies(const float dt, const float gravity) {
     }
 }
 
-void BodySoA::updateVelocities(float dt) {
+void BodyTable::updateVelocities(float dt) {
     float invdt = 1 / dt;
 
     for (uint i = 0; i < size; i++) {
@@ -61,7 +61,7 @@ void BodySoA::updateVelocities(float dt) {
  * 
  * @param newCapacity new capacity of the tensor. If this is below the current size, the function is ignored. 
  */
-void BodySoA::resize(uint newCapacity) {
+void BodyTable::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity,
@@ -74,7 +74,7 @@ void BodySoA::resize(uint newCapacity) {
 
 // NOTE this function is very expensive but should only be called once per frame
 // if needed, find a cheaper solution
-void BodySoA::compact() {
+void BodyTable::compact() {
     // do a quick check to see if we need to run more complex compact function
     uint active = numValid(toDelete, size);
     if (active == size) {
@@ -106,7 +106,7 @@ void BodySoA::compact() {
     }
 }
 
-uint BodySoA::insert(Indexed* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius) {
+uint BodyTable::insert(Indexed* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius) {
     if (size == capacity) {
         resize(capacity * 2);
     }
@@ -127,6 +127,6 @@ uint BodySoA::insert(Indexed* body, vec3 pos, vec3 vel, vec2 scale, float fricti
     return size++;
 }
 
-void BodySoA::remove(uint index) {
+void BodyTable::remove(uint index) {
     toDelete[index] = true;
 }

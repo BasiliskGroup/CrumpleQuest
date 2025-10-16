@@ -1,12 +1,12 @@
-#ifndef NODETABLE_H
-#define NODETABLE_H
+#ifndef NODE_TABLE_H
+#define NODE_TABLE_H
 
-#include "tables/virtualSoA.h"
+#include "tables/virtualTable.h"
 
 class Node;
 struct Data; // todo rename this
 
-class NodeTable : public SoA {
+class NodeTable : public VirtualTable {
 private:
     std::vector<Node*> nodes;
     std::vector<uint> instanceIndex;

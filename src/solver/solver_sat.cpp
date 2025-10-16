@@ -29,8 +29,8 @@ void Solver::sat(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     vec2 rA2 = secondDepth - firstDepth > COLLISION_MARGIN ? a.start[secondIndex] : a.start[firstIndex];
 
     // write contact points to manifold index
-    getManifoldSoA()->getRA()[pair.manifoldIndex][0] = rA1 * a.scale;
-    getManifoldSoA()->getRA()[pair.manifoldIndex][1] = rA2 * a.scale;
+    getManifoldTable()->getRA()[pair.manifoldIndex][0] = rA1 * a.scale;
+    getManifoldTable()->getRA()[pair.manifoldIndex][1] = rA2 * a.scale;
 
     // ########################################################################################
 
@@ -61,8 +61,8 @@ void Solver::sat(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     vec2 rB2 = secondDepth - firstDepth > COLLISION_MARGIN ? b.start[secondIndex] : b.start[firstIndex];
 
     // write contact points to manifold index
-    getManifoldSoA()->getRB()[pair.manifoldIndex][0] = rB1 * b.scale;
-    getManifoldSoA()->getRB()[pair.manifoldIndex][1] = rB2 * b.scale;
+    getManifoldTable()->getRB()[pair.manifoldIndex][0] = rB1 * b.scale;
+    getManifoldTable()->getRB()[pair.manifoldIndex][1] = rB2 * b.scale;
 }
 
 void Solver::intersect(ColliderRow& a, ColliderRow& b, CollisionPair& pair, const vec2& mtv) {

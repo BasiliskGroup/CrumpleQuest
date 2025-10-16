@@ -1,24 +1,24 @@
-#include "tables/forceSoAs.h"
+#include "tables/forceRoute.h"
 #include "util/print.h"
 
 
-ForceSoA::ForceSoA(uint capacity) {
+ForceTable::ForceTable(uint capacity) {
     resize(capacity);
 
-    // create SoAs
-    manifoldSoA = new ManifoldSoA(this, capacity);
+    // create Tables
+    manifoldTable = new ManifoldTable(this, capacity);
 }
 
-ForceSoA::~ForceSoA() {
-    delete manifoldSoA;
+ForceTable::~ForceTable() {
+    delete manifoldTable;
 }
 
-void ForceSoA::markForDeletion(uint index) { 
+void ForceTable::markForDeletion(uint index) { 
     toDelete[index] = true; 
     forces[index] = nullptr;
 }
 
-void ForceSoA::warmstart(float alpha, float gamma) {
+void ForceTable::warmstart(float alpha, float gamma) {
     for (uint i = 0; i < size; i++) {
         for (uint j = 0; j < ROWS; j++) {
             lambda[i][j] *= alpha * gamma;
@@ -28,8 +28,8 @@ void ForceSoA::warmstart(float alpha, float gamma) {
     }
 }
 
-void ForceSoA::reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldIndex) {
-    manifoldIndex = manifoldSoA->reserve(numPairs);
+void ForceTable::reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldIndex) {
+    manifoldIndex = manifoldTable->reserve(numPairs);
     uint numBodies = 2 * numPairs;
     
     uint neededSpace = pow(2, ceil(log2(size + numBodies)));
@@ -47,7 +47,7 @@ void ForceSoA::reserveManifolds(uint numPairs, uint& forceIndex, uint& manifoldI
     size += numBodies;
 }
 
-void ForceSoA::resize(uint newCapacity) {
+void ForceTable::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity, 
@@ -60,7 +60,7 @@ void ForceSoA::resize(uint newCapacity) {
     capacity = newCapacity;
 }
 
-void ForceSoA::compact() {
+void ForceTable::compact() {
     // do a quick check to see if we need to run more complex compact function
     uint active = numValid(toDelete, size);
     if (active == size) {
@@ -92,14 +92,14 @@ void ForceSoA::compact() {
     }
 
     // compact special tables
-    manifoldSoA->compact();
+    manifoldTable->compact();
 }
 
-int ForceSoA::insert() {
+int ForceTable::insert() {
     // Skipped as requested - you'll handle the special cases
     return 0;
 }
 
-void ForceSoA::remove(uint index) {
+void ForceTable::remove(uint index) {
     toDelete[index] = true;
 }

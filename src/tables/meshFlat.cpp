@@ -1,7 +1,7 @@
-#include "tables/meshSoA.h"
+#include "tables/meshFlat.h"
 #include "util/print.h"
 
-MeshSoA::MeshSoA(uint vertCapacity, uint meshCapacity) {
+MeshFlat::MeshFlat(uint vertCapacity, uint meshCapacity) {
     this->vertCapacity = vertCapacity;
     this->meshCapacity = meshCapacity;
 
@@ -17,12 +17,12 @@ MeshSoA::MeshSoA(uint vertCapacity, uint meshCapacity) {
     com.resize(meshCapacity);
 }
 
-void MeshSoA::compact() {
+void MeshFlat::compact() {
     eraseChunks(verts, start, length, toDelete, meshes, halfDim, moment, area, com);
     toDelete.clear();
 }
 
-uint MeshSoA::insert(std::vector<vec2> verts) {    
+uint MeshFlat::insert(std::vector<vec2> verts) {    
     // check to see if the vector is going to resize
     bool needsResize = this->verts.capacity() < verts.size() + vertSize;
     
@@ -71,18 +71,18 @@ uint MeshSoA::insert(std::vector<vec2> verts) {
     return meshSize++;
 }
 
-void MeshSoA::resize(uint new_capacity) {
+void MeshFlat::resize(uint new_capacity) {
 
 }
 
-void MeshSoA::refreshPointers() {
+void MeshFlat::refreshPointers() {
     for (const auto& pair : meshes) {
         pair.second->setIndex(pair.first);
         // TODO reroute pointer to correct starting location
     }
 }
 
-void MeshSoA::remove(uint meshIndex) {
+void MeshFlat::remove(uint meshIndex) {
     toDelete.push_back(meshIndex);
     meshes.erase(meshIndex);
 }

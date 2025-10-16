@@ -5,11 +5,13 @@
 
 class Player : public Character {
 private:
-
+    int money = 0;
 
 public:
     Player(int health, Weapon* weapon);
     
+    void onDamage(int damage) override;
+    void move() override;
 };
 
 #endif

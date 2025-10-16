@@ -6,9 +6,9 @@
 #include "util/time.h"
 #include "util/print.h"
 
-#include "tables/bodySoA.h"
-#include "tables/forceSoAs.h"
-#include "tables/meshSoA.h"
+#include "tables/bodyTable.h"
+#include "tables/forceRoute.h"
+#include "tables/meshFlat.h"
 
 
 class Rigid;
@@ -29,10 +29,10 @@ private:
     Rigid* bodies;
     Force* forces;
 
-    // SoAs
-    ForceSoA* forceSoA;
-    BodySoA* bodySoA;
-    MeshSoA* meshSoA;
+    // Tables
+    ForceTable* forceTable;
+    BodyTable* bodyTable;
+    MeshFlat* meshFlat;
 
     // broad collision detection
     std::vector<CollisionIndexPair> collisionPairs;
@@ -93,10 +93,10 @@ public:
     // getters
     Force*& getForces() { return forces; }
     Rigid*& getBodies() { return bodies; }
-    ForceSoA* getForceSoA() { return forceSoA; }
-    BodySoA*  getBodySoA()  { return bodySoA; }
-    MeshSoA*  getMeshSoA()  { return meshSoA; }
-    ManifoldSoA* getManifoldSoA() { return forceSoA->getManifoldSoA(); } 
+    ForceTable* getForceTable() { return forceTable; }
+    BodyTable*  getBodyTable()  { return bodyTable; }
+    MeshFlat*  getMeshFlat()  { return meshFlat; }
+    ManifoldTable* getManifoldTable() { return forceTable->getManifoldTable(); } 
 
     void step(float dt);
     void draw();

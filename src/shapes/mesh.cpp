@@ -1,14 +1,14 @@
 #include "solver/physics.h"
 
 Mesh::Mesh(Solver* solver, std::vector<vec2> verts) : solver(solver) {
-    index = getMeshSoA()->insert(verts);
+    index = getMeshFlat()->insert(verts);
 }
 
 Mesh::~Mesh() {
     // remove self from meshFlat
-    getMeshSoA()->remove(index);
+    getMeshFlat()->remove(index);
 }
 
-MeshSoA* Mesh::getMeshSoA() {
-    return solver->getMeshSoA();
+MeshFlat* Mesh::getMeshFlat() {
+    return solver->getMeshFlat();
 }

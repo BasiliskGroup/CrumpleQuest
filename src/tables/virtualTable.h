@@ -1,12 +1,12 @@
-#ifndef VIRTUALSOA_H
-#define VIRTUALSOA_H
+#ifndef VIRTUAL_TABLE_H
+#define VIRTUAL_TABLE_H
 
 #include "util/includes.h"
 #include "tables/helper.h"
 #include "tables/expandTensor.h"
 #include "tables/compactTensor.h"
 
-class SoA {
+class VirtualTable {
 protected:
     uint size = 0;
     uint capacity = 0;

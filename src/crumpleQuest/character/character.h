@@ -4,7 +4,7 @@
 class Weapon;
 
 class Character {
-private:
+protected:
     int health;
     Weapon* weapon;
 
@@ -13,7 +13,7 @@ public:
 
     // virtual methods
     virtual void onDamage(int damage) = 0;
-    
+    virtual void move() = 0;
 };
 
 #endif

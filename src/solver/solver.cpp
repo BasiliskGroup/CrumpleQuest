@@ -9,10 +9,10 @@ Solver::Solver() : forces(nullptr), bodies(nullptr) {
     alpha = 0.99f;
     gamma = 0.99f;
 
-    // create SoAs
-    forceSoA = new ForceSoA(1024);
-    bodySoA = new BodySoA(512);
-    meshSoA = new MeshSoA(256, 16);
+    // create Tables
+    forceTable = new ForceTable(1024);
+    bodyTable = new BodyTable(512);
+    meshFlat = new MeshFlat(256, 16);
 }
 
 Solver::~Solver() {
@@ -21,15 +21,15 @@ Solver::~Solver() {
         delete bodies;
     }
 
-    delete bodySoA;
+    delete bodyTable;
 
     // delete forces
     while (forces) {
         delete forces;
     }
 
-    delete forceSoA;
-    delete meshSoA;
+    delete forceTable;
+    delete meshFlat;
 }
 
 /**
@@ -43,7 +43,7 @@ void Solver::step(float dt) {
     printDurationUS(beforeStep, timeNow(), "Body Compact:\t\t");
 
     auto beforeTransform = timeNow();
-    bodySoA->computeTransforms();
+    bodyTable->computeTransforms();
     printDurationUS(beforeTransform, timeNow(), "Body Transform:\t\t");
 
     // NOTE bodies are compact after this point
@@ -105,14 +105,14 @@ void Solver::step(float dt) {
 }
 
 void Solver::compactBodies() {
-    bodySoA->compact();
+    bodyTable->compact();
 
     // route forces back to their correct bodies after standard compact
-    auto& bodyIndices = forceSoA->getBodyIndex();
-    auto& toDelete = forceSoA->getToDelete();
-    auto& inverseForceMap = bodySoA->getInverseForceMap();
+    auto& bodyIndices = forceTable->getBodyIndex();
+    auto& toDelete = forceTable->getToDelete();
+    auto& inverseForceMap = bodyTable->getInverseForceMap();
 
-    for (uint i = 0; i < forceSoA->getSize(); i++) {
+    for (uint i = 0; i < forceTable->getSize(); i++) {
         // will index out of bounds
         if (toDelete[i] == true) {
             continue;
@@ -122,13 +122,13 @@ void Solver::compactBodies() {
 }
 
 void Solver::compactForces() {
-    forceSoA->compact();
+    forceTable->compact();
 }
 
 // TODO replace this with BVH
 void Solver::sphericalCollision() {
-    auto& pos = bodySoA->getPos();
-    auto& radii = bodySoA->getRadius();
+    auto& pos = bodyTable->getPos();
+    auto& radii = bodyTable->getRadius();
 
     // clear contact pairs from last frame
     collisionPairs.clear();
@@ -166,11 +166,11 @@ void Solver::sphericalCollision() {
 }
 
 void Solver::narrowCollision() {
-    auto& manifoldNormals = getManifoldSoA()->getNormal();
-    auto& forcePointers = forceSoA->getForces();
-    auto& bodyPointers = bodySoA->getBodies();
-    auto& specialIndices = forceSoA->getSpecial();
-    auto& types = forceSoA->getType();
+    auto& manifoldNormals = getManifoldTable()->getNormal();
+    auto& forcePointers = forceTable->getForces();
+    auto& bodyPointers = bodyTable->getBodies();
+    auto& specialIndices = forceTable->getSpecial();
+    auto& types = forceTable->getType();
 
     // reserve space to perform all collisions 
     uint forceIndex, manifoldIndex;
@@ -194,8 +194,8 @@ void Solver::narrowCollision() {
 
         if (!collided) {
             // increment enumeration
-            forceSoA->markForDeletion(forceIndex + 0);
-            forceSoA->markForDeletion(forceIndex + 1);
+            forceTable->markForDeletion(forceIndex + 0);
+            forceTable->markForDeletion(forceIndex + 1);
             forceIndex += 2;
             manifoldIndex++;
             continue;
@@ -238,9 +238,9 @@ void Solver::narrowCollision() {
 }
 
 void Solver::reserveForcesForCollision(uint& forceIndex, uint& manifoldIndex) {
-    auto& bodyIndices = forceSoA->getBodyIndex();
+    auto& bodyIndices = forceTable->getBodyIndex();
 
-    forceSoA->reserveManifolds(collisionPairs.size(), forceIndex, manifoldIndex);
+    forceTable->reserveManifolds(collisionPairs.size(), forceIndex, manifoldIndex);
 
     // assign forces their bodies
     uint i = 0;
@@ -252,34 +252,34 @@ void Solver::reserveForcesForCollision(uint& forceIndex, uint& manifoldIndex) {
 }
 
 void Solver::initColliderRow(uint row, uint manifoldIndex, ColliderRow& colliderRow) {
-    colliderRow.pos = bodySoA->getPos()[row];
-    colliderRow.scale = bodySoA->getScale()[row];
-    colliderRow.mat = bodySoA->getMat()[row];
-    colliderRow.imat = bodySoA->getIMat()[row];
-    colliderRow.start = meshSoA->getStartPtr(meshSoA->getStart()[bodySoA->getMesh()[row]]);
+    colliderRow.pos = bodyTable->getPos()[row];
+    colliderRow.scale = bodyTable->getScale()[row];
+    colliderRow.mat = bodyTable->getMat()[row];
+    colliderRow.imat = bodyTable->getIMat()[row];
+    colliderRow.start = meshFlat->getStartPtr(meshFlat->getStart()[bodyTable->getMesh()[row]]);
 
     // print("Mesh data");
-    // print(bodySoA->getMesh()[row]);
-    // print(meshSoA->getStart()[bodySoA->getMesh()[row]]);
+    // print(bodyTable->getMesh()[row]);
+    // print(meshTable->getStart()[bodyTable->getMesh()[row]]);
 
-    colliderRow.length = meshSoA->getLength()[bodySoA->getMesh()[row]];
-    colliderRow.simplex = getManifoldSoA()->getSimplexPtr(manifoldIndex);
+    colliderRow.length = meshFlat->getLength()[bodyTable->getMesh()[row]];
+    colliderRow.simplex = getManifoldTable()->getSimplexPtr(manifoldIndex);
 }
 
 void Solver::warmstartManifolds() {
     // manifolds compute tangent and basis
-    getManifoldSoA()->warmstart();
+    getManifoldTable()->warmstart();
 
     // compute rW
-    auto& pos = bodySoA->getPos();
-    auto& rmat = bodySoA->getRMat();
-    auto& rAs = getManifoldSoA()->getRA();
-    auto& rBs = getManifoldSoA()->getRB();
-    auto& specials = forceSoA->getSpecial();
-    auto& bodyIndices = forceSoA->getBodyIndex();
-    auto& isA = forceSoA->getIsA();
+    auto& pos = bodyTable->getPos();
+    auto& rmat = bodyTable->getRMat();
+    auto& rAs = getManifoldTable()->getRA();
+    auto& rBs = getManifoldTable()->getRB();
+    auto& specials = forceTable->getSpecial();
+    auto& bodyIndices = forceTable->getBodyIndex();
+    auto& isA = forceTable->getIsA();
 
-    for (uint i = 0; i < forceSoA->getSize(); i++) {
+    for (uint i = 0; i < forceTable->getSize(); i++) {
         uint specialIndex = specials[i];
         uint bodyIndex = bodyIndices[i];
 
@@ -292,20 +292,20 @@ void Solver::warmstartManifolds() {
         }
     }
 
-    auto& bases = getManifoldSoA()->getBasis();
-    auto& tangents = getManifoldSoA()->getTangent();
-    auto& normals = getManifoldSoA()->getNormal();
-    auto& rAWs = getManifoldSoA()->getRAW();
-    auto& rBWs = getManifoldSoA()->getRBW();
-    auto& C0s = getManifoldSoA()->getC0();
-    auto& Js = forceSoA->getJ();
+    auto& bases = getManifoldTable()->getBasis();
+    auto& tangents = getManifoldTable()->getTangent();
+    auto& normals = getManifoldTable()->getNormal();
+    auto& rAWs = getManifoldTable()->getRAW();
+    auto& rBWs = getManifoldTable()->getRBW();
+    auto& C0s = getManifoldTable()->getC0();
+    auto& Js = forceTable->getJ();
 
     // set all C0 to zero
-    for (uint i = 0; i < getManifoldSoA()->getSize(); i++) {
+    for (uint i = 0; i < getManifoldTable()->getSize(); i++) {
         C0s[i] = Vec2Pair(); // TODO check if this defaults to zero
     }
 
-    for (uint i = 0; i < forceSoA->getSize(); i++) {
+    for (uint i = 0; i < forceTable->getSize(); i++) {
         uint specialIndex = specials[i];
         uint bodyIndex = bodyIndices[i];
 
@@ -328,41 +328,41 @@ void Solver::warmstartManifolds() {
 }
 
 void Solver::warmstartForces() {
-    forceSoA->warmstart(alpha, gamma);
+    forceTable->warmstart(alpha, gamma);
 }
 
 void Solver::warmstartBodies(float dt) {
-    bodySoA->warmstartBodies(dt, gravity);
+    bodyTable->warmstartBodies(dt, gravity);
 }
 
 void Solver::updateVelocities(float dt) {
-    bodySoA->updateVelocities(dt);
+    bodyTable->updateVelocities(dt);
 }
 
 void Solver::mainloopPreload() {
     // set up all current dpX values since we do halfloads for compute constraints
-    loadCdX(0, forceSoA->getSize());
+    loadCdX(0, forceTable->getSize());
 }
 
 void Solver::primalUpdate(float dt) {
-    auto& rhs = bodySoA->getRHS();
-    auto& lhs = bodySoA->getLHS();
-    auto& pos = bodySoA->getPos();
-    auto& inertial = bodySoA->getInertial();
-    auto& mass = bodySoA->getMass();
-    auto& moment = bodySoA->getMoment();
-    auto& bodyPtrs = bodySoA->getBodies();
-    auto& lambdas = forceSoA->getLambda();
-    auto& stiffness = forceSoA->getStiffness();
-    auto& penalty = forceSoA->getPenalty();
-    auto& C = forceSoA->getC();
-    auto& motor = forceSoA->getMotor();
-    auto& fmax = forceSoA->getFmax();
-    auto& fmin = forceSoA->getFmin();
-    auto& H = forceSoA->getH();
-    auto& J = forceSoA->getJ();
+    auto& rhs = bodyTable->getRHS();
+    auto& lhs = bodyTable->getLHS();
+    auto& pos = bodyTable->getPos();
+    auto& inertial = bodyTable->getInertial();
+    auto& mass = bodyTable->getMass();
+    auto& moment = bodyTable->getMoment();
+    auto& bodyPtrs = bodyTable->getBodies();
+    auto& lambdas = forceTable->getLambda();
+    auto& stiffness = forceTable->getStiffness();
+    auto& penalty = forceTable->getPenalty();
+    auto& C = forceTable->getC();
+    auto& motor = forceTable->getMotor();
+    auto& fmax = forceTable->getFmax();
+    auto& fmin = forceTable->getFmin();
+    auto& H = forceTable->getH();
+    auto& J = forceTable->getJ();
 
-    for (uint b = 0; b < bodySoA->getSize(); b++) {
+    for (uint b = 0; b < bodyTable->getSize(); b++) {
         // this is our falg for immovable objects
         if (mass[b] <= 0) {
             continue;
@@ -403,14 +403,14 @@ void Solver::primalUpdate(float dt) {
 }
 
 void Solver::dualUpdate(float dt) {
-    auto& lambdas = forceSoA->getLambda();
-    auto& stiffness = forceSoA->getStiffness();
-    auto& penalty = forceSoA->getPenalty();
-    auto& fmax = forceSoA->getFmax();
-    auto& fmin = forceSoA->getFmin();
-    auto& C = forceSoA->getC();
+    auto& lambdas = forceTable->getLambda();
+    auto& stiffness = forceTable->getStiffness();
+    auto& penalty = forceTable->getPenalty();
+    auto& fmax = forceTable->getFmax();
+    auto& fmin = forceTable->getFmin();
+    auto& C = forceTable->getC();
 
-    for (uint forceIndex = 0; forceIndex < forceSoA->getSize(); forceIndex++) {
+    for (uint forceIndex = 0; forceIndex < forceTable->getSize(); forceIndex++) {
         computeConstraints(forceIndex, forceIndex + 1, MANIFOLD);
 
         for (uint j = 0; j < MANIFOLD_ROWS; j++) {
@@ -432,17 +432,17 @@ void Solver::dualUpdate(float dt) {
 }
 
 void Solver::computeConstraints(uint start, uint end, ushort type) {
-    auto& pos = bodySoA->getPos();
-    auto& initial = bodySoA->getInitial();
-    auto& J = forceSoA->getJ();
-    auto& friction = getManifoldSoA()->getFriction();
-    auto& fmax = forceSoA->getFmax();
-    auto& fmin = forceSoA->getFmin();
-    auto& C = forceSoA->getC();
-    auto& lambda = forceSoA->getLambda();
-    auto& C0 = getManifoldSoA()->getC0();
-    auto& cdA = getManifoldSoA()->getCdA();
-    auto& cdB = getManifoldSoA()->getCdB();
+    auto& pos = bodyTable->getPos();
+    auto& initial = bodyTable->getInitial();
+    auto& J = forceTable->getJ();
+    auto& friction = getManifoldTable()->getFriction();
+    auto& fmax = forceTable->getFmax();
+    auto& fmin = forceTable->getFmin();
+    auto& C = forceTable->getC();
+    auto& lambda = forceTable->getLambda();
+    auto& C0 = getManifoldTable()->getC0();
+    auto& cdA = getManifoldTable()->getCdA();
+    auto& cdB = getManifoldTable()->getCdB();
 
     // other dp will already be loaded, only focus on self
     loadCdX(start, end);
@@ -474,14 +474,14 @@ void Solver::computeDerivatives(uint start, uint end, ushort type) {
 }
 
 void Solver::loadCdX(uint start, uint end) {
-    auto& pos = bodySoA->getPos();
-    auto& initial = bodySoA->getInitial();
-    auto& bodyIndices = forceSoA->getBodyIndex();
-    auto& specialIndices = forceSoA->getSpecial();
-    auto& isA = forceSoA->getIsA();
-    auto& J = forceSoA->getJ();
-    auto& cdA = getManifoldSoA()->getCdA();
-    auto& cdB = getManifoldSoA()->getCdB();
+    auto& pos = bodyTable->getPos();
+    auto& initial = bodyTable->getInitial();
+    auto& bodyIndices = forceTable->getBodyIndex();
+    auto& specialIndices = forceTable->getSpecial();
+    auto& isA = forceTable->getIsA();
+    auto& J = forceTable->getJ();
+    auto& cdA = getManifoldTable()->getCdA();
+    auto& cdB = getManifoldTable()->getCdB();
 
     for (uint i = start; i < end; i++) {
         uint special = specialIndices[i];
