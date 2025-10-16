@@ -10,7 +10,6 @@
 #include "tables/forceRoute.h"
 #include "tables/meshFlat.h"
 
-
 class Rigid;
 class Force;
 class Manifold;
@@ -100,6 +99,13 @@ public:
 
     void step(float dt);
     void draw();
+
+    // linked list operations
+    void insert(Rigid* rigid);
+    void insert(Force* force);
+    void remove(Rigid* rigid);
+    void remove(Force* force);
+    void clear();
 
 private:
     // manage storage functions

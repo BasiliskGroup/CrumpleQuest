@@ -10,9 +10,13 @@ class Rigid;
 class Force : public Indexed {
 private:
     Solver* solver;
-    Force* next;
-    Force* nextA;
-    Force* twin;
+    Force* next; // next in solver list
+    Force* prev; // prev in solver list
+    Force* nextA; // next in body list
+    Force* prevA; // prev in body list
+
+    Force* twin; // points to twin force
+
     Rigid* bodyA;
     Rigid* bodyB;
 
@@ -22,18 +26,17 @@ public:
     virtual ~Force();
 
     // getters 
-    Force*& getNext()  { return next; }
-    Force*& getNextA() { return nextA; }
-    Rigid*& getBodyA() { return bodyA; }
-    Rigid*& getBodyB() { return bodyB; }
+    Solver*& getSolver() { return solver; }
+    Force*& getNext()    { return next; }
+    Force*& getPrev()    { return prev; }
+    Force*& getNextA()   { return nextA; }
+    Force*& getPrevA()   { return prevA; }
+    Force*& getTwin()    { return twin; }
+    Rigid*& getBodyA()   { return bodyA; }
+    Rigid*& getBodyB()   { return bodyB; }
     ushort getType();
-    ForceTable* getForceTable();
 
-    // setters
-    void setTwin(Force* twin) { this->twin = twin; }
-
-    void markForDeletion();
-    void unlink();
+    void markAsDeleted();
     void disable();
 
     // number of jacobian rows (max = 4)

@@ -16,20 +16,7 @@ Solver::Solver() : forces(nullptr), bodies(nullptr) {
 }
 
 Solver::~Solver() {
-    // delete bodies
-    while (bodies) {
-        delete bodies;
-    }
-
-    delete bodyTable;
-
-    // delete forces
-    while (forces) {
-        delete forces;
-    }
-
-    delete forceTable;
-    delete meshFlat;
+    clear();
 }
 
 /**
@@ -194,8 +181,8 @@ void Solver::narrowCollision() {
 
         if (!collided) {
             // increment enumeration
-            forceTable->markForDeletion(forceIndex + 0);
-            forceTable->markForDeletion(forceIndex + 1);
+            forceTable->markAsDeleted(forceIndex + 0);
+            forceTable->markAsDeleted(forceIndex + 1);
             forceIndex += 2;
             manifoldIndex++;
             continue;
@@ -219,8 +206,8 @@ void Solver::narrowCollision() {
         forcePointers[forceIndex + 1] = bToA;
 
         // set twins to allow for proper deletion
-        aToB->setTwin(bToA);
-        bToA->setTwin(aToB);
+        aToB->getTwin() = bToA;
+        bToA->getTwin() = aToB;
 
         // set special indices in each constructor, maybe set this ina constructor
         specialIndices[forceIndex + 0] = manifoldIndex;

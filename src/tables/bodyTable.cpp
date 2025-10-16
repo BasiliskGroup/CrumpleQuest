@@ -127,6 +127,7 @@ uint BodyTable::insert(Indexed* body, vec3 pos, vec3 vel, vec2 scale, float fric
     return size++;
 }
 
-void BodyTable::remove(uint index) {
+void BodyTable::markAsDeleted(uint index) {
+    bodies[index] = nullptr;
     toDelete[index] = true;
 }

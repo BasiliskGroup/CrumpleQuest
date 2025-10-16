@@ -13,7 +13,7 @@ ForceTable::~ForceTable() {
     delete manifoldTable;
 }
 
-void ForceTable::markForDeletion(uint index) { 
+void ForceTable::markAsDeleted(uint index) { 
     toDelete[index] = true; 
     forces[index] = nullptr;
 }
@@ -98,8 +98,4 @@ void ForceTable::compact() {
 int ForceTable::insert() {
     // Skipped as requested - you'll handle the special cases
     return 0;
-}
-
-void ForceTable::remove(uint index) {
-    toDelete[index] = true;
 }

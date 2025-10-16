@@ -34,7 +34,7 @@ public:
     ForceTable(uint capacity);
     ~ForceTable();
 
-    void markForDeletion(uint index);
+    void markAsDeleted(uint index);
     void warmstart(float alpha, float gamma);
     
     auto& getIsA() { return isA; }
@@ -58,7 +58,6 @@ public:
     void resize(uint newCapacity) override;
     void compact() override;
     int insert();
-    void remove(uint index);
 };
 
 #endif

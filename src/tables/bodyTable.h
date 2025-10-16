@@ -46,6 +46,8 @@ public:
     void warmstartBodies(const float dt, const float gravity);
     void updateVelocities(float dt);
 
+    void markAsDeleted(uint index);
+
     auto& getBodies() { return bodies; }
     auto& getPos() { return pos; }
     auto& getInitial() { return initial; }
@@ -72,7 +74,6 @@ public:
     void resize(uint newCapacity) override;
     void compact() override;
     uint insert(Indexed* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius);
-    void remove(uint index);
 };
 
 #endif
