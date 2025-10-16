@@ -26,26 +26,9 @@ FetchContent_MakeAvailable(glm)
 FetchContent_Declare(
   assimp
   GIT_REPOSITORY https://github.com/assimp/assimp.git
-  GIT_TAG        master
+  GIT_TAG        v6.0.2
 )
 FetchContent_MakeAvailable(assimp)
-
-# xtl (dependency of xtensor)
-FetchContent_Declare(
-  xtl
-  GIT_REPOSITORY https://github.com/xtensor-stack/xtl.git
-  GIT_TAG        0.7.5 # required by xtensor 0.24.7
-)
-FetchContent_MakeAvailable(xtl)
-
-# xtensor (for simd and large matrices)
-FetchContent_Declare(
-  xtensor
-  GIT_REPOSITORY https://github.com/xtensor-stack/xtensor.git
-  GIT_TAG        0.24.7 # pick a release tag or "master"
-)
-
-FetchContent_MakeAvailable(xtensor)
 
 # (Optional but recommended: xsimd for vectorization)
 FetchContent_Declare(

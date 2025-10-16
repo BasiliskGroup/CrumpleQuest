@@ -37,8 +37,6 @@ target_link_libraries(engine
     glm
     assimp
     stb
-    xtl
-    xtensor
     xsimd
     TBB::tbb
 )
