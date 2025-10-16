@@ -381,7 +381,7 @@ void Solver::primalUpdate(float dt) {
 
             for (uint j = 0; j < MANIFOLD_ROWS; j++) {
                 // Use lambda as 0 if it's not a hard constraint
-                float lambda = isinf(stiffness[forceIndex][j]) ? lambdas[forceIndex][j] : 0.0f;
+                float lambda = glm::isinf(stiffness[forceIndex][j]) ? lambdas[forceIndex][j] : 0.0f;
 
                 // Compute the clamped force magnitude (Sec 3.2)
                 float f = glm::clamp(penalty[forceIndex][j] * C[forceIndex][j] + lambda + motor[forceIndex][j], fmin[forceIndex][j], fmax[forceIndex][j]);
@@ -415,7 +415,7 @@ void Solver::dualUpdate(float dt) {
 
         for (uint j = 0; j < MANIFOLD_ROWS; j++) {
             // Use lambda as 0 if it's not a hard constraint
-            float lambda = isinf(stiffness[forceIndex][j]) ? lambdas[forceIndex][j] : 0.0f;
+            float lambda = glm::isinf(stiffness[forceIndex][j]) ? lambdas[forceIndex][j] : 0.0f;
 
             // Update lambda (Eq 11)
             // Note that we don't include non-conservative forces (ie motors) in the lambda update, as they are not part of the dual problem.

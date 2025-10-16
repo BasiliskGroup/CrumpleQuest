@@ -37,7 +37,7 @@ void BodyTable::warmstartBodies(const float dt, const float gravity) {
         vec3 accel = (vel[i] - prevVel[i]) / dt;
         float accelExt = accel.y * glm::sign(gravity);
         float accelWeight = glm::clamp(accelExt / abs(gravity), 0.0f, 1.0f);
-        accelWeight = isfinite(accelWeight) ? accelWeight : 0.0f;
+        accelWeight = std::isfinite(accelWeight) ? accelWeight : 0.0f;
 
         // Save initial position (x-) and compute warmstarted position (See original VBD paper)
         initial[i] = pos[i];
