@@ -1,4 +1,5 @@
 import os
+import sys
 
 def count_lines_in_file(filepath):
     try:
@@ -22,4 +23,4 @@ def count_lines_in_directory(root_dir):
     print("============================")
 
 if __name__ == "__main__":
-    count_lines_in_directory('src')
+    count_lines_in_directory(sys.argv[1])
