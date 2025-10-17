@@ -4,18 +4,27 @@
 #include "tables/virtualTable.h"
 
 class Node;
-struct Data; // todo rename this
+struct MeshInstanceData; // todo rename this
 
 class NodeTable : public VirtualTable {
 private:
-    std::vector<Node*> nodes;
-    std::vector<uint> instanceIndex;
-    std::vector<Data*> instanceTable;
+    // compacting
     std::vector<bool> toDelete;
+    std::vector<uint> oldIndex;
+    std::vector<uint> inverseMap;
+
+    // node object
+    std::vector<Node*> nodes;
+
+    // node data
+    std::vector<uint> instanceIndex;
+    std::vector<MeshInstanceData*> instanceTable;
 
 public:
     NodeTable(uint capacity);
     ~NodeTable() = default;
+
+    void markAsDeleted(uint index);
 
     auto& getNode() { return nodes; }
     auto& getInstanceIndex() { return instanceIndex; }
@@ -23,7 +32,6 @@ public:
 
     void resize(uint newCapacity) override;
     void compact() override;
-    void remove(uint index);
 };
 
 #endif
