@@ -8,7 +8,7 @@ void NodeTable::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(size, newCapacity,
-        nodes, toDelete, instanceIndex, instanceTable
+        nodes, toDelete, instanceIndex, instanceTable, oldIndex, inverseMap
     );
 
     capacity = newCapacity;
@@ -21,14 +21,20 @@ void NodeTable::compact() {
         return;
     }
 
-    // reset old indices TODO do this when we have mappings in
-    // for (uint i = 0; i < size; i++) {
-    //     oldIndex[i] = i;
-    // }
+    // reset old indices
+    for (uint i = 0; i < size; i++) {
+        oldIndex[i] = i;
+    }
 
     compactTensors(toDelete, size,
-        nodes, instanceIndex, instanceTable
+        nodes, instanceIndex, instanceTable, oldIndex, inverseMap
     );
+
+    // TODO, where a class can access both the Node and Mesh Instance Tables, assign the Mesh Instance indices to these 
+    // see Solver::bodyCompact() for guidance
+    for (uint i = 0; i < size; i++) {
+        inverseMap[oldIndex[i]] = i;
+    }
 
     // update to current size
     size = active;
@@ -40,6 +46,7 @@ void NodeTable::compact() {
     }
 }
 
-void NodeTable::remove(uint index) {
+void NodeTable::markAsDeleted(uint index) {
     toDelete[index] = true;
+    nodes[index] = nullptr;
 }

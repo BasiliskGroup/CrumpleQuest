@@ -10,9 +10,13 @@ void MeshInstanceTable::markAsDeleted(uint index) {
 
 void MeshInstanceTable::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
+    
     expandTensors(size, newCapacity, 
-        nodeIndex, toDelete, position, rotation, scale, instanceData
+        nodeIndex, toDelete, position, rotation, scale, instanceData, oldIndex, inverseMap
     );
+
+    // TODO revalidate pointers in NodeTable or switch to using indices instead of pointers. This is very important and WILL CAUSE MEMORY LEAKS is not addressed
+
     capacity = newCapacity;
 }
 
@@ -23,9 +27,20 @@ void MeshInstanceTable::compact() {
         return;
     }
 
+    // reset old indices
+    for (uint i = 0; i < size; i++) {
+        oldIndex[i] = i;
+    }
+
     compactTensors(toDelete, size,
-        nodeIndex, position, rotation, scale, instanceData
+        nodeIndex, position, rotation, scale, instanceData, oldIndex, inverseMap
     );
+
+    // TODO, where a class can access both the Node and Mesh Instance Tables, assign the Node indices to these 
+    // see Solver::bodyCompact() for guidance
+    for (uint i = 0; i < size; i++) {
+        inverseMap[oldIndex[i]] = i;
+    }
 
     size = active;
 

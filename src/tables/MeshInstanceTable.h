@@ -15,6 +15,8 @@ private:
     // table management
     std::vector<uint> nodeIndex;
     std::vector<bool> toDelete;
+    std::vector<uint> oldIndex;
+    std::vector<uint> inverseMap;
 
     // jonah data
     std::vector<vec3> position;
