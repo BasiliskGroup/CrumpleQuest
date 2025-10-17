@@ -10,7 +10,7 @@ class Rigid;
 // NOTE we do not need copy or move constructor as we will only have one of these
 class BodyTable : public VirtualTable {
 private: 
-    // xtensors    
+    // columns
     std::vector<Rigid*> bodies;
     std::vector<bool> toDelete;
     std::vector<vec3> pos;
