@@ -3,5 +3,6 @@
 
 #include "tables/forceTable.h"
 #include "tables/manifoldTable.h"
+#include "forces/force.h"
 
 #endif

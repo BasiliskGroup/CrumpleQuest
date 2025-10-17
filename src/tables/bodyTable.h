@@ -2,14 +2,16 @@
 #define BODY_TABLE_H
 
 #include "tables/virtualTable.h"
-#include "util/indexed.h"
 #include "util/print.h"
+#include "shapes/rigid.h"
+
+class Rigid;
 
 // NOTE we do not need copy or move constructor as we will only have one of these
 class BodyTable : public VirtualTable {
 private: 
     // xtensors    
-    std::vector<Indexed*> bodies;
+    std::vector<Rigid*> bodies;
     std::vector<bool> toDelete;
     std::vector<vec3> pos;
     std::vector<vec3> initial;
@@ -73,7 +75,7 @@ public:
 
     void resize(uint newCapacity) override;
     void compact() override;
-    uint insert(Indexed* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius);
+    uint insert(Rigid* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius);
 };
 
 #endif

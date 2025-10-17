@@ -106,7 +106,7 @@ void BodyTable::compact() {
     }
 }
 
-uint BodyTable::insert(Indexed* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius) {
+uint BodyTable::insert(Rigid* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius) {
     if (size == capacity) {
         resize(capacity * 2);
     }

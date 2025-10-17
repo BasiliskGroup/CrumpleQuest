@@ -2,7 +2,7 @@
 #define VIRTUAL_TABLE_H
 
 #include "util/includes.h"
-#include "tables/helper.h"
+#include "tables/eraseChunks.h"
 #include "tables/expandTensor.h"
 #include "tables/compactTensor.h"
 

@@ -200,8 +200,8 @@ void Solver::narrowCollision() {
 
         // create manifold force in graph
         // TODO delay creation of these forces until after multithreading, these will insert into linked lists creating race conditions
-        Manifold* aToB = new Manifold(this, (Rigid*) bodyPointers[rowA], (Rigid*) bodyPointers[rowB], forceIndex + 0); // A -> B
-        Manifold* bToA = new Manifold(this, (Rigid*) bodyPointers[rowB], (Rigid*) bodyPointers[rowA], forceIndex + 1); // B -> A
+        Manifold* aToB = new Manifold(this, bodyPointers[rowA], bodyPointers[rowB], forceIndex + 0); // A -> B
+        Manifold* bToA = new Manifold(this, bodyPointers[rowB], bodyPointers[rowA], forceIndex + 1); // B -> A
         forcePointers[forceIndex + 0] = aToB;
         forcePointers[forceIndex + 1] = bToA;
 
@@ -359,7 +359,7 @@ void Solver::primalUpdate(float dt) {
         rhs[b] = lhs[b] * (pos[b] - inertial[b]);
 
         // TODO replace this with known counting sort
-        Rigid* body = (Rigid*) bodyPtrs[b];
+        Rigid* body = bodyPtrs[b];
         for (Force* f = body->getForces(); f != nullptr; f = f->getNextA()) {
             uint forceIndex = f->getIndex();
 

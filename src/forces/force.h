@@ -1,13 +1,11 @@
 #ifndef FORCE_H
 #define FORCE_H
 
-#include "util/indexed.h"
-
 class ForceTable;
 class Solver;
 class Rigid;
 
-class Force : public Indexed {
+class Force {
 private:
     Solver* solver;
     Force* next; // next in solver list
@@ -19,6 +17,11 @@ private:
 
     Rigid* bodyA;
     Rigid* bodyB;
+
+protected:
+
+    // for table access
+    uint index;
 
 public:
     Force(Solver* solver, Rigid* bodyA, Rigid* bodyB);
@@ -38,6 +41,9 @@ public:
 
     void markAsDeleted();
     void disable();
+
+    uint getIndex() { return index; }
+    void setIndex(uint index) { this->index = index; }
 
     // number of jacobian rows (max = 4)
     virtual int rows() const = 0;

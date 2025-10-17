@@ -2,9 +2,9 @@
 #define FORCE_TABLE_H
 
 #include "tables/virtualTable.h"
-#include "util/indexed.h"
 
 class ManifoldTable;
+class Force;
 
 // NOTE we do not need copy or move constructor as we will only have one of these
 class ForceTable : public VirtualTable {
@@ -22,7 +22,7 @@ private:
     std::vector<FloatROWS> penalty;
     std::vector<FloatROWS> lambda;
 
-    std::vector<Indexed*> forces;
+    std::vector<Force*> forces;
     std::vector<bool> toDelete;
     std::vector<ushort> type;
 

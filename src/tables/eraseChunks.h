@@ -1,8 +1,8 @@
-#ifndef HELPER_H
-#define HELPER_H
+#ifndef ERASE_CHUNKS_H
+#define ERASE_CHUNKS_H
 
 #include "util/includes.h"
-#include "util/indexed.h"
+#include "shapes/mesh.h"
 
 /**
  * @brief 
@@ -21,7 +21,7 @@ void eraseChunks(
     std::vector<uint>& start,
     std::vector<uint>& length,
     const std::vector<uint>& toDelete,
-    std::unordered_map<uint32_t, Indexed*>& meshes,
+    std::unordered_map<uint32_t, Mesh*>& meshes,
     std::vector<MetaTypes>&... metas
 ) {
     if (toDelete.empty()) return;
@@ -74,7 +74,7 @@ void eraseChunks(
     (metas.resize(newCount), ...);
 
     // --- Remap the unordered_map keys ---
-    std::unordered_map<uint32_t, Indexed*> newMeshes;
+    std::unordered_map<uint32_t, Mesh*> newMeshes;
     newMeshes.reserve(meshes.size());
 
     for (auto& [oldKey, ptr] : meshes) {

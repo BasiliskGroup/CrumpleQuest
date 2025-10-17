@@ -2,7 +2,6 @@
 #define EXPAND_TENSOR_H
 
 #include "util/includes.h"
-#include "util/indexed.h"
 
 template <typename... T>
 void expandTensors(const uint size, const uint newCapacity, std::vector<T>&... tensors) {

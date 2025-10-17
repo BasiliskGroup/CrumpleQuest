@@ -2,9 +2,8 @@
 #define MESH_FLAT_H
 
 #include "util/includes.h"
-#include "util/indexed.h"
 #include "tables/virtualTable.h"
-#include "tables/helper.h"
+#include "tables/eraseChunks.h"
 
 class MeshFlat {
 private:
@@ -13,7 +12,7 @@ private:
     uint meshSize = 0;
     uint meshCapacity;
 
-    std::unordered_map<uint, Indexed*> meshes;
+    std::unordered_map<uint, Mesh*> meshes;
     std::vector<uint> toDelete;
 
     // store vertex data
