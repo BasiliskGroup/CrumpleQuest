@@ -1,0 +1,5 @@
+Mesh Instance Table
+vector<vec3> position
+vector<quat> rotation
+vector<vec3> scale
+vector<Struct<mat4x4, int>> model, material
