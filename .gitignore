@@ -2,3 +2,4 @@
 build/
 test/
 .DS_Store
+.venv
