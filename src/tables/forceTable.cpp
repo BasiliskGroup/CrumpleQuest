@@ -50,7 +50,7 @@ void ForceTable::reserveManifolds(uint numPairs, uint& forceIndex, uint& manifol
 void ForceTable::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
-    expandTensors(size, newCapacity, 
+    expandTensors(newCapacity, 
         forces, toDelete, J, C, motor, stiffness, fracture, fmax, fmin, penalty, lambda, H, type, specialIndex, bodyIndex, isA
     );
 

@@ -64,7 +64,7 @@ void BodyTable::updateVelocities(float dt) {
 void BodyTable::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
-    expandTensors(size, newCapacity,
+    expandTensors(newCapacity,
         bodies, toDelete, pos, initial, inertial, vel, prevVel, scale, friction, radius, mass, moment, mesh, mat, imat, rmat, updated, color, degree, satur, oldIndex, inverseForceMap, lhs, rhs
     );
 

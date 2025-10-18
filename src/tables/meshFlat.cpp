@@ -71,8 +71,8 @@ uint MeshFlat::insert(std::vector<vec2> verts) {
     return meshSize++;
 }
 
-void MeshFlat::resize(uint new_capacity) {
-
+void MeshFlat::resize(uint newCapacity) {
+    
 }
 
 void MeshFlat::refreshPointers() {

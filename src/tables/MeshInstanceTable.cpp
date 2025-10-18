@@ -11,7 +11,7 @@ void MeshInstanceTable::markAsDeleted(uint index) {
 void MeshInstanceTable::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
     
-    expandTensors(size, newCapacity, 
+    expandTensors(newCapacity, 
         nodeIndex, toDelete, position, rotation, scale, instanceData, oldIndex, inverseMap
     );
 
@@ -51,4 +51,5 @@ void MeshInstanceTable::compact() {
 
 uint MeshInstanceTable::insert() {
     // To insert into the table, insert at index size and increment size by 1. 
+    return size++;
 }

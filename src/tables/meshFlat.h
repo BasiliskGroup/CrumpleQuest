@@ -39,7 +39,7 @@ public:
     uint getLength(uint index) { return length[index]; }
 
     void compact();
-    void resize(uint new_capacity); // TODO make a resize function for meshSoA
+    void resize(uint newCapacity); // TODO make a resize function for meshSoA
     void refreshPointers();
     uint insert(std::vector<vec2> verts);
     void remove(uint meshIndex);

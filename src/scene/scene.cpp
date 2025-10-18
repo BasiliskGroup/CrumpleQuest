@@ -6,4 +6,5 @@ Scene::Scene() {
 
 Scene::~Scene() {
     delete root;
+    delete solver;
 }

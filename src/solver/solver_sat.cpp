@@ -3,8 +3,8 @@
 // TODO SAT, we are doing the dumb solution right now (Not SAT)
 void Solver::sat(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     // select the deepest points 
-    float firstDepth  = -INFINITY;
-    float secondDepth = -INFINITY;
+    float firstDepth  = -std::numeric_limits<float>::infinity();
+    float secondDepth = -std::numeric_limits<float>::infinity();
     int firstIndex    = -1;
     int secondIndex   = -1;
 
@@ -35,8 +35,8 @@ void Solver::sat(ColliderRow& a, ColliderRow& b, CollisionPair& pair) {
     // ########################################################################################
 
     // select the deepest points 
-    firstDepth  = INFINITY;
-    secondDepth = INFINITY;
+    firstDepth  = std::numeric_limits<float>::infinity();
+    secondDepth = std::numeric_limits<float>::infinity();
     firstIndex  = -1;
     secondIndex = -1;
 

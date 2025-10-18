@@ -38,7 +38,7 @@ uint ManifoldTable::reserve(uint numBodies) {
 void ManifoldTable::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
-    expandTensors(size, newCapacity,
+    expandTensors(newCapacity,
         toDelete, C0, rA, rB, normal, friction, stick, simplex, forceIndex, tangent, basis, rAW, rBW, cdA, cdB
     );
 
