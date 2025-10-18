@@ -1,11 +1,10 @@
 #include "engine/engine.h"
 
-Engine::Engine() : solver(new Solver()), scene(new Scene()) {
+Engine::Engine() : scene(new Scene()) {
 
 }
 
 Engine::~Engine(){
-    delete solver;
     delete scene;
 }
 

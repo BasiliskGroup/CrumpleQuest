@@ -4,7 +4,7 @@
 #include "util/includes.h"
 
 template <typename... T>
-void expandTensors(const uint size, const uint newCapacity, std::vector<T>&... tensors) {
+void expandTensors(const uint newCapacity, std::vector<T>&... tensors) {
     ( tensors.resize(newCapacity), ... );
 }
 

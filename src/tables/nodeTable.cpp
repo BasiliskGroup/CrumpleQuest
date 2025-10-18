@@ -7,7 +7,7 @@ NodeTable::NodeTable(uint capacity) {
 void NodeTable::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
-    expandTensors(size, newCapacity,
+    expandTensors(newCapacity,
         nodes, toDelete, instanceIndex, instanceTable, oldIndex, inverseMap
     );
 

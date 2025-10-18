@@ -25,6 +25,7 @@
 #include <numeric>
 #include <cstdint>
 #include <type_traits>
+#include <limits>
 
 // import glad and glfw
 #include <glad/glad.h>
@@ -34,7 +35,7 @@
 #include <glm/glm.hpp>
 
 // look for future changes to glm experimental
-#define GLM_ENABLE_EXPERIMENTAL 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_operation.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
