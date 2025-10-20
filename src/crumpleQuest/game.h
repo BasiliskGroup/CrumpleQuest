@@ -3,9 +3,11 @@
 
 #include "crumpleQuest/character/enemy.h"
 #include "crumpleQuest/character/player.h"
+#include "engine/engine.h"
 
 class Game {
 private:
+    Engine* engine;
     Player* player;
 
 public:
