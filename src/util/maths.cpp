@@ -28,3 +28,7 @@ void transform(const vec2& pos, const mat2x2& mat, vec2& v) {
 float cross(const vec2& a, const vec2& b) {
     return a.x * b.y - a.y * b.x;
 }
+
+float triangleArea2(const vec2& a, const vec2& b, const vec2& c) {
+    return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+}

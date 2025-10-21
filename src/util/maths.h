@@ -12,4 +12,6 @@ inline vec2 xy(const vec3& v) noexcept {
     return vec2(v.x, v.y);
 }
 
+float triangleArea2(const vec2& a, const vec2& b, const vec2& c);
+
 #endif
