@@ -1,7 +1,7 @@
 import numpy as np
 
-def sign(p1, p2, p3) -> float:
-    return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
+def sign(a, b, c) -> float:
+    return (a[0] - c[0]) * (b[1] - c[1]) - (b[0] - c[0]) * (a[1] - c[1])
 
 def point_in_triangle(p, v1, v2, v3) -> bool:
     d1 = sign(p, v1, v2)

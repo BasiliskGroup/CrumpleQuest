@@ -3,6 +3,7 @@
 
 #include "crumpleQuest/character/enemy.h"
 #include "crumpleQuest/character/player.h"
+#include "crumpleQuest/levels/singleSide.h"
 #include "engine/engine.h"
 
 class Game {
