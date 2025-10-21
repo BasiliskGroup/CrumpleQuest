@@ -1,60 +1,105 @@
-#include "solver/physics.h"
-#include "util/random.h"
-#include "util/time.h"
-#include "crumpleQuest/character/character.h"
-#include "scene/basilisk.h"
+/**
+ * @file main.cpp
+ * @author Jonah Coffelt
+ * @brief ...
+ * @version 0.1
+ * @date 2025-10-14
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ */
+
+#include "IO/window.h"
+#include "render/shader.h"
+#include "render/vbo.h"
+#include "render/ebo.h"
+#include "render/vao.h"
+#include "render/image.h"
+#include "render/texture.h"
+#include "scene/camera.h"
+#include "IO/mouse.h"
+#include "IO/keyboard.h"
+#include "render/mesh.h"
+#include "instance/instancer.h"
+#include "scene/camera2d.h"
+#include "nodes/nodeHandler.h"
 
 int main() {
-    Solver* solver = new Solver();
-    Mesh* cubeMesh = new Mesh(solver, {{-0.5, 0.5}, {-0.5, -0.5}, {0.5, -0.5}, {0.5, 0.5}});
+    // Create a GLFW window
+    Window* window = new Window(800, 800, "Example 13: Instance");
+    
+    // Create a key object for keyboard inputs
+    Keyboard* keys = new Keyboard(window);
+    // Create a mouse object for mouse input
+    Mouse* mouse = new Mouse(window);
+    mouse->setGrab();
 
-    float dx = 5;
-    float dr = 2 * 3.14;
+    // Create a camera object
+    Camera camera3d({-3, 0, 0});
+    Camera2D camera2d({0, 0});
 
-    // create a list of rigids
-    std::vector<Rigid*> objects;
-    for (int i = 0; i < 100; i++) {
-        objects.push_back(new Rigid(solver, {uniform(-dx, dx), uniform(-dx, dx), uniform(0, dr)}, {1, 1}, 1, 0.4, {0, 0, 0}, cubeMesh));
-    }
-
-    for (int i = 0; i < 10; i++) {
-        solver->step(1.0 / 60.0);
-
-        // testing mid simulation body deletion
-        int deleteIndex = randrange(0, objects.size());
-        delete objects[deleteIndex];
-        objects.erase(objects.begin() + deleteIndex);
-    }
-
-    // delete mesh
-    delete cubeMesh;
-
-    // deleting solver should always be last
-    delete solver;
-    return 0;
-}
-
-// int main() {
-//     Scene* scene = new Scene();
-
-//     // expose nodes
-//     std::vector<Node*> nodes;
-
-//     for (uint i = 0; i < 2000; i++) {
-//         Node* node = new Node(scene);
+    // Load shader from file
+    Shader* shader3d = new Shader("shaders/entity_3d.vert", "shaders/entity_3d.frag");
+    Shader* shader2d = new Shader("shaders/entity_2d.vert", "shaders/entity_2d.frag");
+    
+    // Data for making node
+    Mesh* cube = new Mesh("models/cube.obj");
+    Mesh* quad = new Mesh("models/quad.obj");
+    Image* image = new Image("textures/container.jpg");
+    Texture* texture = new Texture(image);
+    texture->setFilter(GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
         
-//         // add to random spot in tree
-//         int push = randint(0, nodes.size());
-//         if (push == nodes.size()) scene->getRoot()->add(node);
-//         else nodes[push]->add(node);
+    // Create entities
+    NodeHandler* nodeHandler = new NodeHandler();
 
-//         nodes.push_back(node);
-//     }
+    Node* node3d = new Node(shader3d, cube, texture);
+    Node2D* node2d = new Node2D(shader2d, quad, texture, {100, 100});
 
-//     // 1 so we dont delete root
-//     int deleteIndex = randrange(0, nodes.size());
-//     delete nodes[deleteIndex];
-//     nodes.erase(nodes.begin() + deleteIndex);
+    nodeHandler->add(node3d);
+    nodeHandler->add(node2d);
 
-//     delete scene;
-// }
+    // Main loop continues as long as the window is open
+    while (window->isRunning()) {
+        // Fill the screen with a low blue color
+        window->clear(0.2, 0.3, 0.3, 1.0);
+        // Update Mouse
+        mouse->update();
+        if (keys->getPressed(GLFW_KEY_ESCAPE)) {
+            mouse->setVisible();
+        }
+        if (mouse->getClicked()) {
+            mouse->setGrab();
+        }
+
+        glm::vec2 pos = node2d->getPosition();
+        pos.x += keys->getPressed(GLFW_KEY_RIGHT) - keys->getPressed(GLFW_KEY_LEFT);
+        pos.y += keys->getPressed(GLFW_KEY_DOWN) - keys->getPressed(GLFW_KEY_UP);
+        node2d->setPosition(pos);
+
+        // Update the camera for movement
+        camera2d.setPosition({camera3d.getX() * 10, camera3d.getY() * 10});
+        camera3d.update(mouse, keys);
+        camera2d.update(mouse, keys);
+        camera3d.use(shader3d);
+        camera2d.use(shader2d);
+        
+        nodeHandler->render();
+
+        // Show the screen
+        window->render();
+    }
+
+    // Free memory allocations
+    delete image;
+    delete texture;
+    delete node3d;
+    delete node2d;
+    delete shader3d;
+    delete shader2d;
+    delete nodeHandler;
+    delete cube;
+    delete quad;
+    delete window;
+    delete keys;
+    delete mouse;
+}

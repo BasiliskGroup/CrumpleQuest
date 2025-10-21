@@ -16,6 +16,7 @@
 #include <vector>
 #include <queue>
 
+
 // helpful stuff
 #include <memory> // I forgor what this does but it was in the 3d version somewhere
 #include <optional> // check null returns (avoid using this)
@@ -27,6 +28,8 @@
 #include <cstdint>
 #include <type_traits>
 #include <limits>
+#include <fstream>
+#include <sstream>
 
 // import glad and glfw
 #include <glad/glad.h>
@@ -41,15 +44,21 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // tbb
 
 
-// import assimp Jonah Stuff
-#include <assimp/scene.h>
+// STB
 #include <stb/stb_image.h>
+#include <stb/stb_image_resize2.h>
 
-#include "util/constants.h"
+// Assimp
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+#include "constants.h"
 
 #define DEBUG_PRINT true
 #define DEBUG_LINEAR_PRINT false
@@ -95,6 +104,12 @@ enum ForceType {
     JOINT,
     SPRING,
     IGNORE_COLLISION
+};
+
+struct Vertex {
+    vec3 position;
+    vec2 uv;
+    vec3 normal;
 };
 
 #endif

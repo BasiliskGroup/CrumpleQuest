@@ -37,17 +37,3 @@ FetchContent_Declare(
   GIT_TAG        11.1.0
 )
 FetchContent_MakeAvailable(xsimd)
-
-# TBB
-set(TBB_TEST OFF CACHE BOOL "" FORCE)
-set(TBB_TESTING OFF CACHE BOOL "" FORCE) 
-set(TBB_EXAMPLES OFF CACHE BOOL "" FORCE) 
-set(TBB_STRICT OFF CACHE BOOL "" FORCE)
-set(TBB_DISABLE_TESTS ON CACHE BOOL "" FORCE)
-
-FetchContent_Declare(
-    tbb
-    GIT_REPOSITORY https://github.com/uxlfoundation/oneTBB
-    GIT_TAG        master
-)
-FetchContent_MakeAvailable(tbb)

@@ -32,3 +32,4 @@ float cross(const vec2& a, const vec2& b) {
 float triangleArea2(const vec2& a, const vec2& b, const vec2& c) {
     return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
 }
+

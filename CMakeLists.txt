@@ -34,11 +34,10 @@ target_include_directories(engine PUBLIC
 target_link_libraries(engine
     glad
     glfw
-    glm
+    glm 
     assimp
     stb
     xsimd
-    TBB::tbb
 )
 
 # -----------------------
@@ -57,6 +56,12 @@ target_compile_options(engine PRIVATE
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/textures)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/models)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # TODO add same things for textures
 
