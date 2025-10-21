@@ -57,8 +57,11 @@ uint Navmesh::posToTriangle(const vec2& pos){
     return -1;
 }
 
-void Navmesh::clearAStar(){
-
+void Navmesh::resetAlgoStructs(){
+    open.clear();
+    openLookup.clear();
+    closed.clear();
+    cameFrom.clear();
 }
 
 void Navmesh::clear() {

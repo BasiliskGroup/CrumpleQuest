@@ -14,6 +14,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <vector>
+#include <queue>
 
 // helpful stuff
 #include <memory> // I forgor what this does but it was in the 3d version somewhere
