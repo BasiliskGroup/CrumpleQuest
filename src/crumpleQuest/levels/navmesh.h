@@ -23,9 +23,24 @@ private:
         bool contains(const vec2& pos) const;
     };
 
+    // custom priority queue that support clearing
+    class OpenLookup : public std::priority_queue<vec2> { // TODO add custom comparactor
+    public:
+        void clear() { this->c.clear(); }
+    };
+
     std::vector<vec2> mesh;
     std::vector<uint> rings; // contains the end index of all ring segments
     std::vector<Triangle> triangles;
+
+    // a* variables
+    OpenLookup open; 
+    std::unordered_map<uint, Triangle> openLookup;
+    std::set<uint> closed;
+    std::unordered_map<uint, uint> cameFrom;
+
+    // funnel variables
+    std::vector<Vec2Pair> portals;
 
 public:
     Navmesh(const std::vector<vec2>& paperMesh);
@@ -36,7 +51,7 @@ public:
     void buildGraph();
     float heuristic(uint cur, uint goal);
     uint posToTriangle(const vec2& pos);
-    void clearAStar();
+    void resetAlgoStructs();
     void AStar();
     void funnel();
     void clear();
