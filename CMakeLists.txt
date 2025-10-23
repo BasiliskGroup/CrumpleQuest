@@ -46,7 +46,7 @@ target_link_libraries(engine
 
 target_compile_options(engine PRIVATE
     -O3
-    -ffast-math
+    # -ffast-math
     -march=native
 )
 

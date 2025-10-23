@@ -27,14 +27,13 @@ private:
     };
 
     struct Triangle {
-        uint index;
         Vec2Triplet verts;
         vec2 center;
         std::unordered_map<uint, ushort> adjacency;
         float g;
         float f;
 
-        Triangle(Vec2Triplet verts, uint index);
+        Triangle(vec2& a, vec2& b, vec2& c);
         ~Triangle() = default;
 
         void reset();

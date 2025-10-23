@@ -1,7 +1,8 @@
 #include "crumpleQuest/levels/navmesh.h"
 
-Navmesh::Triangle::Triangle(Vec2Triplet verts, uint index) : index(index) {
-    center = (verts[0] + verts[1] + verts[2]) / 3.0f;
+Navmesh::Triangle::Triangle(vec2& a, vec2& b, vec2& c) {
+    center = (a + b + c) / 3.0f;
+    verts = { a, b, c };
     reset();
 }
 
@@ -15,9 +16,10 @@ Navmesh::Edge Navmesh::Triangle::operator[](size_t index) const {
 }
 
 bool Navmesh::Triangle::contains(const vec2& pos) const {
-    float d1 = triangleArea2(pos, verts[0], verts[1]);
-    float d2 = triangleArea2(pos, verts[1], verts[2]);
-    float d3 = triangleArea2(pos, verts[2], verts[0]);
+    // TODO check if these are wound in the correct direction for the screen
+    float d1 = sign(pos, verts[0], verts[1]); 
+    float d2 = sign(pos, verts[1], verts[2]);
+    float d3 = sign(pos, verts[2], verts[0]);
 
     bool hasNeg = d1 < 0 || d2 < 0 || d3 < 0;
     bool hasPos = d1 > 0 || d2 > 0 || d3 > 0;
@@ -36,7 +38,28 @@ uint Navmesh::addObstacle(std::vector<vec2> obstacleMesh) {
 }
 
 void Navmesh::earcut() {
+    // convert into a format that works for earcut
+    std::vector<std::vector<std::array<double, 2>>> polygon;
+    size_t start = 0;
+    for (auto end : rings) {
+        std::vector<std::array<double, 2>> ring;
+        for (size_t i = start; i < end; ++i)
+            ring.push_back({ mesh[i].x, mesh[i].y });
+        polygon.push_back(std::move(ring));
+        start = end;
+    }
 
+    // earcut
+    auto indices = mapbox::earcut<uint32_t>(polygon);
+
+    // construct triangles list
+    for (uint i = 0; i < indices.size() / 3; i++) {
+        triangles.emplace_back(
+            mesh[3 * i + 0],
+            mesh[3 * i + 1],
+            mesh[3 * i + 2]
+        );
+    }
 }
 
 /**
@@ -97,6 +120,7 @@ void Navmesh::resetAlgoStructs(){
 }
 
 void Navmesh::clear() {
+    resetAlgoStructs();
     mesh.clear();
     rings.clear();
     triangles.clear();
@@ -136,7 +160,7 @@ void Navmesh::AStar(const vec2& startPos, const vec2& destPos, std::vector<uint>
 
         // check if we have found the goal, reconstruct path
         if (curIdx == dest) {
-            path.push_back(cur.index);
+            path.push_back(curIdx);
             while (cameFrom.find(curIdx) != cameFrom.end()) {
                 curIdx = cameFrom[curIdx];
                 path.push_back(curIdx);

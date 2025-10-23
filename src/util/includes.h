@@ -59,6 +59,9 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+// earcut
+#include <earcut/earcut.hpp>
+
 #include "constants.h"
 
 #define DEBUG_PRINT true

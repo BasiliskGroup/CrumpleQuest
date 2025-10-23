@@ -29,7 +29,10 @@ float cross(const vec2& a, const vec2& b) {
     return a.x * b.y - a.y * b.x;
 }
 
-float triangleArea2(const vec2& a, const vec2& b, const vec2& c) {
+float sign(const vec2& a, const vec2& b, const vec2& c) {
     return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
 }
 
+bool isCCW(const vec2& a, const vec2& b, const vec2& c) {
+    return sign(a, b, c) > 0;
+}
