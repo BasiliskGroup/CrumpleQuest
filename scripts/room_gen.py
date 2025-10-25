@@ -2,10 +2,10 @@ import numpy as np
 import random
 
 
-WIDTH = 13
-MIN = 17
-MEAN = 25
-STDEV = 3
+WIDTH = 7
+MIN = 10
+MEAN = 13
+STDEV = 1
 
 TEMP_REDUCT = 0.95
 
@@ -70,7 +70,7 @@ def print_map_row(i: int) -> None:
     high = [max(d) for d in distance]
     high = max(high) / 5
     
-    norm_dist = [[i // high + 1 for i in d] for d in distance]
+    norm_dist = [[i // high + 1 if i != -1 else 0 for i in d] for d in distance]
     
     print('[', 
         ''.join([sym_map[j] for j in play[i]]), ']   [', 
