@@ -74,7 +74,7 @@ private:
     std::unordered_map<uint, uint> cameFrom;
 
     // funnel variables
-    std::vector<Vec2Pair> portals;
+    std::vector<Edge> portals;
 
 public:
     Navmesh(const std::vector<vec2>& paperMesh);
@@ -93,7 +93,8 @@ private:
     uint posToTriangle(const vec2& pos);
     void resetAlgoStructs();
     void AStar(const vec2& start, const vec2& dest, std::vector<uint>& path);
-    void funnel();
+    void getPortals(const std::vector<uint>& path);
+    void funnel(const vec2& start, const vec2& dest, std::vector<vec2>& path);
     void clear();
 
 };

@@ -7,6 +7,7 @@
 class Paper {
 private:
     std::pair<SingleSide*, SingleSide*> sides;
+    bool open;
 
 public:
 

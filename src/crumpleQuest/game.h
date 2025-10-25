@@ -8,6 +8,7 @@
 class Game {
 private:
     Player* player;
+    // std::vector<Paper>
 
 public:
     Game();

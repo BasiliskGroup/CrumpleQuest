@@ -37,6 +37,10 @@ uint Navmesh::addObstacle(std::vector<vec2> obstacleMesh) {
     return mesh.size();
 }
 
+/**
+ * @brief earcut mesh and initialize triangle array. Uses earcut.hpp
+ * 
+ */
 void Navmesh::earcut() {
     // convert into a format that works for earcut
     std::vector<std::vector<std::array<double, 2>>> polygon;
@@ -201,6 +205,90 @@ void Navmesh::AStar(const vec2& startPos, const vec2& destPos, std::vector<uint>
     path.clear();
 }
 
-void Navmesh::funnel() {
+/**
+ * @brief selects the edges of triangles connecting triangles along the A* path
+ * 
+ * @param path the indices of all triangles taken by A*
+ */
+void Navmesh::getPortals(const std::vector<uint>& path) {
+    portals.clear();
 
+    for (uint i = 0; i < path.size() - 1; i++) {
+        const Triangle& triangle = triangles[path[i]];
+        ushort edgeIndex = triangle.adjacency.at(path[i + 1]);
+        portals.push_back(triangle[edgeIndex]);
+    }
+}
+
+void Navmesh::funnel(const vec2& start, const vec2& dest, std::vector<vec2>& path) {
+    path.clear();
+    path.push_back(start);
+
+    // if we are in the same triangle, take the direct path
+    if (portals.size() == 0) {
+        path.push_back(dest);
+        return;
+    }
+
+    // initialize funnel
+    uint apexIndex = 0;
+    uint leftIndex = 0;
+    uint rightIndex = 0;
+
+    vec2 apex = start;
+    vec2 left = portals[0].first;
+    vec2 right = portals[0].second;
+
+    uint i = 1;
+    while (i < portals.size()) {
+        vec2 newLeft = portals[i].first;
+        vec2 newRight = portals[i].second;
+
+        // update right
+        if (sign(apex, right, newRight) <= 0) {
+            if (glm::length2(apex - right) < COLLISION_MARGIN || sign(apex, left, newRight) > 0) {
+
+                right = newRight;
+                rightIndex = i;
+
+            } else {
+
+                // move apex left
+                path.push_back(left);
+                apex = left;
+                apexIndex = leftIndex;
+                left = right = apex;
+                leftIndex = rightIndex = apexIndex;
+
+                i = apexIndex + 1;
+                continue;
+            }
+        }
+
+        // update left
+        if (sign(apex, left, newLeft) >= 0) {
+            if (glm::length2(apex - left) < COLLISION_MARGIN || sign(apex, right, newLeft) < 0) {
+
+                left = newLeft;
+                leftIndex = i;
+
+            } else {
+
+                // apex moves right
+                path.push_back(right);
+                apex = right;
+                apexIndex = rightIndex;
+                left = right = apex;
+                leftIndex = rightIndex = apexIndex;
+
+                i = apexIndex + 1;
+                continue;
+
+            }
+        }
+
+        i += 1;
+    }
+
+    path.push_back(dest);
 }
