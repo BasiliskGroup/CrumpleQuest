@@ -1,19 +1,69 @@
 #include "crumpleQuest/levels/floor.h"
 
 Floor::Floor() {
-    int distMax = FLOOR_WIDTH * FLOOR_WIDTH;
+    for (uint x = 0; x < FLOOR_WIDTH; x++) {
+        for (uint y = 0; y < FLOOR_WIDTH; y++) {
+            playMap[x][y] = NONE;
+            tempMap[x][y] = 0;
+            distMap[x][y] = distMax;
+        }
+    }
+
+    center = FLOOR_WIDTH / 2;
+    playerPos = { center, center };
+    generateFloor();
+    loadRooms();
+}
+
+void Floor::loadRooms() {
+    return; // uncomment this out when we have 1 of each room type
 
     for (uint x = 0; x < FLOOR_WIDTH; x++) {
         for (uint y = 0; y < FLOOR_WIDTH; y++) {
-            playMap[x][y] = -1;
-            tempMap[x][y] = 0;
-            distMap[x][y] = distMax;
+            uint choice = randrange(0, roomTemplates[playMap[x][y]].size());
+            roomMap[x][y] = roomTemplates[playMap[x][y]][choice];
         }
     }
 }
 
 void Floor::generateFloor() {
-    
+    // default values for starter room
+    distMap[center][center] = 0;
+    addToMaps({ center, center }, SPAWN);
+
+    // generate the remaining floor
+    uint numRooms = glm::max(FLOOR_MIN_ROOMS, randomIntNormal(FLOOR_MEAN_ROOMS, FLOOR_STDEV_ROOMS));
+    for (uint i = 1; numRooms; i++) {
+        
+        // sort dictionary by keys
+        std::vector<std::pair<Position, int>> adjs(valids.begin(), valids.end());
+        std::sort(adjs.begin(), adjs.end(), [](const auto& a, const auto& b) { return a.second < b.second; });
+        Position pos = adjs[0].first;
+
+        // get nth random based on temp decrease
+        float prob = 1;
+        uint j = 1;
+        while (uniform(0, 1) < prob && j < adjs.size()) {
+            pos = adjs[j].first;
+            j++;
+            prob *= FLOOR_TEMP_REDUCT;
+        }
+
+        // add the room to the maps
+        valids.erase(adjs[j - 1].first);
+        addToMaps(pos, BASIC);
+    }
+
+    // add boss room to furthest valid location
+    Position high = { center, center };
+    for (int x = 0; x < FLOOR_WIDTH; x++) {
+        for (int y = 0; y < FLOOR_WIDTH; y++) {
+            if (distMap[x][y] == distMax or distMap[x][y] < distMap[high.x][high.y]) continue;
+            high = { x, y };
+        }
+    }
+
+    playMap[high.x][high.y] = BOSS;
 }
 
 // helper functions
@@ -29,7 +79,7 @@ void Floor::getAround(const Position& pos, std::vector<Position>& around) const 
     if (inRange({ pos.x, pos.y + 1 })) around.emplace_back(pos.x, pos.y + 1);
 }
 
-void Floor::addToMaps(const Position& pos, int type) {
+void Floor::addToMaps(const Position& pos, RoomTypes type) {
     playMap[pos.x][pos.y] = type;
     tempMap[pos.x][pos.y] = -1;
 

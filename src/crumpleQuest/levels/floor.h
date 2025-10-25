@@ -2,6 +2,8 @@
 #define FLOOR_H
 
 #include "util/includes.h"
+#include "util/random.h"
+#include "crumpleQuest/levels/paper.h"
 
 #define FLOOR_WIDTH 7
 #define FLOOR_MIN_ROOMS 10
@@ -9,10 +11,11 @@
 #define FLOOR_STDEV_ROOMS 2
 #define FLOOR_TEMP_REDUCT 0.95
 
-enum Rooms {
+enum RoomTypes {
     SPAWN,
     BASIC,
-    BOSS    
+    BOSS,
+    NONE = -1
 };
 
 class Floor {
@@ -34,6 +37,7 @@ private:
             return x == other.x && y == other.y;
         }
 
+        Position() : x(0), y(0) {}
         Position(int x, int y) : x(x), y(y) {}
     };
 
@@ -45,23 +49,32 @@ private:
         }
     };
 
-    uint center;
+    // generation data
+    int distMax = FLOOR_WIDTH * FLOOR_WIDTH;
+    int center;
     std::unordered_map<Position, int, PositionHash> valids;
-    SquareMap<int> playMap;
+    SquareMap<RoomTypes> playMap;
     SquareMap<int> tempMap;
     SquareMap<int> distMap;
+
+    // play data
+    Position playerPos;
+    SquareMap<Paper> roomMap;
+
+    static std::unordered_map<RoomTypes, std::vector<Paper>> roomTemplates;
 
 public:
     Floor();
     ~Floor() = default;
 
     void generateFloor();
+    void loadRooms();
 
 private:
     // helper functions
     bool inRange(const Position& pos) const;
     void getAround(const Position& pos, std::vector<Position>& around) const;
-    void addToMaps(const Position& pos, int type);
+    void addToMaps(const Position& pos, RoomTypes type);
 };
 
 #endif
