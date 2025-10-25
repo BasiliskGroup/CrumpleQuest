@@ -11,6 +11,8 @@
 #define FLOOR_STDEV_ROOMS 2
 #define FLOOR_TEMP_REDUCT 0.95
 
+class Paper;
+
 enum RoomTypes {
     SPAWN,
     BASIC,
@@ -67,10 +69,12 @@ public:
     Floor();
     ~Floor() = default;
 
+    void getOptions(std::vector<Position> directions);
+
+private:
     void generateFloor();
     void loadRooms();
 
-private:
     // helper functions
     bool inRange(const Position& pos) const;
     void getAround(const Position& pos, std::vector<Position>& around) const;

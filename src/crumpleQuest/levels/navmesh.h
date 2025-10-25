@@ -78,25 +78,30 @@ private:
 
 public:
     Navmesh(const std::vector<vec2>& paperMesh);
+    Navmesh(const Navmesh& other) = default;
+    Navmesh(Navmesh&& other) = default;
     ~Navmesh() = default;
+
+    Navmesh& operator=(const Navmesh& other) = default;
+    Navmesh& operator=(Navmesh&& other) = default;
     
     uint addObstacle(std::vector<vec2> obstacleMesh);
     void getPath(std::vector<vec2>& path, vec2 start, vec2 dest);
+    void generateNavmesh();
 
 private:
     void earcut();
     void buildGraph();
 
-    float heuristic(uint cur, uint dest);
+    float heuristic(int cur, int dest);
     float heuristic(const vec2& cur, const vec2& dest);
 
-    uint posToTriangle(const vec2& pos);
+    int posToTriangle(const vec2& pos);
     void resetAlgoStructs();
     void AStar(const vec2& start, const vec2& dest, std::vector<uint>& path);
     void getPortals(const std::vector<uint>& path);
     void funnel(const vec2& start, const vec2& dest, std::vector<vec2>& path);
     void clear();
-
 };
 
 #endif

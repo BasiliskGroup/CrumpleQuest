@@ -59,9 +59,9 @@ void Navmesh::earcut() {
     // construct triangles list
     for (uint i = 0; i < indices.size() / 3; i++) {
         triangles.emplace_back(
-            mesh[3 * i + 0],
-            mesh[3 * i + 1],
-            mesh[3 * i + 2]
+            mesh[indices[3 * i + 0]],
+            mesh[indices[3 * i + 1]],
+            mesh[indices[3 * i + 2]]
         );
     }
 }
@@ -102,12 +102,12 @@ float Navmesh::heuristic(const vec2& cur, const vec2& dest) {
     return glm::length2(cur - dest);
 }
 
-float Navmesh::heuristic(uint cur, uint dest){
+float Navmesh::heuristic(int cur, int dest){
     return heuristic(triangles[cur].center, triangles[dest].center);
 }
 
-uint Navmesh::posToTriangle(const vec2& pos){
-    for (uint i = 0; i < triangles.size(); i++) {
+int Navmesh::posToTriangle(const vec2& pos){
+    for (int i = 0; i < triangles.size(); i++) {
         if (triangles[i].contains(pos)) {
             return i;
         }
@@ -137,8 +137,8 @@ void Navmesh::getPath(std::vector<vec2>& path, vec2 start, vec2 dest) {
 
 void Navmesh::AStar(const vec2& startPos, const vec2& destPos, std::vector<uint>& path) {
     // convert positions to triangles
-    uint start = posToTriangle(startPos);
-    uint dest = posToTriangle(destPos);
+    int start = posToTriangle(startPos);
+    int dest = posToTriangle(destPos);
     path.clear();
 
     // check if we found valid pathing locations
@@ -291,4 +291,8 @@ void Navmesh::funnel(const vec2& start, const vec2& dest, std::vector<vec2>& pat
     }
 
     path.push_back(dest);
+}
+
+void Navmesh::generateNavmesh() {
+
 }

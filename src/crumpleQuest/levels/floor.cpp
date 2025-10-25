@@ -1,6 +1,6 @@
-#include "crumpleQuest/levels/floor.h"
+#include "crumpleQuest/levels/levels.h"
 
-Floor::Floor() {
+Floor::Floor() : roomMap() {
     for (uint x = 0; x < FLOOR_WIDTH; x++) {
         for (uint y = 0; y < FLOOR_WIDTH; y++) {
             playMap[x][y] = NONE;
@@ -94,4 +94,8 @@ void Floor::addToMaps(const Position& pos, RoomTypes type) {
         tempMap[adj.x][adj.y] += 1;
         valids[adj] = tempMap[adj.x][adj.y];
     }
+}
+
+void Floor::getOptions(std::vector<Position> directions) {
+
 }
