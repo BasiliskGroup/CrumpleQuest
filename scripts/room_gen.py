@@ -16,7 +16,7 @@ BOSS = 2
 
 play = [[-1 for _ in range(WIDTH)] for _ in range(WIDTH)]
 temperature = [[0 for _ in range(WIDTH)] for _ in range(WIDTH)]
-distance = [[-1 for _ in range(WIDTH)] for _ in range(WIDTH)]
+distance = [[WIDTH * WIDTH for _ in range(WIDTH)] for _ in range(WIDTH)]
 
 # start in the center
 center = WIDTH // 2
@@ -59,7 +59,7 @@ def add(x: int, y: int, type: int) -> None:
     
     for adj in get_around(x, y):
         dx, dy = adj
-        distance[x][y] = max(distance[x][y], distance[dx][dy] + 1)
+        distance[x][y] = min(distance[x][y], distance[dx][dy] + 1)
         if temperature[dx][dy] == -1: continue
             
         temperature[dx][dy] += 1
@@ -67,10 +67,11 @@ def add(x: int, y: int, type: int) -> None:
         
 def print_map_row(i: int) -> None:
     # normalize distance map
-    high = [max(d) for d in distance]
+    norm_dist = [[-1 if i == WIDTH * WIDTH else i for i in d] for d in distance]
+    high = [max(d) for d in norm_dist]
     high = max(high) / 5
     
-    norm_dist = [[i // high + 1 if i != -1 else 0 for i in d] for d in distance]
+    norm_dist = [[i // high + 1 if i != -1 else 0 for i in d] for d in norm_dist]
     
     print('[', 
         ''.join([sym_map[j] for j in play[i]]), ']   [', 
@@ -79,6 +80,7 @@ def print_map_row(i: int) -> None:
     ']')
         
 # add spawn room to sets
+distance[center][center] = 0
 add(center, center, SPAWN)
 
 for i in range(1, max(MIN, int(np.random.normal(loc=MEAN, scale=STDEV, size=1).item()))):
@@ -103,7 +105,7 @@ for i in range(1, max(MIN, int(np.random.normal(loc=MEAN, scale=STDEV, size=1).i
 high = (center, center)
 for x in range(WIDTH):
     for y in range(WIDTH):
-        if distance[x][y] < distance[high[0]][high[1]]: continue
+        if distance[x][y] == WIDTH * WIDTH or distance[x][y] < distance[high[0]][high[1]]: continue
         high = (x, y)
         
 play[high[0]][high[1]] = BOSS
