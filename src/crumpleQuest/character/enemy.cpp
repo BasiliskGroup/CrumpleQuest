@@ -13,5 +13,5 @@ void Enemy::onDamage(int damage) {
 }
 
 void Enemy::move() {
-
+    
 }

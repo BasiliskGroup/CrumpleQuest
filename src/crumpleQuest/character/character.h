@@ -10,11 +10,15 @@ protected:
 
 public:
     Character(int health, Weapon* weapon);
+    ~Character() = default;
 
     void onDamage(int damage);
 
     // virtual methods
     virtual void move() = 0;
+
+private:
+    void clear();
 };
 
 #endif

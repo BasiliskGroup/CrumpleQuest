@@ -8,13 +8,13 @@
 class Game {
 private:
     Player* player;
-    // std::vector<Paper>
 
 public:
     Game();
     ~Game();
 
     bool update(float dt);
+    const vec2& playerPos() {  } // TODO
 };
 
 #endif
