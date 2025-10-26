@@ -48,6 +48,8 @@ target_compile_options(engine PRIVATE
     -O3
     # -ffast-math
     -march=native
+    # Windows equivalents
+    $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX2 /permissive->
 )
 
 # -----------------------

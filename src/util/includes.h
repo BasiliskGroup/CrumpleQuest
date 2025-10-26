@@ -31,6 +31,9 @@
 #include <fstream>
 #include <sstream>
 
+// Enable C++ alternative operators (and, or, not) on Windows
+#include <iso646.h>
+
 // import glad and glfw
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
