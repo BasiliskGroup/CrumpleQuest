@@ -63,26 +63,26 @@ target_compile_options(engine PRIVATE
 # -----------------------
 
 # Copy resources to build directory
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shaders)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders/ 
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/textures)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures/ 
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/textures)
 
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/models)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models/ 
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/models)
 
 # For MSVC multi-config generators, also copy to Debug/Release subdirectories
 if(MSVC)
     foreach(CONFIG Debug Release RelWithDebInfo MinSizeRel)
-        file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/shaders)
-        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/shaders)
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders/ 
+             DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/shaders)
         
-        file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/textures)
-        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/textures)
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures/ 
+             DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/textures)
         
-        file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/models)
-        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/models)
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models/ 
+             DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/models)
     endforeach()
 endif()
 
