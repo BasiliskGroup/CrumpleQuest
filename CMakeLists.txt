@@ -4,6 +4,9 @@ project(Basilisk)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Allow older CMake versions in dependencies (xsimd requires this)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
 # Dependencies
 
 # glad
@@ -73,13 +76,13 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models DESTINATION ${CMAKE_CURRENT_BINARY_
 if(MSVC)
     foreach(CONFIG Debug Release RelWithDebInfo MinSizeRel)
         file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/shaders)
-        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/shaders)
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/shaders)
         
         file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/textures)
-        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/textures)
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/textures)
         
         file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/models)
-        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/models)
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/models)
     endforeach()
 endif()
 
