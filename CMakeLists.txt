@@ -4,9 +4,6 @@ project(Basilisk)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Allow older CMake versions in dependencies (xsimd requires this)
-set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
-
 # Dependencies
 
 # glad

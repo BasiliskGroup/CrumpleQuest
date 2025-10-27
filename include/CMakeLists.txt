@@ -34,6 +34,6 @@ FetchContent_MakeAvailable(assimp)
 FetchContent_Declare(
   xsimd
   GIT_REPOSITORY https://github.com/xtensor-stack/xsimd.git
-  GIT_TAG        11.1.0
+  GIT_TAG        13.0.0
 )
 FetchContent_MakeAvailable(xsimd)
