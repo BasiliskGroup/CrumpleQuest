@@ -16,6 +16,7 @@
 
 
 // data structures
+#include <array>
 #include <vector>
 #include <queue>
 #include <set>
