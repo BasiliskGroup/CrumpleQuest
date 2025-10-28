@@ -9,7 +9,7 @@ int main() {
     Image* image = new Image("textures/container.jpg");
     Texture* texture = new Texture(image);
         
-    Node2D* square = new Node2D(scene2D, quad, texture);
+    Node2D* square = new Node2D(scene2D, { .mesh=quad, .texture=texture });
 
     // Main loop continues as long as the window is open
     while (engine->isRunning()) {
