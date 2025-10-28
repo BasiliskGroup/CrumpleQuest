@@ -23,7 +23,7 @@ private:
     std::vector<float> mass;
     std::vector<float> moment;
     std::vector<float> radius;
-    std::vector<uint> mesh;
+    std::vector<uint> collider;
     std::vector<mat2x2> mat;
     std::vector<mat2x2> imat;
     std::vector<mat2x2> rmat;
@@ -61,7 +61,7 @@ public:
     auto& getMass() { return mass; }
     auto& getMoment() { return moment; }
     auto& getRadius() { return radius; }
-    auto& getMesh() { return mesh; }
+    auto& getCollider() { return collider; }
     auto& getMat() { return mat; }
     auto& getIMat() { return imat; }
     auto& getRMat() { return rmat; }
@@ -75,7 +75,7 @@ public:
 
     void resize(uint newCapacity) override;
     void compact() override;
-    uint insert(Rigid* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius);
+    uint insert(Rigid* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint collider, float radius);
 };
 
 #endif

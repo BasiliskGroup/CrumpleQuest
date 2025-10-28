@@ -1,17 +1,17 @@
 #include "solver/physics.h"
 
 
-Rigid::Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction, vec3 vel, Mesh* mesh) : solver(solver), forces(nullptr), next(nullptr), prev(nullptr) {
+Rigid::Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction, vec3 vel, Collider* collider) : solver(solver), forces(nullptr), next(nullptr), prev(nullptr) {
     // Add to linked list
     solver->insert(this);
 
     // compute intermediate values
-    float volume = 1; // replace with mesh volume
+    float volume = 1; // replace with collider volume
     float mass = scale.x * scale.y * density * volume; 
-    float moment = mass * glm::dot(scale, scale) / 12.0f; // TODO replace with mesh moment
+    float moment = mass * glm::dot(scale, scale) / 12.0f; // TODO replace with collider moment
     float radius = glm::length(scale * 0.5f);
 
-    index = solver->getBodyTable()->insert(this, pos, vel, scale, friction, mass, mesh->getIndex(), radius);
+    index = solver->getBodyTable()->insert(this, pos, vel, scale, friction, mass, collider->getIndex(), radius);
 }   
 
 Rigid::~Rigid() {

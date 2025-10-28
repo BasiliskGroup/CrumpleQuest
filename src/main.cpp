@@ -6,7 +6,7 @@
 
 int main() {
     Solver* solver = new Solver();
-    Mesh* cubeMesh = new Mesh(solver, {{-0.5, 0.5}, {-0.5, -0.5}, {0.5, -0.5}, {0.5, 0.5}});
+    Collider* cubeCollider = new Collider(solver, {{-0.5, 0.5}, {-0.5, -0.5}, {0.5, -0.5}, {0.5, 0.5}});
 
     float dx = 5;
     float dr = 2 * 3.14;
@@ -14,7 +14,7 @@ int main() {
     // create a list of rigids
     std::vector<Rigid*> objects;
     for (int i = 0; i < 100; i++) {
-        objects.push_back(new Rigid(solver, {uniform(-dx, dx), uniform(-dx, dx), uniform(0, dr)}, {1, 1}, 1, 0.4, {0, 0, 0}, cubeMesh));
+        objects.push_back(new Rigid(solver, {uniform(-dx, dx), uniform(-dx, dx), uniform(0, dr)}, {1, 1}, 1, 0.4, {0, 0, 0}, cubeCollider));
     }
 
     for (int i = 0; i < 10; i++) {
@@ -26,8 +26,8 @@ int main() {
         objects.erase(objects.begin() + deleteIndex);
     }
 
-    // delete mesh
-    delete cubeMesh;
+    // delete collider
+    delete cubeCollider;
 
     // deleting solver should always be last
     delete solver;

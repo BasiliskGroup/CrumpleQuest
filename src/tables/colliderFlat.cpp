@@ -1,32 +1,32 @@
-#include "tables/meshFlat.h"
+#include "tables/colliderFlat.h"
 #include "util/print.h"
 
-MeshFlat::MeshFlat(uint vertCapacity, uint meshCapacity) {
+ColliderFlat::ColliderFlat(uint vertCapacity, uint colliderCapacity) {
     this->vertCapacity = vertCapacity;
-    this->meshCapacity = meshCapacity;
+    this->colliderCapacity = colliderCapacity;
 
     // resize to meet vertsCapacity
     verts.resize(vertCapacity);
 
-    // resize to meet meshCapacity
-    halfDim.resize(meshCapacity);
-    length.resize(meshCapacity);
-    moment.resize(meshCapacity);
-    start.resize(meshCapacity);
-    area.resize(meshCapacity);
-    com.resize(meshCapacity);
+    // resize to meet colliderCapacity
+    halfDim.resize(colliderCapacity);
+    length.resize(colliderCapacity);
+    moment.resize(colliderCapacity);
+    start.resize(colliderCapacity);
+    area.resize(colliderCapacity);
+    com.resize(colliderCapacity);
 }
 
-void MeshFlat::compact() {
-    eraseChunks(verts, start, length, toDelete, meshes, halfDim, moment, area, com);
+void ColliderFlat::compact() {
+    eraseChunks(verts, start, length, toDelete, colliders, halfDim, moment, area, com);
     toDelete.clear();
 }
 
-uint MeshFlat::insert(std::vector<vec2> verts) {    
+uint ColliderFlat::insert(std::vector<vec2> verts) {    
     // check to see if the vector is going to resize
     bool needsResize = this->verts.capacity() < verts.size() + vertSize;
     
-    // TODO center mesh com on (0, 0)
+    // TODO center collider com on (0, 0)
     for (uint i = 0; i < verts.size(); i++) {
         this->verts[vertSize + i] = verts[i];
     }
@@ -35,8 +35,8 @@ uint MeshFlat::insert(std::vector<vec2> verts) {
         refreshPointers();
     }
 
-    start[meshSize] = vertSize;
-    length[meshSize] = verts.size();
+    start[colliderSize] = vertSize;
+    length[colliderSize] = verts.size();
 
     // insert remaining property data
     // find extreme values
@@ -59,7 +59,7 @@ uint MeshFlat::insert(std::vector<vec2> verts) {
     // calulate mesh variables TODO actually do this LATER. 
     // for now, default to unit cube values
     // create half dimensions
-    halfDim[meshSize] = { maxX - gcx, maxY - gcy };
+    halfDim[colliderSize] = { maxX - gcx, maxY - gcy };
 
     // TODO add the follow variables 
     // com
@@ -68,21 +68,21 @@ uint MeshFlat::insert(std::vector<vec2> verts) {
 
     // increment both sizes
     vertSize += verts.size();
-    return meshSize++;
+    return colliderSize++;
 }
 
-void MeshFlat::resize(uint newCapacity) {
+void ColliderFlat::resize(uint newCapacity) {
     
 }
 
-void MeshFlat::refreshPointers() {
-    for (const auto& pair : meshes) {
+void ColliderFlat::refreshPointers() {
+    for (const auto& pair : colliders) {
         pair.second->setIndex(pair.first);
         // TODO reroute pointer to correct starting location
     }
 }
 
-void MeshFlat::remove(uint meshIndex) {
-    toDelete.push_back(meshIndex);
-    meshes.erase(meshIndex);
+void ColliderFlat::remove(uint colliderIndex) {
+    toDelete.push_back(colliderIndex);
+    colliders.erase(colliderIndex);
 }

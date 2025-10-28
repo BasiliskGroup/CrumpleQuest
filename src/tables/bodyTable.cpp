@@ -65,7 +65,7 @@ void BodyTable::resize(uint newCapacity) {
     if (newCapacity <= capacity) return;
 
     expandTensors(newCapacity,
-        bodies, toDelete, pos, initial, inertial, vel, prevVel, scale, friction, radius, mass, moment, mesh, mat, imat, rmat, updated, color, degree, satur, oldIndex, inverseForceMap, lhs, rhs
+        bodies, toDelete, pos, initial, inertial, vel, prevVel, scale, friction, radius, mass, moment, collider, mat, imat, rmat, updated, color, degree, satur, oldIndex, inverseForceMap, lhs, rhs
     );
 
     // update capacity
@@ -90,7 +90,7 @@ void BodyTable::compact() {
     compactTensors(toDelete, size,
         bodies, pos, initial, inertial, vel, prevVel,
         scale, friction, radius, mass, moment,
-        mesh, mat, imat, rmat, updated, color, degree, satur, oldIndex, lhs, rhs
+        collider, mat, imat, rmat, updated, color, degree, satur, oldIndex, lhs, rhs
     );
 
     // invert old indices so that forces can find their new indices
@@ -106,7 +106,7 @@ void BodyTable::compact() {
     }
 }
 
-uint BodyTable::insert(Rigid* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint mesh, float radius) {
+uint BodyTable::insert(Rigid* body, vec3 pos, vec3 vel, vec2 scale, float friction, float mass, uint collider, float radius) {
     if (size == capacity) {
         resize(capacity * 2);
     }
@@ -119,7 +119,7 @@ uint BodyTable::insert(Rigid* body, vec3 pos, vec3 vel, vec2 scale, float fricti
     this->scale[size] = scale;
     this->friction[size] = friction;
     this->mass[size] = mass;
-    this->mesh[size] = mesh;
+    this->collider[size] = collider;
     this->radius[size] = radius;
     this->updated[size] = false;
 

@@ -1,12 +1,12 @@
-#ifndef MESH_H
-#define MESH_H
+#ifndef COLLIDER_H
+#define COLLIDER_H
 
 #include "util/includes.h"
 
 class Solver;
-class MeshFlat;
+class ColliderFlat;
 
-class Mesh {
+class Collider {
 private:
     Solver* solver;
 
@@ -14,13 +14,13 @@ private:
     uint index;
 
 public:
-    Mesh(Solver* solver, std::vector<vec2> verts);
-    ~Mesh();
+    Collider(Solver* solver, std::vector<vec2> verts);
+    ~Collider();
 
     uint getIndex() { return index; }
     void setIndex(uint index) { this->index = index; }
 
-    MeshFlat* getMeshFlat();
+    ColliderFlat* getColliderFlat();
 };
 
 #endif

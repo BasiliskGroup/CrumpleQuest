@@ -1,18 +1,18 @@
-#ifndef MESH_FLAT_H
-#define MESH_FLAT_H
+#ifndef COLLIDER_FLAT_H
+#define COLLIDER_FLAT_H
 
 #include "util/includes.h"
 #include "tables/virtualTable.h"
 #include "tables/eraseChunks.h"
 
-class MeshFlat {
+class ColliderFlat {
 private:
     uint vertSize = 0;
     uint vertCapacity;
-    uint meshSize = 0;
-    uint meshCapacity;
+    uint colliderSize = 0;
+    uint colliderCapacity;
 
-    std::unordered_map<uint, Mesh*> meshes;
+    std::unordered_map<uint, Collider*> colliders;
     std::vector<uint> toDelete;
 
     // store vertex data
@@ -27,8 +27,8 @@ private:
     std::vector<float> moment;
 
 public:
-    MeshFlat(uint vertCapacity, uint meshCapacity);
-    ~MeshFlat() = default;
+    ColliderFlat(uint vertCapacity, uint colliderCapacity);
+    ~ColliderFlat() = default;
 
     std::vector<vec2>& getVerts() { return verts; }
     std::vector<uint>& getStart() { return start; }
@@ -39,10 +39,10 @@ public:
     uint getLength(uint index) { return length[index]; }
 
     void compact();
-    void resize(uint newCapacity); // TODO make a resize function for meshSoA
+    void resize(uint newCapacity); // TODO make a resize function for colliderSoA
     void refreshPointers();
     uint insert(std::vector<vec2> verts);
-    void remove(uint meshIndex);
+    void remove(uint colliderIndex);
 };
 
 #endif 

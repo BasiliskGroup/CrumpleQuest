@@ -8,12 +8,12 @@
 
 #include "tables/bodyTable.h"
 #include "tables/forceRoute.h"
-#include "tables/meshFlat.h"
+#include "tables/colliderFlat.h"
 
 class Rigid;
 class Force;
 class Manifold;
-class Mesh;
+class Collider;
 
 class Solver {
 private:
@@ -31,7 +31,7 @@ private:
     // Tables
     ForceTable* forceTable;
     BodyTable* bodyTable;
-    MeshFlat* meshFlat;
+    ColliderFlat* colliderFlat;
 
     // broad collision detection
     std::vector<CollisionIndexPair> collisionPairs;
@@ -45,7 +45,7 @@ private:
         vec2* start;
         uint length;
         vec2* simplex;
-        std::array<float, 4> dots; // TODO this needs to be at least the length of the mesh
+        std::array<float, 4> dots; // TODO this needs to be at least the length of the collider
 
         ColliderRow() = default;
     };
@@ -94,7 +94,7 @@ public:
     Rigid*& getBodies() { return bodies; }
     ForceTable* getForceTable() { return forceTable; }
     BodyTable*  getBodyTable()  { return bodyTable; }
-    MeshFlat*  getMeshFlat()  { return meshFlat; }
+    ColliderFlat*  getColliderFlat()  { return colliderFlat; }
     ManifoldTable* getManifoldTable() { return forceTable->getManifoldTable(); } 
 
     void step(float dt);

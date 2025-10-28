@@ -3,7 +3,7 @@
 
 class Solver;
 class Force;
-class Mesh;
+class Collider;
 class BodyTable;
 
 class Rigid {
@@ -20,7 +20,7 @@ private:
     uint index;
 
 public:
-    Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction, vec3 vel, Mesh* mesh);
+    Rigid(Solver* solver, vec3 pos, vec2 scale, float density, float friction, vec3 vel, Collider* collider);
     ~Rigid();
 
     // list management

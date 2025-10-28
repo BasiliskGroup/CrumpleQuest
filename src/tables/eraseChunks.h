@@ -2,7 +2,7 @@
 #define ERASE_CHUNKS_H
 
 #include "util/includes.h"
-#include "shapes/mesh.h"
+#include "shapes/collider.h"
 
 /**
  * @brief 
@@ -12,7 +12,7 @@
  * @param start 
  * @param length 
  * @param toDelete 
- * @param meshes 
+ * @param colliders 
  * @param metas 
  */
 template <typename T, typename... MetaTypes>
@@ -21,7 +21,7 @@ void eraseChunks(
     std::vector<uint>& start,
     std::vector<uint>& length,
     const std::vector<uint>& toDelete,
-    std::unordered_map<uint32_t, Mesh*>& meshes,
+    std::unordered_map<uint32_t, Collider*>& colliders,
     std::vector<MetaTypes>&... metas
 ) {
     if (toDelete.empty()) return;
@@ -74,16 +74,16 @@ void eraseChunks(
     (metas.resize(newCount), ...);
 
     // --- Remap the unordered_map keys ---
-    std::unordered_map<uint32_t, Mesh*> newMeshes;
-    newMeshes.reserve(meshes.size());
+    std::unordered_map<uint32_t, Collider*> newColliders;
+    newColliders.reserve(colliders.size());
 
-    for (auto& [oldKey, ptr] : meshes) {
+    for (auto& [oldKey, ptr] : colliders) {
         int ni = (oldKey < newIndex.size()) ? newIndex[oldKey] : -1;
         if (ni >= 0)
-            newMeshes[static_cast<uint32_t>(ni)] = ptr;
+            newColliders[static_cast<uint32_t>(ni)] = ptr;
     }
 
-    meshes.swap(newMeshes);
+    colliders.swap(newColliders);
 }
 
 #endif

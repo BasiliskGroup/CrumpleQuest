@@ -12,7 +12,7 @@
 #include "forces/manifold.h"
 
 #include "shapes/rigid.h"
-#include "shapes/mesh.h"
+#include "shapes/collider.h"
 
 #include "solver/solver.h"
 

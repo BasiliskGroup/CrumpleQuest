@@ -12,7 +12,7 @@ Solver::Solver() : forces(nullptr), bodies(nullptr) {
     // create Tables
     forceTable = new ForceTable(1024);
     bodyTable = new BodyTable(512);
-    meshFlat = new MeshFlat(256, 16);
+    colliderFlat = new ColliderFlat(256, 16);
 }
 
 Solver::~Solver() {
@@ -243,13 +243,8 @@ void Solver::initColliderRow(uint row, uint manifoldIndex, ColliderRow& collider
     colliderRow.scale = bodyTable->getScale()[row];
     colliderRow.mat = bodyTable->getMat()[row];
     colliderRow.imat = bodyTable->getIMat()[row];
-    colliderRow.start = meshFlat->getStartPtr(meshFlat->getStart()[bodyTable->getMesh()[row]]);
-
-    // print("Mesh data");
-    // print(bodyTable->getMesh()[row]);
-    // print(meshTable->getStart()[bodyTable->getMesh()[row]]);
-
-    colliderRow.length = meshFlat->getLength()[bodyTable->getMesh()[row]];
+    colliderRow.start = colliderFlat->getStartPtr(colliderFlat->getStart()[bodyTable->getCollider()[row]]);
+    colliderRow.length = colliderFlat->getLength()[bodyTable->getCollider()[row]];
     colliderRow.simplex = getManifoldTable()->getSimplexPtr(manifoldIndex);
 }
 
