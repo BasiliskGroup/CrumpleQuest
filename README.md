@@ -34,12 +34,12 @@ cmake --build . --config Debug
 
 **Mac/Linux:**
 ```bash
-./engine
+./game
 ```
 
 **Windows:**
 ```bash
-Debug\engine.exe
+Debug\game.exe
 # or
-Release\engine.exe
+Release\game.exe
 ```

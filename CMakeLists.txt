@@ -1,20 +1,12 @@
 cmake_minimum_required(VERSION 3.14)
-project(Basilisk)
+project(CrumpleQuest)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Dependencies
 
-# glad
-add_library(glad STATIC include/glad/glad.c)
-target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# stb (header-only)
-add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# glm, glfw, assimp, xsimd
+# basilisk
 include(FetchContent)
 add_subdirectory(include)
 
@@ -24,27 +16,23 @@ file(GLOB_RECURSE SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/**/*.cpp
 )
 
-add_executable(engine ${SRC_FILES})
-target_include_directories(engine PUBLIC
+add_executable(game ${SRC_FILES})
+target_include_directories(game PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 # Link deps
-target_link_libraries(engine
-    glad
-    glfw
-    glm 
-    assimp
-    stb
-    xsimd
+target_link_libraries(game
+    glm
+    basilisk
 )
 
 # -----------------------
 # compile options
 # -----------------------
 
-target_compile_options(engine PRIVATE
+target_compile_options(game PRIVATE
     # Optimization for Release builds only
     $<$<CONFIG:Release>:-O3>
     $<$<CONFIG:Release>:-march=native>
@@ -92,13 +80,13 @@ endif()
 
 # Enable AddressSanitizer in debug builds (GCC/Clang)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(engine PUBLIC -fsanitize=address -fno-omit-frame-pointer -g)
-    target_link_options(engine PUBLIC -fsanitize=address -fno-omit-frame-pointer)
+    target_compile_options(game PUBLIC -fsanitize=address -fno-omit-frame-pointer -g)
+    target_link_options(game PUBLIC -fsanitize=address -fno-omit-frame-pointer)
 endif()
 
 # MSVC debug configuration (uses /RTC1 by default, which conflicts with optimization)
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    target_compile_options(engine PRIVATE
+    target_compile_options(game PRIVATE
         $<$<CONFIG:Debug>:/Zi>       # Debug information
         $<$<CONFIG:Debug>:/Od>       # Disable optimization (required for /RTC1)
     )

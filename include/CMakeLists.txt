@@ -6,15 +6,7 @@ endif()
 
 include(FetchContent)
 
-# GLFW
-FetchContent_Declare(
-  glfw
-  GIT_REPOSITORY https://github.com/glfw/glfw.git
-  GIT_TAG        master
-)
-FetchContent_MakeAvailable(glfw)
-
-# GLM
+# glm
 FetchContent_Declare(
   glm
   GIT_REPOSITORY https://github.com/icaven/glm.git
@@ -22,18 +14,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
-# ASSIMP
+# Yay Yippee Horray! I love Basilisk Engine <3 :D
 FetchContent_Declare(
-  assimp
-  GIT_REPOSITORY https://github.com/assimp/assimp.git
-  GIT_TAG        v6.0.2
+  basilisk
+  GIT_REPOSITORY https://github.com/BasiliskGroup/BasiliskEngine.git
+  GIT_TAG        main
 )
-FetchContent_MakeAvailable(assimp)
-
-# (Optional but recommended: xsimd for vectorization)
-FetchContent_Declare(
-  xsimd
-  GIT_REPOSITORY https://github.com/xtensor-stack/xsimd.git
-  GIT_TAG        13.0.0
-)
-FetchContent_MakeAvailable(xsimd)
+FetchContent_MakeAvailable(basilisk)
