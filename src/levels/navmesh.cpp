@@ -1,4 +1,4 @@
-#include "crumpleQuest/levels/navmesh.h"
+#include "levels/navmesh.h"
 
 Navmesh::Triangle::Triangle(vec2& a, vec2& b, vec2& c) {
     center = (a + b + c) / 3.0f;
@@ -246,7 +246,7 @@ void Navmesh::funnel(const vec2& start, const vec2& dest, std::vector<vec2>& pat
 
         // update right
         if (sign(apex, right, newRight) <= 0) {
-            if (glm::length2(apex - right) < COLLISION_MARGIN || sign(apex, left, newRight) > 0) {
+            if (glm::length2(apex - right) < EPSILON || sign(apex, left, newRight) > 0) {
 
                 right = newRight;
                 rightIndex = i;
@@ -267,7 +267,7 @@ void Navmesh::funnel(const vec2& start, const vec2& dest, std::vector<vec2>& pat
 
         // update left
         if (sign(apex, left, newLeft) >= 0) {
-            if (glm::length2(apex - left) < COLLISION_MARGIN || sign(apex, right, newLeft) < 0) {
+            if (glm::length2(apex - left) < EPSILON || sign(apex, right, newLeft) < 0) {
 
                 left = newLeft;
                 leftIndex = i;

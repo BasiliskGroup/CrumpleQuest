@@ -1,4 +1,4 @@
-#include "crumpleQuest/levels/singleSide.h"
+#include "levels/singleSide.h"
 
 SingleSide::SingleSide() {
     std::vector<vec2> mesh = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};

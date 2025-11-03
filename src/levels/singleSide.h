@@ -1,8 +1,8 @@
 #ifndef SINGLE_SIDE_H
 #define SINGLE_SIDE_H
 
-#include "crumpleQuest/levels/navmesh.h"
-#include "crumpleQuest/character/enemy.h"
+#include "levels/navmesh.h"
+#include "character/enemy.h"
 
 class SingleSide {  
 private:

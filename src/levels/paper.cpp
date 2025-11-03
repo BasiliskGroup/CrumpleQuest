@@ -1,4 +1,4 @@
-#include "crumpleQuest/levels/levels.h"
+#include "levels/levels.h"
 
 Paper::Paper() : floor(nullptr), curSide(nullptr), isOpen(false) {
     sides = { nullptr, nullptr };

@@ -1,4 +1,4 @@
-#include "crumpleQuest/character/enemy.h"
+#include "character/enemy.h"
 
 Enemy::Enemy(int health, Weapon* weapon, AI* ai) : Character(health, weapon), ai(ai) {
 

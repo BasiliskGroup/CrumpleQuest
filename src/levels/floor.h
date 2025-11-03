@@ -3,7 +3,7 @@
 
 #include "util/includes.h"
 #include "util/random.h"
-#include "crumpleQuest/levels/paper.h"
+#include "levels/paper.h"
 
 #define FLOOR_WIDTH 7
 #define FLOOR_MIN_ROOMS 10

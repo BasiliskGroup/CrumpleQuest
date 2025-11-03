@@ -1,9 +1,9 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "crumpleQuest/character/enemy.h"
-#include "crumpleQuest/character/player.h"
-#include "crumpleQuest/levels/singleSide.h"
+#include "character/enemy.h"
+#include "character/player.h"
+#include "levels/singleSide.h"
 
 class Game {
 private:

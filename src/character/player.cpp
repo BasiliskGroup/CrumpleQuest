@@ -1,4 +1,4 @@
-#include "crumpleQuest/character/player.h"
+#include "character/player.h"
 
 Player::Player(int health, Weapon* weapon) : Character(health, weapon) {}
 

@@ -1,7 +1,7 @@
 #ifndef AI_H
 #define AI_H
 
-#include "crumpleQuest/levels/navmesh.h"
+#include "levels/navmesh.h"
 
 class AI {
     

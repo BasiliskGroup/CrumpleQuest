@@ -2,7 +2,7 @@
 #define PAPER_H
 
 #include "util/includes.h"
-#include "crumpleQuest/levels/singleSide.h"
+#include "levels/singleSide.h"
 
 class Floor;
 
