@@ -39,6 +39,17 @@ using Vec2Triplet = std::array<vec2, 3>;
 using Vec2Pair = std::array<vec2, 2>;
 using FloatPair = std::array<float, 2>;
 
-// Proper hash functor for glm::vec2
+enum RoomTypes {
+    SPAWN_ROOM,
+    BASIC_ROOM,
+    BOSS_ROOM,
+    NULL_ROOM = -1
+};
+
+enum AttackAnimation {
+    MELEE_ANIM,
+    RANGE_ANIM,
+    NULL_ANIM = -1
+};
 
 #endif

@@ -6,8 +6,10 @@ int main() {
 
     // Data for making node
     Mesh* quad = new Mesh("models/quad.obj");
-    Image* image = new Image("textures/man.png");
-    Material* material1 = new Material({1.0, 1.0, 0.0}, image);
+    Image* image1 = new Image("textures/man.png");
+    Image* image2 = new Image("textures/container.jpg");
+    Material* material1 = new Material({1.0, 1.0, 0.0}, image1);
+    Material* material2 = new Material({1.0, 1.0, 0.0}, image2);
 
     // create "paper"
     std::vector<vec2> vertices = {
@@ -20,7 +22,7 @@ int main() {
 
     for (glm::vec2& vertex : vertices) {
         vertex /= 50;
-        new Node2D(scene2D, { .mesh=quad, .material=material1, .position=vertex, .scale={ 0.1, 0.1 } });
+        new Node2D(scene2D, { .mesh=quad, .material=material2, .position=vertex, .scale={ 0.1, 0.1 } });
     }
         
     // normal nodes
@@ -37,7 +39,8 @@ int main() {
     }
 
     // Free memory allocations
-    delete image;
+    delete image1;
+    delete image2;
     delete material1;
     delete quad;
     delete scene2D;

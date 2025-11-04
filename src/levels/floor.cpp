@@ -6,7 +6,7 @@ std::unordered_map<RoomTypes, std::vector<Paper>> Floor::roomTemplates;
 Floor::Floor() : roomMap() {
     for (uint x = 0; x < FLOOR_WIDTH; x++) {
         for (uint y = 0; y < FLOOR_WIDTH; y++) {
-            playMap[x][y] = NONE;
+            playMap[x][y] = NULL_ROOM;
             tempMap[x][y] = 0;
             distMap[x][y] = distMax;
         }
@@ -32,7 +32,7 @@ void Floor::loadRooms() {
 void Floor::generateFloor() {
     // default values for starter room
     distMap[center][center] = 0;
-    addToMaps({ center, center }, SPAWN);
+    addToMaps({ center, center }, SPAWN_ROOM);
 
     // generate the remaining floor
     uint numRooms = glm::max(FLOOR_MIN_ROOMS, randomIntNormal(FLOOR_MEAN_ROOMS, FLOOR_STDEV_ROOMS));
@@ -54,7 +54,7 @@ void Floor::generateFloor() {
 
         // add the room to the maps
         valids.erase(adjs[j - 1].first);
-        addToMaps(pos, BASIC);
+        addToMaps(pos, BASIC_ROOM);
     }
 
     // add boss room to furthest valid location
@@ -66,7 +66,7 @@ void Floor::generateFloor() {
         }
     }
 
-    playMap[high.x][high.y] = BOSS;
+    playMap[high.x][high.y] = BOSS_ROOM;
 }
 
 // helper functions

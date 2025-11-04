@@ -21,6 +21,10 @@ SingleSide& SingleSide::operator=(const SingleSide& other) noexcept {
     if (this == &other) return *this;
     clear();
 
+    for (const Obstacle* obst : other.obstacles) {
+        obstacles.push_back(new Obstacle(*obst));
+    }
+
     navmesh = new Navmesh(*other.navmesh);
     enemies = other.enemies;
 
@@ -30,6 +34,11 @@ SingleSide& SingleSide::operator=(const SingleSide& other) noexcept {
 SingleSide& SingleSide::operator=(SingleSide&& other) noexcept {
     if (this == &other) return *this;
     clear();
+
+    for (Obstacle* obst : other.obstacles) {
+        obstacles.push_back(obst);
+    }
+    other.obstacles.clear(); // unlink all other pointers to prevent deletion
 
     navmesh = other.navmesh;
     enemies = std::move(other.enemies);
@@ -49,4 +58,10 @@ void SingleSide::update(float dt) {
 void SingleSide::clear() {
     delete navmesh;
     navmesh = nullptr;
+
+    while (obstacles.empty() == false) {
+        Obstacle* obstacle = obstacles.back();
+        obstacles.pop_back();
+        delete obstacle;
+    }
 }

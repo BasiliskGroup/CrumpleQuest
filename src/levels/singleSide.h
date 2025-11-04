@@ -2,10 +2,12 @@
 #define SINGLE_SIDE_H
 
 #include "levels/navmesh.h"
+#include "levels/obstacle.h"
 #include "character/enemy.h"
 
 class SingleSide {  
 private:
+    std::vector<Obstacle*> obstacles;
     Navmesh* navmesh;
     std::vector<Enemy> enemies;
 

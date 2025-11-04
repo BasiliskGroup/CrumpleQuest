@@ -13,13 +13,6 @@
 
 class Paper;
 
-enum RoomTypes {
-    SPAWN,
-    BASIC,
-    BOSS,
-    NONE = -1
-};
-
 class Floor {
 private:
     // store infomation about the grid

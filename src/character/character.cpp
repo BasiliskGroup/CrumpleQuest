@@ -8,3 +8,7 @@ Character::Character(int health, Weapon* weapon) {
 void Character::onDamage(int damage) {
     health -= damage;
 }
+
+void Character::onDeath() {
+    delete this;
+}
