@@ -1,4 +1,4 @@
-#include <basilisk/basilisk.h>
+#include "util/includes.h"
 
 int main() {
     Engine* engine = new Engine(800, 800, "Basilisk");
@@ -18,7 +18,7 @@ int main() {
 
     std::vector<uint> rings = { 4, 8, 11 };
 
-    for (vec2& vertex : vertices) {
+    for (glm::vec2& vertex : vertices) {
         vertex /= 50;
         new Node2D(scene2D, { .mesh=quad, .material=material1, .position=vertex, .scale={ 0.1, 0.1 } });
     }

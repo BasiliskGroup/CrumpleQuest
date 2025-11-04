@@ -1,32 +1,29 @@
+// util/includes.h
 #ifndef INCLUDES_H
 #define INCLUDES_H
 
-#include "constants.h"
+#include <basilisk/basilisk.h>
+using namespace bsk;
 
-// glm
+#include <earcut/earcut.hpp>
+
+#include "util/constants.h"
 #include <glm/glm.hpp>
 
-// look for future changes to glm experimental
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_operation.hpp>
 #include <glm/gtx/hash.hpp>
-#include <glm/gtx/quaternion.hpp> // these are different 
-#include <glm/gtc/quaternion.hpp> // ^
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-
-// data structures
 #include <array>
 #include <vector>
 #include <queue>
 #include <set>
-
+#include <unordered_map>
 #include <algorithm>
 
-// earcut
-#include <earcut/earcut.hpp>
-
-// shorthand names
 using vec2 = glm::vec2;
 using vec3 = glm::vec3;
 using vec4 = glm::vec4;
@@ -38,9 +35,10 @@ using quat = glm::quat;
 using uint = unsigned int;
 using ushort = unsigned short;
 
-// AoS Types
 using Vec2Triplet = std::array<vec2, 3>;
 using Vec2Pair = std::array<vec2, 2>;
 using FloatPair = std::array<float, 2>;
+
+// Proper hash functor for glm::vec2
 
 #endif

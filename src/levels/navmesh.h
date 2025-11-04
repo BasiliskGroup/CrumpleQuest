@@ -8,16 +8,21 @@ class Navmesh {
 private:
     using Edge = std::pair<vec2, vec2>;
 
+    struct Vec2Hash {
+        std::size_t operator()(const vec2& v) const noexcept {
+            return std::hash<float>()(v.x) ^ (std::hash<float>()(v.y) << 1);
+        }
+    };
+
     // Custom hash function for Edge
     struct EdgeHash {
         std::size_t operator()(const Edge& e) const noexcept {
-            std::hash<glm::vec2> vec2Hash;
-            // combine both vector hashes (standard hash combine pattern)
-            std::size_t h1 = vec2Hash(e.first);
-            std::size_t h2 = vec2Hash(e.second);
+            std::size_t h1 = Vec2Hash{}(e.first);
+            std::size_t h2 = Vec2Hash{}(e.second);
             return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
         }
     };
+
 
     // Optional: custom equality (only needed if float comparison tolerance required)
     struct EdgeEqual {

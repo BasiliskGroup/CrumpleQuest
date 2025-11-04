@@ -1,6 +1,8 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
+#include <basilisk/basilisk.h>
+
 class Weapon;
 
 class Character {
