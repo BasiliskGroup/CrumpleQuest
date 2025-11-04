@@ -1,7 +1,7 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
-#include <basilisk/basilisk.h>
+#include "util/includes.h"
 
 class Weapon;
 
@@ -11,10 +11,11 @@ protected:
     int health;
     float speed;
     Weapon* weapon;
+    Node2D* node;
 
 public:
-    Character(int maxHealth, Weapon* weapon);
-    ~Character() = default; // dont delete weapon
+    Character(int maxHealth, Node2D* node, Weapon* weapon);
+    ~Character();
 
     void onDamage(int damage);
     void onDeath();
@@ -33,8 +34,7 @@ public:
     void setSpeed(float speed) { this->speed = speed; }
     void setWeapon(Weapon* weapon) { this->weapon = weapon; }
 
-    // virtual methods
-    virtual void move() = 0;
+    void move(float dt);
 };
 
 #endif

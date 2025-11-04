@@ -8,10 +8,10 @@ private:
     int money = 0;
 
 public:
-    Player(int health, Weapon* weapon);
+    Player(int health, Node2D* node, Weapon* weapon);
     
     void onDamage(int damage);
-    void move() override;
+    void move(float dt);
 };
 
 #endif

@@ -10,11 +10,11 @@ private:
     
 
 public:
-    Enemy(int health, Weapon* weapon, AI* ai);
+    Enemy(int health, Node2D* node, Weapon* weapon, AI* ai);
     ~Enemy();
 
     void onDamage(int damage);
-    void move() override;
+    void move(float dt);
 };
 
 #endif
