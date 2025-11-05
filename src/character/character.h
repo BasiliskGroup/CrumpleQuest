@@ -14,7 +14,7 @@ protected:
     Node2D* node;
 
 public:
-    Character(int maxHealth, Node2D* node, Weapon* weapon);
+    Character(int maxHealth, float speed, Node2D* node, Weapon* weapon);
     ~Character();
 
     void onDamage(int damage);

@@ -47,6 +47,9 @@ bool Game::update(float dt) {
         player->move(dt);
     }
 
+    // update camera to correct position
+    scene->getCamera()->setPosition({0, 0});
+
     // basilisk update
     engine->update();
     scene->update(dt);

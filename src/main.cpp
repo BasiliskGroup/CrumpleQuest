@@ -13,8 +13,8 @@ int main() {
     Collider* quadCollider = new Collider(game->getScene()->getSolver(), {{0.5, 0.5}, {-0.5, 0.5}, {-0.5, -0.5}, {0.5, -0.5}});
 
     // create player
-    Node2D* playerNode = new Node2D(game->getScene(), { .scale={1, 1}, .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .collider=quadCollider});
-    Player* player = new Player(3, playerNode, nullptr);
+    Node2D* playerNode = new Node2D(game->getScene(), { .scale={1, 1}, .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .collider=quadCollider, .velocity={1, 1, 0}});
+    Player* player = new Player(3, 3, playerNode, nullptr);
     game->setPlayer(player);
 
     // Main loop continues as long as the window is open

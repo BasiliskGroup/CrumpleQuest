@@ -10,7 +10,7 @@ private:
     
 
 public:
-    Enemy(int health, Node2D* node, Weapon* weapon, AI* ai);
+    Enemy(int health, float speed, Node2D* node, Weapon* weapon, AI* ai);
     ~Enemy();
 
     void onDamage(int damage);

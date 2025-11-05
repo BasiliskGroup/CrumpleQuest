@@ -8,7 +8,7 @@ private:
     int money = 0;
 
 public:
-    Player(int health, Node2D* node, Weapon* weapon);
+    Player(int health, float speed, Node2D* node, Weapon* weapon);
     
     void onDamage(int damage);
     void move(float dt);

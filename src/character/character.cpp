@@ -1,6 +1,6 @@
 #include "character/character.h"
 
-Character::Character(int health, Node2D* node, Weapon* weapon) : health(health), node(node), weapon(weapon) {}
+Character::Character(int health, float speed, Node2D* node, Weapon* weapon) : health(health), speed(speed), node(node), weapon(weapon) {}
 
 Character::~Character() {
      // dont delete weapon
@@ -17,6 +17,6 @@ void Character::onDeath() {
 
 void Character::move(float dt) {
     vec3 velocity = node->getVelocity();
-    velocity = (float) (1 - 10 * dt) * velocity;
+    velocity = (float) (1 - 20 * dt) * velocity;
     node->setVelocity(velocity);
 }
