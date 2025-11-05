@@ -13,6 +13,8 @@ private:
     SingleSide* curSide;
     bool isOpen;
 
+    static std::unordered_map<std::string, std::vector<Paper>> sideTemplates;
+
 public:
     Paper();
     Paper(Floor* floor, SingleSide* sideA, SingleSide* sideB, int startSide=0, bool isOpen=false);

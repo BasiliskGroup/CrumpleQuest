@@ -1,6 +1,6 @@
 #include "character/player.h"
 
-Player::Player(int health, float speed, Node2D* node, Weapon* weapon) : Character(health, speed, node, weapon) {}
+Player::Player(int health, float speed, Node2D* node, Weapon* weapon) : Character(health, speed, node, weapon, "Ally") {}
 
 void Player::onDamage(int damage) {
     Character::onDamage(damage);

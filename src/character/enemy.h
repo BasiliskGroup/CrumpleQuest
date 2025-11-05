@@ -11,7 +11,7 @@ private:
 
 public:
     Enemy(int health, float speed, Node2D* node, Weapon* weapon, AI* ai);
-    ~Enemy();
+    ~Enemy() = default;
 
     void onDamage(int damage);
     void move(const vec2& playerPos, float dt);

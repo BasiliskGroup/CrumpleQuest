@@ -1,8 +1,5 @@
 #include "levels/levels.h"
 
-// Define the static member variable (Required for Windows linker)
-std::unordered_map<RoomTypes, std::vector<Paper>> Floor::roomTemplates;
-
 Floor::Floor() : roomMap() {
     for (uint x = 0; x < FLOOR_WIDTH; x++) {
         for (uint y = 0; y < FLOOR_WIDTH; y++) {

@@ -8,7 +8,7 @@ auto onDamage = [](Character* hit) { hit->onDamage(5); };
 
 class DamageZone {
 private:
-    Character* character;
+    Character* owner;
     std::string team;
     Node2D* hitbox;
 

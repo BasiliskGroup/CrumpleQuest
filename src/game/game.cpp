@@ -1,15 +1,19 @@
-#include "game/game.h"
+#include "levels/levels.h"
 
 Game::Game() : 
     player(nullptr), 
     floor(nullptr),
     engine(nullptr),
     scene(nullptr),
+    voidScene(nullptr),
     camera(nullptr)
 {
     this->engine = new Engine(800, 800, "Crumple Quest");
     this->scene = new Scene2D(this->engine);
     this->camera = new StaticCamera2D(engine);
+
+    // used for storing template nodes
+    this->voidScene = new Scene2D(this->engine);
     
     this->scene->getSolver()->setGravity(0);
     this->scene->setCamera(this->camera);
@@ -45,6 +49,7 @@ Game::~Game() {
     delete engine; engine = nullptr;
     delete scene; scene = nullptr;
     delete camera; camera = nullptr;
+    delete voidScene; voidScene = nullptr;
 }
 
 void Game::update(float dt) {

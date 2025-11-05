@@ -3,12 +3,15 @@
 
 #include "util/includes.h"
 #include "character/player.h"
-#include "levels/levels.h"
+#include "character/enemy.h"
+
+class Floor;
 
 class Game {
 private:
     Engine* engine;
     Scene2D* scene;
+    Scene2D* voidScene;
     StaticCamera2D* camera;
 
     std::unordered_map<std::string, Collider*> colliders;
@@ -39,6 +42,7 @@ public:
 
     Engine*& getEngine() { return engine; }
     Scene2D*& getScene() { return scene; }
+    Scene2D* getVoidScene() { return voidScene; }
 
     // setters
     void setPlayer(Player* player) { this->player = player; }
