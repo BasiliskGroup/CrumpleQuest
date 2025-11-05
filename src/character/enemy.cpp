@@ -12,6 +12,12 @@ void Enemy::onDamage(int damage) {
     Character::onDamage(damage);
 }
 
-void Enemy::move(float dt) {
-    
+void Enemy::move(const vec2& playerPos, float dt) {
+    Character::move(dt);
+
+    vec3 dir = { playerPos - getPosition(), 0 };
+    if (glm::length2(dir) < EPSILON) return;
+    dir = (float) speed * glm::normalize(dir);
+
+    setVelocity(dir);
 }

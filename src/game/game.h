@@ -18,6 +18,7 @@ private:
 
     Player* player;
     Floor* floor;
+    std::vector<Enemy*> enemies;
 
 public:
     Game();
@@ -27,6 +28,8 @@ public:
     void addMaterial(std::string name, Material* material) { this->materials[name] = material; }
     void addMesh(std::string name, Mesh* mesh)             { this->meshes[name] = mesh; }
     void addCollider(std::string name, Collider* collider) { this->colliders[name] = collider; }
+
+    void addEnemy(Enemy* enemy) { this->enemies.push_back(enemy); }
     
     // getters
     Image* getImage(std::string name)       { return images[name]; }

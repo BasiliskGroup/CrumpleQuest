@@ -14,7 +14,7 @@ public:
     ~Enemy();
 
     void onDamage(int damage);
-    void move(float dt);
+    void move(const vec2& playerPos, float dt);
 };
 
 #endif

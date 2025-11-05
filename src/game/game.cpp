@@ -16,11 +16,8 @@ Game::Game() :
 }
 
 Game::~Game() {
-    delete player;
-    delete floor;
-    delete engine;
-    delete scene;
-    delete camera;
+    delete player; player = nullptr;
+    delete floor; floor = nullptr;
 
     // materials
     for (auto const& [name, material] : materials) {
@@ -40,17 +37,24 @@ Game::~Game() {
     }
     meshes.clear();
 
-    player = nullptr;
-    engine = nullptr;
-    floor = nullptr;
-    scene = nullptr;
-    camera = nullptr;
+    for (Enemy* enemy : enemies) {
+        delete enemy;
+    }
+    enemies.clear();
+
+    delete engine; engine = nullptr;
+    delete scene; scene = nullptr;
+    delete camera; camera = nullptr;
 }
 
 void Game::update(float dt) {
     // entity update
     if (player != nullptr) {
         player->move(dt);
+    }
+
+    for (Enemy* enemy : enemies) {
+        enemy->move(player->getPosition(), dt);
     }
 
     // basilisk update

@@ -28,6 +28,12 @@ public:
     float& getSpeed() { return speed; }
     Weapon*& getWeapon() { return weapon; }
 
+    vec2 getPosition() { return node->getPosition(); }
+    vec3 getVelocity() { return node->getVelocity(); }
+
+    void setVelocity(const vec3& velocity) { this->node->setVelocity(velocity); }
+    void setPosition(const vec2& position) { this->node->setPosition(position); }
+
     // setters
     void setMaxMealth(int maxHealth) { this->maxHealth = maxHealth; }
     void setHealth(int health) { this->health = health; }
