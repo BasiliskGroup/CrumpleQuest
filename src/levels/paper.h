@@ -7,6 +7,7 @@
 class Paper {
 public:
     static std::unordered_map<std::string, Paper> templates;
+    static std::unordered_map<RoomTypes, std::vector<std::string>> papers;
 
 private:
     std::pair<SingleSide*, SingleSide*> sides;
@@ -27,6 +28,7 @@ public:
     void open();
 
     static void generateTemplates(Game* game);
+    static const Paper& getRandomTemplate(RoomTypes type);
 
 private:
     void clear();

@@ -20,8 +20,8 @@ void Floor::loadRooms() {
 
     for (uint x = 0; x < FLOOR_WIDTH; x++) {
         for (uint y = 0; y < FLOOR_WIDTH; y++) {
-            uint choice = randrange(0, roomTemplates[playMap[x][y]].size());
-            roomMap[x][y] = roomTemplates[playMap[x][y]][choice];
+            if (playMap[x][y] == NULL_ROOM) continue;
+            roomMap[x][y] = Paper::getRandomTemplate(playMap[x][y]);
         }
     }
 }

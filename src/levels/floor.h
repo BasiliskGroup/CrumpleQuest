@@ -56,8 +56,6 @@ private:
     Position playerPos;
     SquareMap<Paper> roomMap;
 
-    static std::unordered_map<RoomTypes, std::vector<Paper>> roomTemplates;
-
 public:
     Floor();
     ~Floor() = default;
