@@ -1,6 +1,6 @@
 #include "weapon/projectileZone.h"
 
-ProjectileZone::ProjectileZone(Character* owner, Node2D* hitbox, int damage, float life, int ricochet=0, bool friendlyDamage=false, bool selfDamage=false) :
+ProjectileZone::ProjectileZone(Character* owner, Node2D* hitbox, int damage, float life, int ricochet, bool friendlyDamage, bool selfDamage) :
     DamageZone(owner, hitbox, damage, life, friendlyDamage, selfDamage),
     ricochet(ricochet)
 {}

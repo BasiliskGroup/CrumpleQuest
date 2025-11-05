@@ -1,6 +1,6 @@
 #include "levels/levels.h"
 
-SingleSide::SingleSide() {
+SingleSide::SingleSide() : navmesh(nullptr) {
     std::vector<vec2> mesh = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
     navmesh = new Navmesh(mesh);
 }
@@ -15,14 +15,15 @@ SingleSide::SingleSide(SingleSide&& other) : navmesh(nullptr) {
 
 SingleSide::~SingleSide() {
     delete navmesh;
+    navmesh = nullptr;
 }
 
 SingleSide& SingleSide::operator=(const SingleSide& other) noexcept {
     if (this == &other) return *this;
     clear();
 
-    for (const Obstacle* obst : other.obstacles) {
-        obstacles.push_back(new Obstacle(*obst));
+    for (const Node2D* node : other.obstacles) {
+        obstacles.push_back(new Node2D(*node));
     }
 
     navmesh = new Navmesh(*other.navmesh);
@@ -35,7 +36,7 @@ SingleSide& SingleSide::operator=(SingleSide&& other) noexcept {
     if (this == &other) return *this;
     clear();
 
-    for (Obstacle* obst : other.obstacles) {
+    for (Node2D* obst : other.obstacles) {
         obstacles.push_back(obst);
     }
     other.obstacles.clear(); // unlink all other pointers to prevent deletion
@@ -43,6 +44,7 @@ SingleSide& SingleSide::operator=(SingleSide&& other) noexcept {
     navmesh = other.navmesh;
     enemies = std::move(other.enemies);
 
+    other.navmesh = nullptr;
     other.clear();
     return *this;
 }
@@ -60,8 +62,8 @@ void SingleSide::clear() {
     navmesh = nullptr;
 
     while (obstacles.empty() == false) {
-        Obstacle* obstacle = obstacles.back();
+        Node2D* node = obstacles.back();
         obstacles.pop_back();
-        delete obstacle;
+        delete node;
     }
 }

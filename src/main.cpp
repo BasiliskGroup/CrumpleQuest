@@ -1,5 +1,6 @@
 #include "util/includes.h"
 #include "game/game.h"
+#include "levels/levels.h"
 
 int main() {
     // create game
@@ -12,6 +13,9 @@ int main() {
     game->addMesh("quad", new Mesh("models/quad.obj"));
     game->addCollider("quad", new Collider(game->getScene()->getSolver(), {{0.5, 0.5}, {-0.5, 0.5}, {-0.5, -0.5}, {0.5, -0.5}}));
     game->addCollider("ugh", new Collider(game->getScene()->getSolver(), {{0.5, 0.5}, {-1, 1}, {-0.5, -0.5}, {0.5, -0.5}}));
+
+    // generate all templates
+    SingleSide::generateTemplates(game);
 
     // create player
     Node2D* playerNode = new Node2D(game->getScene(), { .scale={1, 1}, .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .collider=game->getCollider("quad") });
