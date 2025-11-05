@@ -7,17 +7,18 @@
 class Game;
 
 class SingleSide {  
+public:
+    static std::unordered_map<std::string, SingleSide> templates;
+
 private:
     std::vector<Node2D*> obstacles;
     Navmesh* navmesh;
     std::vector<Enemy> enemies;
 
-    static std::unordered_map<std::string, SingleSide> templates;
-
 public:
     SingleSide();
-    SingleSide(const SingleSide& other);
-    SingleSide(SingleSide&& other);
+    SingleSide(const SingleSide& other) noexcept;
+    SingleSide(SingleSide&& other) noexcept;
     ~SingleSide();
 
     SingleSide& operator=(const SingleSide& other) noexcept;

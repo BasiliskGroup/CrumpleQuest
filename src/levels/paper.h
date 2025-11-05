@@ -4,22 +4,20 @@
 #include "util/includes.h"
 #include "levels/singleSide.h"
 
-class Floor;
-
 class Paper {
+public:
+    static std::unordered_map<std::string, Paper> templates;
+
 private:
-    Floor* floor;
     std::pair<SingleSide*, SingleSide*> sides;
     SingleSide* curSide;
     bool isOpen;
 
-    static std::unordered_map<std::string, std::vector<Paper>> sideTemplates;
-
 public:
     Paper();
-    Paper(Floor* floor, SingleSide* sideA, SingleSide* sideB, int startSide=0, bool isOpen=false);
-    Paper(const Paper& other) ;
-    Paper(Paper&& other);
+    Paper(SingleSide* sideA, SingleSide* sideB, int startSide=0, bool isOpen=false);
+    Paper(const Paper& other) noexcept;
+    Paper(Paper&& other) noexcept;
     ~Paper();
 
     Paper& operator=(const Paper& other) noexcept;
@@ -27,6 +25,8 @@ public:
 
     void flip();
     void open();
+
+    static void generateTemplates(Game* game);
 
 private:
     void clear();

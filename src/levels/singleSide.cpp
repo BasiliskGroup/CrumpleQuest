@@ -5,30 +5,44 @@ SingleSide::SingleSide() : navmesh(nullptr) {
     navmesh = new Navmesh(mesh);
 }
 
-SingleSide::SingleSide(const SingleSide& other) : navmesh(nullptr) {
-    *this = other;
+SingleSide::SingleSide(const SingleSide& other) noexcept : navmesh(nullptr) {
+    if (other.navmesh) navmesh = new Navmesh(*other.navmesh);
+
+    for (const Node2D* node : other.obstacles) {
+        obstacles.push_back(new Node2D(*node));
+    }
+
+    enemies = other.enemies;
 }
 
-SingleSide::SingleSide(SingleSide&& other) : navmesh(nullptr) {
-    *this = std::move(other);
+SingleSide::SingleSide(SingleSide&& other) noexcept : 
+    navmesh(other.navmesh),
+    obstacles(std::move(other.obstacles)),
+    enemies(std::move(other.enemies))
+{
+    other.navmesh = nullptr;
+    other.obstacles.clear();
 }
 
 SingleSide::~SingleSide() {
     delete navmesh;
     navmesh = nullptr;
+
+    for (Node2D* node : obstacles) delete node;
+    obstacles.clear();
 }
 
 SingleSide& SingleSide::operator=(const SingleSide& other) noexcept {
     if (this == &other) return *this;
     clear();
 
+    if (other.navmesh) navmesh = new Navmesh(*other.navmesh);
+
     for (const Node2D* node : other.obstacles) {
         obstacles.push_back(new Node2D(*node));
     }
 
-    navmesh = new Navmesh(*other.navmesh);
     enemies = other.enemies;
-
     return *this;
 }
 
@@ -36,21 +50,20 @@ SingleSide& SingleSide::operator=(SingleSide&& other) noexcept {
     if (this == &other) return *this;
     clear();
 
-    for (Node2D* obst : other.obstacles) {
-        obstacles.push_back(obst);
-    }
-    other.obstacles.clear(); // unlink all other pointers to prevent deletion
-
+    // transfer
     navmesh = other.navmesh;
+    obstacles = std::move(other.obstacles); // vector of pointers transferred
     enemies = std::move(other.enemies);
 
+    // clear other
     other.navmesh = nullptr;
-    other.clear();
+    other.obstacles.clear();
+
     return *this;
 }
 
 void SingleSide::generateNavmesh() {
-    navmesh->generateNavmesh();
+    if (navmesh) navmesh->generateNavmesh();
 }
 
 void SingleSide::update(float dt) {
@@ -61,9 +74,6 @@ void SingleSide::clear() {
     delete navmesh;
     navmesh = nullptr;
 
-    while (obstacles.empty() == false) {
-        Node2D* node = obstacles.back();
-        obstacles.pop_back();
-        delete node;
-    }
+    for (Node2D* n : obstacles) delete n;
+    obstacles.clear();
 }
