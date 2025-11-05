@@ -9,6 +9,7 @@ class Game {
 private:
     Engine* engine;
     Scene2D* scene;
+    StaticCamera2D* camera;
 
     std::unordered_map<std::string, Image*> images;
     std::unordered_map<std::string, Material*> materials;
@@ -36,8 +37,7 @@ public:
     // setters
     void setPlayer(Player* player) { this->player = player; }
 
-    bool update(float dt);
-    const vec2& playerPos();
+    void update(float dt);
 };
 
 #endif

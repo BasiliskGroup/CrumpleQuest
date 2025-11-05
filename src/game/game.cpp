@@ -4,11 +4,15 @@ Game::Game() :
     player(nullptr), 
     floor(nullptr),
     engine(nullptr),
-    scene(nullptr)
+    scene(nullptr),
+    camera(nullptr)
 {
     this->engine = new Engine(800, 800, "Crumple Quest");
-    this->scene = new Scene2D(this->engine);    
+    this->scene = new Scene2D(this->engine);
+    this->camera = new StaticCamera2D(engine);
+    
     this->scene->getSolver()->setGravity(0);
+    this->scene->setCamera(this->camera);
 }
 
 Game::~Game() {
@@ -16,6 +20,7 @@ Game::~Game() {
     delete floor;
     delete engine;
     delete scene;
+    delete camera;
 
     // materials
     for (auto const& [name, material] : materials) {
@@ -39,24 +44,18 @@ Game::~Game() {
     engine = nullptr;
     floor = nullptr;
     scene = nullptr;
+    camera = nullptr;
 }
 
-bool Game::update(float dt) {
+void Game::update(float dt) {
     // entity update
     if (player != nullptr) {
         player->move(dt);
     }
-
-    // update camera to correct position
-    scene->getCamera()->setPosition({0, 0});
 
     // basilisk update
     engine->update();
     scene->update(dt);
     scene->render();
     engine->render();
-}
-
-const vec2& Game::playerPos() {
-    
 }
