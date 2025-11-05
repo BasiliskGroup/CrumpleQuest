@@ -5,10 +5,9 @@
 
 class ContactZone : public DamageZone {
 public:
-    ContactZone();
-    ~ContactZone();
+    ContactZone(Character* owner, Node2D* hitbox, int damage, float life, bool friendlyDamage=false, bool selfDamage=false);
 
-    void update(float dt) override;
+    bool update(float dt);
 };
 
 #endif

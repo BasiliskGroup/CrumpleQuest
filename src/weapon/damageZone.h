@@ -9,7 +9,6 @@ auto onDamage = [](Character* hit) { hit->onDamage(5); };
 class DamageZone {
 private:
     Character* owner;
-    std::string team;
     Node2D* hitbox;
 
     int damage;
@@ -18,16 +17,19 @@ private:
     bool friendlyDamage = false;
     bool selfDamage = false;
 
-    // onExpire()
-    // onHit(Character* hit)
+    std::function<void()> onExpire;
+    std::function<void(Character*)> onHit;
     
 public:
-    DamageZone();
+    DamageZone(Character* owner, Node2D* hitbox, int damage, float life, bool friendlyDamage=false, bool selfDamage=false);
     ~DamageZone();
 
-    virtual void update(float dt);
-    void setOnExpire();
-    void setOnHit();
+    void hit(Character* other);
+    bool update(float dt);
+
+    // setters
+    void setOnHit(std::function<void(Character*)> func) { onHit = std::move(func); }
+    void setOnExpire(std::function<void()> func) { onExpire = std::move(func); }
 };
 
 #endif

@@ -16,7 +16,7 @@ private:
 
 public:
     Weapon(Character* owner, DamageZone zone);
-    ~Weapon();
+    ~Weapon() = default;
 
     void attack(const vec2& origin, const vec2& direction);
 
