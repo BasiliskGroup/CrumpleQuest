@@ -11,6 +11,7 @@ private:
     Scene2D* scene;
     StaticCamera2D* camera;
 
+    std::unordered_map<std::string, Collider*> colliders;
     std::unordered_map<std::string, Image*> images;
     std::unordered_map<std::string, Material*> materials;
     std::unordered_map<std::string, Mesh*> meshes;
@@ -22,14 +23,16 @@ public:
     Game();
     ~Game();
 
-    void addImage(std::string name, Image* image) { this->images[name] = image; }
+    void addImage(std::string name, Image* image)          { this->images[name] = image; }
     void addMaterial(std::string name, Material* material) { this->materials[name] = material; }
-    void addMesh(std::string name, Mesh* mesh) { this->meshes[name] = mesh; }
+    void addMesh(std::string name, Mesh* mesh)             { this->meshes[name] = mesh; }
+    void addCollider(std::string name, Collider* collider) { this->colliders[name] = collider; }
     
     // getters
-    Image* getImage(std::string name) { return images[name]; }
+    Image* getImage(std::string name)       { return images[name]; }
     Material* getMaterial(std::string name) { return materials[name]; }
-    Mesh* getMesh(std::string name) { return meshes[name]; }
+    Mesh* getMesh(std::string name)         { return meshes[name]; }
+    Collider* getCollider(std::string name) { return colliders[name]; }
 
     Engine*& getEngine() { return engine; }
     Scene2D*& getScene() { return scene; }

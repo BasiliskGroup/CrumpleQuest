@@ -54,8 +54,18 @@ target_link_libraries(game PUBLIC
 # ======================================================
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU" AND NOT CMAKE_CROSSCOMPILING)
-    target_compile_options(game PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
-    target_link_options(game PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+    target_compile_options(game PRIVATE
+        -fsanitize=address
+        -fno-omit-frame-pointer
+        -g
+    )
+    target_link_options(game PRIVATE
+        -fsanitize=address
+        -fno-omit-frame-pointer
+    )
+
+    # Optional: also detect memory leaks
+    set(ENV{ASAN_OPTIONS} "detect_leaks=1:halt_on_error=0:verbosity=1")
 endif()
 
 # ======================================================
