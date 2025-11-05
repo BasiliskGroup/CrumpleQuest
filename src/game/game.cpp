@@ -6,11 +6,9 @@ Game::Game() :
     engine(nullptr),
     scene(nullptr)
 {
-    this->engine = new Engine(800, 600, "Crumple Quest");
-    this->scene = new Scene2D(this->engine);
-    this->player = new Player(3, nullptr, nullptr); // TODO add weapon
-    // this->floor = new Floor();
-    
+    this->engine = new Engine(800, 800, "Crumple Quest");
+    this->scene = new Scene2D(this->engine);    
+    this->scene->getSolver()->setGravity(0);
 }
 
 Game::~Game() {
@@ -18,6 +16,24 @@ Game::~Game() {
     delete floor;
     delete engine;
     delete scene;
+
+    // materials
+    for (auto const& [name, material] : materials) {
+        delete material;
+    }
+    materials.clear();
+
+    // images
+    for (auto const& [name, image] : images) {
+        delete image;
+    }
+    images.clear();
+
+    // meshes
+    for (auto const& [name, mesh] : meshes) {
+        delete mesh;
+    }
+    meshes.clear();
 
     player = nullptr;
     engine = nullptr;
@@ -27,7 +43,9 @@ Game::~Game() {
 
 bool Game::update(float dt) {
     // entity update
-    // player->move(dt);
+    if (player != nullptr) {
+        player->move(dt);
+    }
 
     // basilisk update
     engine->update();

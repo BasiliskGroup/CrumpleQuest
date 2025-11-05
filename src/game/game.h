@@ -10,6 +10,10 @@ private:
     Engine* engine;
     Scene2D* scene;
 
+    std::unordered_map<std::string, Image*> images;
+    std::unordered_map<std::string, Material*> materials;
+    std::unordered_map<std::string, Mesh*> meshes;
+
     Player* player;
     Floor* floor;
 
@@ -17,8 +21,20 @@ public:
     Game();
     ~Game();
 
+    void addImage(std::string name, Image* image) { this->images[name] = image; }
+    void addMaterial(std::string name, Material* material) { this->materials[name] = material; }
+    void addMesh(std::string name, Mesh* mesh) { this->meshes[name] = mesh; }
+    
+    // getters
+    Image* getImage(std::string name) { return images[name]; }
+    Material* getMaterial(std::string name) { return materials[name]; }
+    Mesh* getMesh(std::string name) { return meshes[name]; }
+
     Engine*& getEngine() { return engine; }
     Scene2D*& getScene() { return scene; }
+
+    // setters
+    void setPlayer(Player* player) { this->player = player; }
 
     bool update(float dt);
     const vec2& playerPos();

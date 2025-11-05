@@ -19,5 +19,5 @@ void Player::move(float dt) {
     // if the player isn't pressing keys
     if (glm::length2(dir) < EPSILON) return;
 
-    node->setVelocity(node->getVelocity() + vec3{ dir.x, dir.y, 0 });
+    node->setVelocity((float) this->speed * vec3{ dir.x, dir.y, 0 });
 }

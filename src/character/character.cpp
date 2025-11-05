@@ -17,6 +17,6 @@ void Character::onDeath() {
 
 void Character::move(float dt) {
     vec3 velocity = node->getVelocity();
-    velocity = (float) (1 - 0.9 * dt) * velocity;
+    velocity = (float) (1 - 10 * dt) * velocity;
     node->setVelocity(velocity);
 }

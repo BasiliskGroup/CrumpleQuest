@@ -2,7 +2,20 @@
 #include "game/game.h"
 
 int main() {
+    // create game
     Game* game = new Game();
+
+    // add resources
+    game->addImage("man", new Image("textures/man.png"));
+    game->addMaterial("man", new Material({ 1, 1, 1 }, game->getImage("man")));
+    game->addMesh("quad", new Mesh("models/quad.obj"));
+
+    Collider* quadCollider = new Collider(game->getScene()->getSolver(), {{0.5, 0.5}, {-0.5, 0.5}, {-0.5, -0.5}, {0.5, -0.5}});
+
+    // create player
+    Node2D* playerNode = new Node2D(game->getScene(), { .scale={1, 1}, .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .collider=quadCollider});
+    Player* player = new Player(3, playerNode, nullptr);
+    game->setPlayer(player);
 
     // Main loop continues as long as the window is open
     while (game->getEngine()->isRunning()) {
