@@ -7,10 +7,18 @@ std::unordered_map<RoomTypes, std::vector<std::string>> Paper::papers;
 void Paper::generateTemplates(Game* game) {
     Scene2D* voidScene = game->getVoidScene();
 
+    // ---------------------
+    // create templates
+    // ---------------------
+
     templates["empty"] = Paper(
         new SingleSide(SingleSide::templates["empty"]),
         new SingleSide(SingleSide::templates["empty"])
     );
+
+    // ---------------------
+    // label templates
+    // ---------------------
 
     papers = {
         {SPAWN_ROOM, {

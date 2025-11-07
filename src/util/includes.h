@@ -5,8 +5,6 @@
 #include <basilisk/basilisk.h>
 using namespace bsk;
 
-#include <earcut/earcut.hpp>
-
 #include "util/constants.h"
 #include <glm/glm.hpp>
 

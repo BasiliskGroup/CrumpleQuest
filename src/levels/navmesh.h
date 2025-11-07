@@ -94,6 +94,9 @@ public:
     void getPath(std::vector<vec2>& path, vec2 start, vec2 dest);
     void generateNavmesh();
 
+    static void earcut(const std::vector<std::vector<vec2>>& polygon, std::vector<uint>& indices);
+    static void convertToMesh(const std::vector<std::vector<vec2>>& polygon, std::vector<uint>& indices, std::vector<float>& data);
+
 private:
     void earcut();
     void buildGraph();

@@ -42,19 +42,8 @@ uint Navmesh::addObstacle(std::vector<vec2> obstacleMesh) {
  * 
  */
 void Navmesh::earcut() {
-    // convert into a format that works for earcut
-    std::vector<std::vector<std::array<double, 2>>> polygon;
-    size_t start = 0;
-    for (auto end : rings) {
-        std::vector<std::array<double, 2>> ring;
-        for (size_t i = start; i < end; ++i)
-            ring.push_back({ mesh[i].x, mesh[i].y });
-        polygon.push_back(std::move(ring));
-        start = end;
-    }
-
-    // earcut
-    auto indices = mapbox::earcut<uint32_t>(polygon);
+    std::vector<uint> indices;
+    // Navmesh::earcutMesh(mesh, rings, indices);
 
     // construct triangles list
     for (uint i = 0; i < indices.size() / 3; i++) {

@@ -77,29 +77,29 @@ while running:
     # Draw triangles
     for tri in graph.tris:
         pygame.draw.polygon(screen, TRI_COLOR, tri.verts, 0)
-        pygame.draw.polygon(screen, POLY_OUTLINE, tri.verts, 1)
+        # pygame.draw.polygon(screen, POLY_OUTLINE, tri.verts, 1)
 
     # Draw polygon outlines
-    pygame.draw.polygon(screen, POLY_OUTLINE, verts[:4], 2)
-    pygame.draw.polygon(screen, POLY_OUTLINE, verts[4:8], 2)
+    # pygame.draw.polygon(screen, POLY_OUTLINE, verts[:4], 2)
+    # pygame.draw.polygon(screen, POLY_OUTLINE, verts[4:8], 2)
 
-    # Draw A* path
-    for i in range(len(a_star_result) - 1):
-        pygame.draw.line(screen, POLY_OUTLINE, a_star_result[i], a_star_result[i + 1], 2)
+    # # Draw A* path
+    # for i in range(len(a_star_result) - 1):
+    #     pygame.draw.line(screen, POLY_OUTLINE, a_star_result[i], a_star_result[i + 1], 2)
         
-    # Draw funnel path
+    # # Draw funnel path
     for i in range(len(final_path) - 1):
         pygame.draw.line(screen, VERTEX_COLOR, final_path[i], final_path[i + 1], 3)
 
-    # Draw start and end
+    # # Draw start and end
     pygame.draw.circle(screen, START_COLOR, start_pos, 6)
     pygame.draw.circle(screen, END_COLOR, end_pos, 6)
     
-    # Portals
-    for left, right in portals:
-        pygame.draw.circle(screen, (255, 100, 255), left, 4)
-        pygame.draw.circle(screen, (255, 100, 0), right, 4)
-        pygame.draw.line(screen, START_COLOR, left, right, 2)
+    # # Portals
+    # for left, right in portals:
+    #     pygame.draw.circle(screen, (255, 100, 255), left, 4)
+    #     pygame.draw.circle(screen, (255, 100, 0), right, 4)
+    #     pygame.draw.line(screen, START_COLOR, left, right, 2)
 
     pygame.display.flip()
     clock.tick(60)
