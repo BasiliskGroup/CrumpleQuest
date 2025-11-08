@@ -21,26 +21,31 @@ private:
         bool contains(const vec2& pos);
     };
 
-    struct PaperNode {
-        std::vector<vec2> verts;
+    struct PaperMesh {
+        std::vector<Vert> verts;
         Mesh* mesh;
-        Node2D* node;
 
-        PaperNode(const std::vector<vec2>& verts);
+        PaperMesh();
+        PaperMesh(const std::vector<Vert>& verts);
+        ~PaperMesh();
     };
     
     // tracking folding
     std::vector<Fold> folds;
-    std::vector<vec2> meshVertices = {{10, 10}, {-10, 10}, {-10, -10}, {10, -10}};
+    Fold* activeFold = nullptr;
+
+    // side pairs
+    std::pair<SingleSide*, SingleSide*> sides;
+    std::pair<PaperMesh*, PaperMesh*> paperMeshes;
+    short curSide;
 
     // tracking gameplay
-    std::pair<SingleSide*, SingleSide*> sides;
-    SingleSide* curSide;
     bool isOpen;
 
 public:
     Paper();
-    Paper(SingleSide* sideA, SingleSide* sideB, int startSide=0, bool isOpen=false);
+    Paper(Mesh* mesh);
+    Paper(SingleSide* sideA, SingleSide* sideB, short startSide=0, bool isOpen=false);
     Paper(const Paper& other) noexcept;
     Paper(Paper&& other) noexcept;
     ~Paper();
@@ -48,11 +53,16 @@ public:
     Paper& operator=(const Paper& other) noexcept;
     Paper& operator=(Paper&& other) noexcept;
 
+    // getters
+    Mesh* getMesh();
+    SingleSide* getSingleSide() { return curSide ? sides.second : sides.first; }
+
     void flip();
     void open();
 
     static void generateTemplates(Game* game);
     static const Paper& getRandomTemplate(RoomTypes type);
+    static void flattenVertices(const std::vector<Vert>& vertices, std::vector<float>& data);
 
 private:
     void clear();

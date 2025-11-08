@@ -6,7 +6,9 @@ Game::Game() :
     engine(nullptr),
     scene(nullptr),
     voidScene(nullptr),
-    camera(nullptr)
+    camera(nullptr),
+    paper(nullptr),
+    paperNode(nullptr)
 {
     // basilisk preamble
     this->engine = new Engine(800, 800, "Crumple Quest");
@@ -17,9 +19,6 @@ Game::Game() :
     
     // storing templates
     this->voidScene = new Scene2D(this->engine);
-
-    // initialize first paper
-    this->paper = new Paper();
 }
 
 Game::~Game() {
@@ -83,12 +82,24 @@ void Game::update(float dt) {
     }
 
     // add paper stuff to the scene
+    if (paper) {
+        if (paperNode == nullptr) {
+            paperNode = new Node2D(scene, { .mesh=meshes["quad"], .material=materials["paper"] });
+        }
+        if (paperNode->getMesh() != paper->getMesh()) {
+            paperNode->setMesh(paper->getMesh());
+        }
+
+    } else {
+        if (paperNode) {
+            delete paperNode;
+            paperNode = nullptr;
+        }
+    }
 
     // basilisk update
     engine->update();
     scene->update(dt);
     scene->render();
     engine->render();
-
-    // delete paper stuff 
 }

@@ -38,3 +38,16 @@ const Paper& Paper::getRandomTemplate(RoomTypes type) {
     uint index = randrange(0, numTemplates);
     return templates[papers[type][index]];
 }
+
+void Paper::flattenVertices(const std::vector<Vert>& vertices, std::vector<float>& data) {
+    data.clear();
+    data.reserve(vertices.size() * 5);
+
+    for (const auto& v : vertices) {
+        data.push_back(v.pos.x);
+        data.push_back(v.pos.y);
+        data.push_back(0.0f);
+        data.push_back(v.uv.x);
+        data.push_back(v.uv.y);
+    }
+}

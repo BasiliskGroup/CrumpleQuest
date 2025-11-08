@@ -1,25 +1,48 @@
 #include "levels/levels.h"
 
 Paper::Paper() 
-    : curSide(nullptr), isOpen(false) 
+    : curSide(0), isOpen(false) 
 {
     sides = { nullptr, nullptr };
 }
 
-Paper::Paper(SingleSide* sideA, SingleSide* sideB, int startSide, bool isOpen) : isOpen(isOpen) {
+Paper::Paper(Mesh* mesh) : 
+    curSide(0), 
+    isOpen(false), 
+    sides(nullptr, nullptr), 
+    paperMeshes(nullptr, nullptr) 
+{
+    const auto& meshVerts = mesh->getVertices();
+
+    std::vector<Vert> verts;
+    for (uint i = 0; i < meshVerts.size(); i += 5) {
+        // no i + 2 since that is z and we're flat
+        verts.push_back({ { meshVerts[i + 0], meshVerts[i + 1] }, { meshVerts[i + 2], meshVerts[i + 3] } });
+    }
+    paperMeshes.first = new PaperMesh(verts);
+
+    // reverse x direction for other side of paper
+    for (Vert& v : verts) {
+        v.pos.x = -v.pos.x;
+        // TODO check if we need to invert UVs
+    }
+    paperMeshes.second = new PaperMesh(verts);
+}
+
+Paper::Paper(SingleSide* sideA, SingleSide* sideB, short startSide, bool isOpen) : isOpen(isOpen) {
     sides = { sideA, sideB };
-    curSide = startSide == 0 ? sideA : sideB;
+    curSide = startSide;
 }
 
 Paper::Paper(const Paper& other) noexcept
-    : curSide(nullptr), isOpen(false)
+    : curSide(0), isOpen(false)
 {
     sides = { nullptr, nullptr };
     *this = other;
 }
 
 Paper::Paper(Paper&& other) noexcept
-    : curSide(nullptr), isOpen(false)
+    : curSide(0), isOpen(false)
 {
     sides = { nullptr, nullptr };
     *this = std::move(other);
@@ -38,10 +61,7 @@ Paper& Paper::operator=(const Paper& other) noexcept {
     if (other.sides.second)
         sides.second = new SingleSide(*other.sides.second);
 
-    if (other.curSide == nullptr)
-        curSide = nullptr;
-    else
-        curSide = (other.curSide == other.sides.first ? sides.first : sides.second);
+    curSide = other.curSide;
 
     isOpen = other.isOpen;
     return *this;
@@ -58,8 +78,6 @@ Paper& Paper::operator=(Paper&& other) noexcept {
 
     // clear other
     other.sides = { nullptr, nullptr };
-    other.curSide = nullptr;
-    other.isOpen = false;
 
     return *this;
 }
@@ -76,7 +94,9 @@ void Paper::clear() {
     delete sides.first;
     delete sides.second;
     sides = { nullptr, nullptr };
-    curSide = nullptr;
+    delete paperMeshes.first;
+    delete paperMeshes.second;
+    paperMeshes = { nullptr, nullptr };
     isOpen = true;
 }
 
@@ -105,5 +125,23 @@ bool Paper::Fold::contains(const vec2& pos) {
 }
 
 void Paper::initFolds() {
-    folds.push_back(Fold(meshVertices, {0, 0}, 0));
+    // folds.push_back(Fold(meshVerts, {0, 0}, 0));
+}
+
+Paper::PaperMesh::PaperMesh() : mesh(nullptr), verts() {}
+
+Paper::PaperMesh::PaperMesh(const std::vector<Vert>& verts) : mesh(nullptr), verts(verts) {
+    std::vector<float> data; 
+    Paper::flattenVertices(verts, data);
+    mesh = new Mesh(data);
+}
+
+Paper::PaperMesh::~PaperMesh() {
+    delete mesh; mesh = nullptr;
+}
+
+Mesh* Paper::getMesh() { 
+    PaperMesh* curMesh = curSide ? paperMeshes.second : paperMeshes.first; 
+    if (curMesh == nullptr) return nullptr;
+    return curMesh->mesh;
 }

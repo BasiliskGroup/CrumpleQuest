@@ -26,6 +26,7 @@ private:
 
     // rendering paper
     Paper* paper;
+    Node2D* paperNode;
 
     // track mouse inputs
     bool leftWasDown = false;
@@ -51,9 +52,11 @@ public:
     Engine*& getEngine() { return engine; }
     Scene2D*& getScene() { return scene; }
     Scene2D* getVoidScene() { return voidScene; }
+    Paper* getPaper() { return paper; }
 
     // setters
     void setPlayer(Player* player) { this->player = player; }
+    void setPaper(Paper* paper) { this->paper = paper; }
 
     void update(float dt);
 };

@@ -9,33 +9,41 @@
 int main() {
     Game* game = new Game();
 
+    // image
     game->addImage("man", new Image("textures/man.png"));
     game->addImage("paper", new Image("textures/paper.png"));
     game->addImage("box", new Image("textures/container.jpg"));
+
+    // material
     game->addMaterial("man", new Material({ 1, 1, 1 }, game->getImage("man")));
     game->addMaterial("paper", new Material({ 1, 1, 1 }, game->getImage("paper")));
     game->addMaterial("box", new Material({ 1, 1, 1 }, game->getImage("box")));
+
+    // mesh
     game->addMesh("quad", new Mesh("models/quad.obj"));
+    game->addMesh("paper", new Mesh("models/paper.obj"));
+
+    // collider
     game->addCollider("quad", new Collider(game->getScene()->getSolver(), {{0.5f, 0.5f}, {-0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, -0.5f}}));
     game->addCollider("ugh", new Collider(game->getScene()->getSolver(), {{0.5f, 0.5f}, {-1.f, 1.f}, {-0.5f, -0.5f}, {0.5f, -0.5f}}));
 
     // create a piece of paper for a demo
-    std::vector<std::vector<vec2>> paperDemoPolygon = {
-        {{10.0, 10.0}, {40.0, 10.0}, {40.0, 30.0}, {10.0, 30.0}},
-        {{20.0, 20.0}, {30.0, 20.0}, {30.0, 25.0}, {20.0, 25.0}},
-        {{20.0, 12.5}, {30.0, 12.5}, {27.5, 15.0}}
-    };
-    for (uint i = 0; i < paperDemoPolygon.size(); i++) {
-        for (uint j = 0; j < paperDemoPolygon.at(i).size(); j++) {
-            paperDemoPolygon[i][j] *= 0.3;
-            paperDemoPolygon[i][j] += vec2{-7.5, -6.5};
-        }   
-    }
-    std::vector<uint> paperDemoIndices;
-    std::vector<float> paperDemoData;
-    Navmesh::earcut(paperDemoPolygon, paperDemoIndices);
-    Navmesh::convertToMesh(paperDemoPolygon, paperDemoIndices, paperDemoData);
-    game->addMesh("paper", new Mesh(paperDemoData));
+    // std::vector<std::vector<vec2>> paperDemoPolygon = {
+    //     {{10.0, 10.0}, {40.0, 10.0}, {40.0, 30.0}, {10.0, 30.0}},
+    //     {{20.0, 20.0}, {30.0, 20.0}, {30.0, 25.0}, {20.0, 25.0}},
+    //     {{20.0, 12.5}, {30.0, 12.5}, {27.5, 15.0}}
+    // };
+    // for (uint i = 0; i < paperDemoPolygon.size(); i++) {
+    //     for (uint j = 0; j < paperDemoPolygon.at(i).size(); j++) {
+    //         paperDemoPolygon[i][j] *= 0.3;
+    //         paperDemoPolygon[i][j] += vec2{-7.5, -6.5};
+    //     }   
+    // }
+    // std::vector<uint> paperDemoIndices;
+    // std::vector<float> paperDemoData;
+    // Navmesh::earcut(paperDemoPolygon, paperDemoIndices);
+    // Navmesh::convertToMesh(paperDemoPolygon, paperDemoIndices, paperDemoData);
+    // game->addMesh("paper", new Mesh(paperDemoData));
 
     // create player
     Node2D* playerNode = new Node2D(game->getScene(), { .scale={1, 1}, .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .collider=game->getCollider("quad") });
@@ -60,6 +68,9 @@ int main() {
             std::cout << "  (" << p.x << ", " << p.y << ")\n";
         }
     }
+
+    // create test paper
+    game->setPaper(new Paper(game->getMesh("paper")));
 
     // background paper
     // Node2D* paper = new Node2D(game->getScene(), { .mesh=game->getMesh("paper"), .material=game->getMaterial("paper") });
