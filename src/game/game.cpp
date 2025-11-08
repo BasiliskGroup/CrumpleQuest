@@ -58,17 +58,29 @@ Game::~Game() {
 }
 
 void Game::update(float dt) {
+    // always unhide mouse 
+    this->engine->getMouse()->setVisible();
+
     // folding
     bool leftIsDown = engine->getMouse()->getLeftDown();
     vec2 mousePos = { engine->getMouse()->getX(), engine->getMouse()->getY() };
 
+    // hard code mouse to world coordinates TODO replace this with world coordinate mouse call
+    mousePos -= vec2{ 400, 400 };
+    mousePos /= 80;
+
     if (!leftWasDown && leftIsDown) { // we just clicked
         LeftStartDown = mousePos;
-        std::cout << mousePos.x << ", " << mousePos.y << std::endl;
+        
+        if (paper) {
+            paper->activateFold(mousePos);
+        }
 
     } else if (leftWasDown && !leftIsDown) { // we just let go
-        std::cout << mousePos.x << ", " << mousePos.y << std::endl;
-        
+        if (paper) {
+            paper->fold(LeftStartDown, mousePos);
+            paper->deactivateFold();
+        }
     }
     leftWasDown = leftIsDown;
 
@@ -99,7 +111,7 @@ void Game::update(float dt) {
 
     // basilisk update
     engine->update();
-    scene->update(dt);
+    scene->update(0.00001);
     scene->render();
     engine->render();
 }
