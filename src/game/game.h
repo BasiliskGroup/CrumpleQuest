@@ -4,6 +4,7 @@
 #include "util/includes.h"
 #include "character/player.h"
 #include "character/enemy.h"
+#include "levels/paper.h"
 
 class Floor;
 
@@ -22,6 +23,13 @@ private:
     Player* player;
     Floor* floor;
     std::vector<Enemy*> enemies;
+
+    // rendering paper
+    Paper* paper;
+
+    // track mouse inputs
+    bool leftWasDown = false;
+    vec2 LeftStartDown = vec2();
 
 public:
     Game();

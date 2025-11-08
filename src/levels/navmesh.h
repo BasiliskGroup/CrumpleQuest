@@ -3,6 +3,7 @@
 
 #include "util/includes.h"
 #include "util/maths.h"
+#include "levels/triangle.h"
 
 class Navmesh {
 private:
@@ -23,7 +24,6 @@ private:
         }
     };
 
-
     // Optional: custom equality (only needed if float comparison tolerance required)
     struct EdgeEqual {
         bool operator()(const Edge& a, const Edge& b) const noexcept {
@@ -31,8 +31,7 @@ private:
         }
     };
 
-    struct Triangle {
-        Vec2Triplet verts;
+    struct Triangle : public Tri {
         vec2 center;
         std::unordered_map<uint, ushort> adjacency;
         float g;
@@ -43,7 +42,6 @@ private:
 
         void reset();
         Edge operator[](size_t index) const;
-        bool contains(const vec2& pos) const;
     };
 
     // nav mesh variables (not algo)

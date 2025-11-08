@@ -3,6 +3,7 @@
 
 #include "util/includes.h"
 #include "levels/singleSide.h"
+#include "levels/triangle.h"
 
 class Paper {
 public:
@@ -10,6 +11,21 @@ public:
     static std::unordered_map<RoomTypes, std::vector<std::string>> papers;
 
 private:
+    struct Fold {
+        std::vector<Tri> triangles;
+        std::set<Fold> holds;
+        vec2 crease;
+        int layer;
+
+        Fold(const std::vector<vec2>& vertices, vec2 crease, int layer);
+        bool contains(const vec2& pos);
+    };
+    
+    // tracking folding
+    std::vector<Fold> folds;
+    std::vector<vec2> meshVertices = {{10, 10}, {-10, 10}, {-10, -10}, {10, -10}};
+
+    // tracking gameplay
     std::pair<SingleSide*, SingleSide*> sides;
     SingleSide* curSide;
     bool isOpen;
@@ -32,6 +48,7 @@ public:
 
 private:
     void clear();
+    void initFolds();
 };
 
 #endif

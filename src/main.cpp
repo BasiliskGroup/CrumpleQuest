@@ -43,7 +43,7 @@ int main() {
     game->addEnemy(new Enemy(3, 2, enemyNode, nullptr, nullptr));
 
     // background paper
-    Node2D* paper = new Node2D(game->getScene(), { .mesh=game->getMesh("paper"), .material=game->getMaterial("paper") });
+    // Node2D* paper = new Node2D(game->getScene(), { .mesh=game->getMesh("paper"), .material=game->getMaterial("paper") });
 
     while (game->getEngine()->isRunning()) {
         game->update(1.0 / 120);

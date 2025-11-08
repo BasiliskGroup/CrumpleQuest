@@ -79,3 +79,31 @@ void Paper::clear() {
     curSide = nullptr;
     isOpen = true;
 }
+
+Paper::Fold::Fold(const std::vector<vec2>& verts, vec2 crease, int layer) 
+    : crease(crease), layer(layer) 
+{
+    // find indices
+    std::vector<uint> inds;
+    Navmesh::earcut({verts}, inds);
+    
+    // create triangles
+    for (uint i = 0; i < inds.size(); i += 3) {
+        triangles.push_back(Tri({ 
+            verts[inds[i + 0]],
+            verts[inds[i + 1]],
+            verts[inds[i + 2]]
+        }));
+    }
+}
+
+bool Paper::Fold::contains(const vec2& pos) {
+    for (const Tri& tri : triangles) {
+        if (tri.contains(pos)) return true;
+    }
+    return false;
+}
+
+void Paper::initFolds() {
+    folds.push_back(Fold(meshVertices, {0, 0}, 0));
+}

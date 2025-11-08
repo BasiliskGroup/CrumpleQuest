@@ -8,29 +8,18 @@ Game::Game() :
     voidScene(nullptr),
     camera(nullptr)
 {
-    std::cout << "Game constructor started" << std::endl;
-    std::cout << "Creating Engine..." << std::endl;
+    // basilisk preamble
     this->engine = new Engine(800, 800, "Crumple Quest");
-    std::cout << "Engine created: " << this->engine << std::endl;
-    
-    std::cout << "Creating Scene2D..." << std::endl;
     this->scene = new Scene2D(this->engine);
-    std::cout << "Scene created: " << this->scene << std::endl;
-    
-    std::cout << "Creating Camera..." << std::endl;
-    this->camera = new StaticCamera2D(engine);
-    std::cout << "Camera created: " << this->camera << std::endl;
-    
-    std::cout << "Creating VoidScene..." << std::endl;
-    this->voidScene = new Scene2D(this->engine);
-    std::cout << "VoidScene created: " << this->voidScene << std::endl;
-    
-    std::cout << "Setting gravity..." << std::endl;
     this->scene->getSolver()->setGravity(0);
-    std::cout << "Setting camera..." << std::endl;
+    this->camera = new StaticCamera2D(engine);
     this->scene->setCamera(this->camera);
     
-    std::cout << "Game constructor finished" << std::endl;
+    // storing templates
+    this->voidScene = new Scene2D(this->engine);
+
+    // initialize first paper
+    this->paper = new Paper();
 }
 
 Game::~Game() {
@@ -60,6 +49,9 @@ Game::~Game() {
     }
     enemies.clear();
 
+    delete paper; paper = nullptr;
+
+    // basilisk closing, must be last
     delete engine; engine = nullptr;
     delete scene; scene = nullptr;
     delete camera; camera = nullptr;
@@ -67,6 +59,20 @@ Game::~Game() {
 }
 
 void Game::update(float dt) {
+    // folding
+    bool leftIsDown = engine->getMouse()->getLeftDown();
+    vec2 mousePos = { engine->getMouse()->getX(), engine->getMouse()->getY() };
+
+    if (!leftWasDown && leftIsDown) { // we just clicked
+        LeftStartDown = mousePos;
+        std::cout << mousePos.x << ", " << mousePos.y << std::endl;
+
+    } else if (leftWasDown && !leftIsDown) { // we just let go
+        std::cout << mousePos.x << ", " << mousePos.y << std::endl;
+        
+    }
+    leftWasDown = leftIsDown;
+
     // entity update
     if (player != nullptr) {
         player->move(dt);
@@ -76,9 +82,13 @@ void Game::update(float dt) {
         enemy->move(player->getPosition(), dt);
     }
 
+    // add paper stuff to the scene
+
     // basilisk update
     engine->update();
     scene->update(dt);
     scene->render();
     engine->render();
+
+    // delete paper stuff 
 }
