@@ -20,6 +20,14 @@ private:
         Fold(const std::vector<vec2>& vertices, vec2 crease, int layer);
         bool contains(const vec2& pos);
     };
+
+    struct PaperNode {
+        std::vector<vec2> verts;
+        Mesh* mesh;
+        Node2D* node;
+
+        PaperNode(const std::vector<vec2>& verts);
+    };
     
     // tracking folding
     std::vector<Fold> folds;

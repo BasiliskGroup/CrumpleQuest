@@ -3,6 +3,9 @@
 #include "levels/levels.h"
 #include <earcut.hpp>
 
+#include <iostream>
+#include "clipper2/clipper.h"
+
 int main() {
     Game* game = new Game();
 
@@ -41,6 +44,22 @@ int main() {
 
     Node2D* enemyNode = new Node2D(game->getScene(), { .position={3, 4}, .scale={0.7, 0.7}, .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .collider=game->getCollider("quad") });
     game->addEnemy(new Enemy(3, 2, enemyNode, nullptr, nullptr));
+
+    // polygon clip test
+    Clipper2Lib::PathsD subject = {{{0,0}, {100,0}, {100,100}, {0,100}}};
+    Clipper2Lib::PathsD clip = {{{50,-50}, {150,-50}, {150,50}, {50,50}}};
+
+    Clipper2Lib::PathsD result = Clipper2Lib::Intersect(subject, clip, Clipper2Lib::FillRule::NonZero);
+
+    std::cout << "Intersection result count: " << result.size() << "\n";
+
+    // Loop through each path (polygon)
+    for (size_t i = 0; i < result.size(); ++i) {
+        std::cout << "Polygon " << i << ":\n";
+        for (const Clipper2Lib::PointD& p : result[i]) {
+            std::cout << "  (" << p.x << ", " << p.y << ")\n";
+        }
+    }
 
     // background paper
     // Node2D* paper = new Node2D(game->getScene(), { .mesh=game->getMesh("paper"), .material=game->getMaterial("paper") });

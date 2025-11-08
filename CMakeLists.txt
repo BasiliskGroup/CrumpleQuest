@@ -1,58 +1,59 @@
-cmake_minimum_required(VERSION 3.14)
-project(CrumpleQuest)
+cmake_minimum_required(VERSION 3.20)
+project(CrumpleQuest LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# ======================================================
-# Dependencies
-# ======================================================
 include(FetchContent)
 
+# ======================================================
 # Basilisk Engine (includes Assimp)
+# ======================================================
 FetchContent_Declare(
     basilisk
     GIT_REPOSITORY https://github.com/BasiliskGroup/BasiliskEngine.git
-    GIT_TAG        main
+    GIT_TAG main
 )
 FetchContent_MakeAvailable(basilisk)
 
-# Add this AFTER FetchContent_MakeAvailable(basilisk)
-message(STATUS "=== DEBUG INFO ===")
-message(STATUS "basilisk_SOURCE_DIR: ${basilisk_SOURCE_DIR}")
-message(STATUS "CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
+# ======================================================
+# Clipper2
+# ======================================================
+FetchContent_Declare(
+    clipper2
+    GIT_REPOSITORY https://github.com/AngusJohnson/Clipper2.git
+    GIT_TAG main   # <- use 'main', not 'master'
+)
+FetchContent_MakeAvailable(clipper2)
 
-# Check if the path exists
-set(EARCUT_PATH "${basilisk_SOURCE_DIR}/_deps/assimp-src/contrib/earcut-hpp")
-if(EXISTS ${EARCUT_PATH})
-    message(STATUS "EARCUT PATH EXISTS: ${EARCUT_PATH}")
-else()
-    message(STATUS "EARCUT PATH DOES NOT EXIST: ${EARCUT_PATH}")
-endif()
+# Build Clipper2 as a static library
+file(GLOB CLIPPER2_SOURCES
+    ${clipper2_SOURCE_DIR}/CPP/Clipper2Lib/src/*.cpp
+)
 
-# Try to find it
-file(GLOB_RECURSE EARCUT_FILES "${CMAKE_BINARY_DIR}/*earcut.hpp")
-message(STATUS "Found earcut files: ${EARCUT_FILES}")
+add_library(clipper2 STATIC ${CLIPPER2_SOURCES})
+target_include_directories(clipper2 PUBLIC
+    ${clipper2_SOURCE_DIR}/CPP/Clipper2Lib/include
+)
+target_compile_features(clipper2 PUBLIC cxx_std_20)
 
 # ======================================================
 # Source files and executable
 # ======================================================
-file(GLOB_RECURSE SRC_FILES 
+file(GLOB_RECURSE SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
 
 add_executable(game ${SRC_FILES})
 
-# Add include directories
-# Add include directories pointing to Assimp sources
 target_include_directories(game PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_BINARY_DIR}/_deps/assimp-src/contrib/earcut-hpp
 )
 
-# Link Basilisk
-target_link_libraries(game PRIVATE basilisk)
+# Link Basilisk + Clipper2
+target_link_libraries(game PRIVATE basilisk clipper2)
 
 # ======================================================
 # AddressSanitizer (Debug)
@@ -73,9 +74,6 @@ endif()
 # ======================================================
 # Resources
 # ======================================================
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders 
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures 
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models 
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
