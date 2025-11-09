@@ -56,7 +56,10 @@ public:
 
     // setters
     void setPlayer(Player* player) { this->player = player; }
-    void setPaper(Paper* paper) { this->paper = paper; }
+    void setPaper(Paper* paper) { 
+        this->paper = paper; 
+        this->paper->setGame(this);
+    }
 
     void update(float dt);
 };

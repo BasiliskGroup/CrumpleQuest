@@ -32,3 +32,19 @@ vec2 Tri::intersect(const vec2& pos, const vec2& dir) {
 
     return closestPoint;
 }
+
+vec2 Tri::leastDot(const vec2& dir) {
+    float d0 = glm::dot(verts[0], dir);
+    float d1 = glm::dot(verts[1], dir);
+    float d2 = glm::dot(verts[2], dir);
+
+    if (d0 < d1 && d0 < d2) {
+        return verts[0];
+    }
+
+    if (d1 < d0 && d1 < d2) {
+        return verts[1];
+    }
+
+    return verts[2];
+}

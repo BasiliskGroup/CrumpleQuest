@@ -1,4 +1,5 @@
 #include "edger.h"
+#include <stdexcept>
 
 Edger::Edger(const std::vector<vec2> verts) : verts(verts) {}
 
@@ -48,4 +49,105 @@ vec2 Edger::getNearestEdgePoint(const vec2& pos) {
     }
 
     return bestPoint;
+}
+
+std::pair<int, int> Edger::getVertexRangeBelowThreshold(const vec2& dir, float thresh, const vec2& start) {
+    size_t n = verts.size();
+    if (n == 0) {
+        throw std::runtime_error("Cannot get vertex range on empty vertex list");
+    }
+
+    // Step 1: Find the vertex closest to start
+    float minDistSq = std::numeric_limits<float>::max();
+    size_t closestIndex = 0;
+    
+    for (size_t i = 0; i < n; ++i) {
+        float distSq = glm::dot(verts[i] - start, verts[i] - start);
+        if (distSq < minDistSq) {
+            minDistSq = distSq;
+            closestIndex = i;
+        }
+    }
+
+    // Verify that the closest vertex satisfies the threshold condition
+    float closestDot = glm::dot(verts[closestIndex], dir);
+    if (closestDot >= thresh) {
+        throw std::runtime_error("Closest vertex dot product is not less than threshold");
+    }
+
+    // Step 2: Walk CCW (backwards in index) from closest until we find a vertex >= thresh
+    // This finds the first vertex OUTSIDE the region on the CCW side
+    int currentIndex = static_cast<int>(closestIndex);
+    int leftFirstOutside = -1;
+    size_t stepsLeft = 0;
+    
+    while (stepsLeft < n) {
+        int prevIndex = (currentIndex == 0) ? static_cast<int>(n - 1) : (currentIndex - 1);
+        float prevDot = glm::dot(verts[prevIndex], dir);
+        
+        if (prevDot >= thresh) {
+            // Found first vertex outside going CCW
+            leftFirstOutside = prevIndex;
+            break;
+        }
+        
+        currentIndex = prevIndex;
+        stepsLeft++;
+    }
+    
+    // If we walked all vertices, all are below threshold
+    if (stepsLeft == n) {
+        return {0, static_cast<int>(n - 1)};
+    }
+
+    // Step 3: Walk CW (forwards in index) from closest until we find a vertex >= thresh
+    // This finds the first vertex OUTSIDE the region on the CW side
+    currentIndex = static_cast<int>(closestIndex);
+    int rightFirstOutside = -1;
+    size_t stepsRight = 0;
+    
+    while (stepsRight < n) {
+        int nextIndex = (currentIndex + 1) % static_cast<int>(n);
+        float nextDot = glm::dot(verts[nextIndex], dir);
+        
+        if (nextDot >= thresh) {
+            // Found first vertex outside going CW
+            rightFirstOutside = nextIndex;
+            break;
+        }
+        
+        currentIndex = nextIndex;
+        stepsRight++;
+    }
+    
+    int first = (leftFirstOutside + 1) % static_cast<int>(n);
+    int second = (rightFirstOutside - 1 + static_cast<int>(n)) % static_cast<int>(n);
+    
+    return {first, second};
+}
+
+bool Edger::getEdgeIntersection(int edgeStartIndex, const vec2& pos, const vec2& dir, vec2& out) {
+    size_t n = verts.size();
+    if (n < 2) {
+        return false; // Need at least 2 vertices to form an edge
+    }
+
+    // Wrap the indices to handle out-of-bounds and negative values
+    // For negative indices, we need to add multiples of n until positive
+    int wrappedStart = edgeStartIndex % static_cast<int>(n);
+    if (wrappedStart < 0) {
+        wrappedStart += n;
+    }
+    
+    size_t startIdx = static_cast<size_t>(wrappedStart);
+    size_t endIdx = (startIdx + 1) % n;
+
+    const vec2& edgeStart = verts[startIdx];
+    const vec2& edgeEnd = verts[endIdx];
+
+    if (intersectLineSegmentInfiniteLine(edgeStart, edgeEnd, pos, dir, out)) {
+        return true;
+    }
+
+    return false; // No intersection found
 }

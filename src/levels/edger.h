@@ -10,6 +10,8 @@ struct Edger {
     Edger(const std::vector<vec2> verts);
     vec2 getNearestEdgeIntersection(const vec2& pos, const vec2& dir);
     vec2 getNearestEdgePoint(const vec2& pos);
+    std::pair<int, int> getVertexRangeBelowThreshold(const vec2& dir, float thresh, const vec2& start);
+    bool getEdgeIntersection(int edgeStartIndex, const vec2& pos, const vec2& dir, vec2& out);
 };
 
 #endif

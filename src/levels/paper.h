@@ -6,6 +6,8 @@
 #include "levels/triangle.h"
 #include "levels/edger.h"
 
+class Game;
+
 class Paper {
 public:
     static std::unordered_map<std::string, Paper> templates;
@@ -53,6 +55,9 @@ private:
     std::pair<PaperMesh*, PaperMesh*> paperMeshes;
     short curSide;
 
+    // TODO temporary
+    Game* game = nullptr;
+
     // tracking gameplay
     bool isOpen;
 
@@ -78,6 +83,9 @@ public:
 
     void activateFold(const vec2& start);
     void deactivateFold();
+
+    // TODO temporary
+    void setGame(Game* game) { this->game = game; }
 
     static void generateTemplates(Game* game);
     static const Paper& getRandomTemplate(RoomTypes type);

@@ -270,7 +270,7 @@ void Paper::deactivateFold() {
 
 void Paper::fold(const vec2& start, const vec2& end) {
     if (activeFold == -1 || glm::length2(start - end) < EPSILON) return;
-
+    
     // 1. locate triangle that we are on
     Fold& fold = folds[activeFold];
     uint trindex = -1;
@@ -280,40 +280,68 @@ void Paper::fold(const vec2& start, const vec2& end) {
             break;
         }
     }
-
     if (trindex == -1) {
-        std::cout << "could not start identify triangle";
+        std::cout << "could not start identify triangle" << std::endl;
         return;
     }
     Tri& clickedTri = fold.triangles[trindex];
-
-    std::cout << trindex << std::endl;
-
+    PaperMesh* paperMesh = curSide == 0 ? paperMeshes.first : paperMeshes.second;
+    
     // 2. get crease line
     vec2 dx = end - start;
     vec2 creaseDir = { dx.y, -dx.x };
-
-    // get fold intersection data
-    vec2 edgeIntersect = fold.getNearestEdgeIntersection(start, -dx);
-    vec2 nearEdgePoint = fold.getNearestEdgePoint(start);
-
-    std::cout << edgeIntersect.x << ", " << edgeIntersect.y << std::endl;
-    std::cout << nearEdgePoint.x << ", " << nearEdgePoint.y << std::endl;
-
-    if (glm::dot(edgeIntersect - start, nearEdgePoint - start) < 0) {
+    
+    // get intersection and locality data
+    vec2 edgeIntersectFold = fold.getNearestEdgeIntersection(start, -dx);
+    vec2 nearEdgePointFold = fold.getNearestEdgePoint(start);
+    vec2 edgeIntersectPaper = paperMesh->getNearestEdgeIntersection(start, -dx);
+    vec2 nearEdgePointPaper = paperMesh->getNearestEdgePoint(start);
+    vec2 deepestPointOnTri = clickedTri.leastDot(dx);
+    
+    if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) < 0) {
         std::cout << "unfold" << std::endl;
     } else {
         std::cout << "fold" << std::endl;
     }
 
-    // TODO add in an unfold function
-
-    vec2 midPoint = 0.5f * (end + edgeIntersect);
+    new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("paper"), .scale={0.25, 0.25}, .position=edgeIntersectPaper });
+    
+    vec2 midPoint = 0.5f * (end + edgeIntersectPaper);
     float midDot = glm::dot(midPoint, dx);
+    
+    // make a new fold in the paper
+    if (true) {
+        vec2 searchStart = clickedTri.leastDot(dx);
+        auto indexBounds = paperMesh->getVertexRangeBelowThreshold(dx, midDot, searchStart);
+        
+        // Calculate the actual edge indices
+        int leftEdgeIndex = indexBounds.first - 1;
+        int rightEdgeIndex = indexBounds.second;
+        
+        // Print the vertices that form these edges
+        int leftStart = leftEdgeIndex;
+        int leftEnd = indexBounds.first;
+        if (leftStart < 0) leftStart += paperMesh->verts.size();
+        if (leftEnd < 0) leftEnd += paperMesh->verts.size();
+        
+        int rightStart = rightEdgeIndex % paperMesh->verts.size();
+        int rightEnd = (rightEdgeIndex + 1) % paperMesh->verts.size();
+        
+        vec2 foldStart, foldEnd;
+        bool leftCheck = paperMesh->getEdgeIntersection(indexBounds.first - 1, midPoint, creaseDir, foldStart);
+        bool rightCheck = paperMesh->getEdgeIntersection(indexBounds.second, midPoint, creaseDir, foldEnd);
+        
+        bool check = leftCheck & rightCheck;
+        
+        if (!check) throw std::runtime_error("Fold crease could not find intersection");
 
-    // walk around the edge until we find all passing points
-
-
+        new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .scale={0.25, 0.25}, .position=foldStart });
+        new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .scale={0.25, 0.25}, .position=foldEnd });
+    }
+    
+    // TODO add in an unfold function
+    // TODO add pulling a fold forward
+    
     // 4. create fold polygon
     // 5. clip polygon to remove folded over section
     // 6. earcut remaining paper and remap uvs

@@ -44,17 +44,18 @@ bool intersectLineSegmentInfiniteLine(
 {
     vec2 aDir = a1 - a0;
     float det = aDir.x * (-bDir.y) + aDir.y * bDir.x;
-
+    
     // Parallel lines
     if (fabs(det) < 1e-8f)
         return false;
-
+    
     vec2 diff = b0 - a0;
     float tA = (diff.x * (-bDir.y) + diff.y * bDir.x) / det;
-    float tB = (aDir.x * diff.y - aDir.y * diff.x) / det;
-
-    // Only valid if intersection lies on segment A and on ray B
-    if (tA >= 0.0f && tA <= 1.0f && tB >= 0.0f) {
+    // float tB = (aDir.x * diff.y - aDir.y * diff.x) / det;  // Not needed for infinite line
+    
+    // Only valid if intersection lies on segment A
+    // The infinite line extends in both directions, so no check on tB
+    if (tA >= 0.0f && tA <= 1.0f) {
         outIntersection = a0 + tA * aDir;
         return true;
     }

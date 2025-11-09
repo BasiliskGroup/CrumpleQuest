@@ -68,6 +68,7 @@ void Game::update(float dt) {
     // hard code mouse to world coordinates TODO replace this with world coordinate mouse call
     mousePos -= vec2{ 400, 400 };
     mousePos /= 80;
+    mousePos.y *= -1;
 
     if (!leftWasDown && leftIsDown) { // we just clicked
         LeftStartDown = mousePos;

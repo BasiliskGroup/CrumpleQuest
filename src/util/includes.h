@@ -22,6 +22,8 @@ using namespace bsk;
 #include <unordered_map>
 #include <algorithm>
 
+#include <stdexcept>
+
 // functional programming
 #include <functional>
 
