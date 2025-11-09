@@ -36,3 +36,47 @@ float sign(const vec2& a, const vec2& b, const vec2& c) {
 bool isCCW(const vec2& a, const vec2& b, const vec2& c) {
     return sign(a, b, c) > 0;
 }
+
+bool intersectLineSegmentInfiniteLine(
+    const vec2& a0, const vec2& a1,
+    const vec2& b0, const vec2& bDir,
+    vec2& outIntersection)
+{
+    vec2 aDir = a1 - a0;
+    float det = aDir.x * (-bDir.y) + aDir.y * bDir.x;
+
+    // Parallel lines
+    if (fabs(det) < 1e-8f)
+        return false;
+
+    vec2 diff = b0 - a0;
+    float tA = (diff.x * (-bDir.y) + diff.y * bDir.x) / det;
+    float tB = (aDir.x * diff.y - aDir.y * diff.x) / det;
+
+    // Only valid if intersection lies on segment A and on ray B
+    if (tA >= 0.0f && tA <= 1.0f && tB >= 0.0f) {
+        outIntersection = a0 + tA * aDir;
+        return true;
+    }
+    return false;
+}
+
+vec2 nearestPointOnEdgeToPoint(const vec2& start, const vec2& end, const vec2& point) {
+    vec2 edge = end - start;
+    vec2 toPoint = point - start;
+
+    float edgeLenSq = glm::dot(edge, edge);
+    if (edgeLenSq < 1e-8f)
+        return toPoint; // Degenerate edge (both endpoints same)
+
+    // Project point onto line, then clamp projection to segment range
+    float t = glm::dot(toPoint, edge) / edgeLenSq;
+    t = glm::clamp(t, 0.0f, 1.0f);
+
+    vec2 closest = start + t * edge;
+    return closest;
+}
+
+float distancePointToEdge(const vec2& start, const vec2& end, const vec2& point) {
+    return glm::length(point - nearestPointOnEdgeToPoint(start, end, point));
+}

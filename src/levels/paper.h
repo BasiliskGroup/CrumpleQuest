@@ -4,6 +4,7 @@
 #include "util/includes.h"
 #include "levels/singleSide.h"
 #include "levels/triangle.h"
+#include "levels/edger.h"
 
 class Paper {
 public:
@@ -11,14 +12,14 @@ public:
     static std::unordered_map<RoomTypes, std::vector<std::string>> papers;
 
 private:
-    struct Fold {
+    struct Fold : public Edger {
         std::vector<Tri> triangles;
         std::set<Fold> holds;
         vec2 crease;
         int layer;
         int side; 
 
-        Fold(const std::vector<vec2>& vertices, vec2 crease, int layer, int side=0);
+        Fold(const std::vector<vec2>& verts, vec2 crease, int layer, int side=0);
         bool contains(const vec2& pos);
         
         // Fold needs operator< for std::set, if not already defined
@@ -29,12 +30,11 @@ private:
         }
     };
 
-    struct PaperMesh {
-        std::vector<Vert> verts;
+    struct PaperMesh : public Edger{
+        std::vector<Vert> data;
         Mesh* mesh;
 
-        PaperMesh();
-        PaperMesh(const std::vector<Vert>& verts);
+        PaperMesh(const std::vector<vec2> verts, const std::vector<Vert>& data);
         ~PaperMesh();
         
         // Rule of 5 for PaperMesh
@@ -58,14 +58,14 @@ private:
 
 public:
     Paper();
-    Paper(Mesh* mesh);
+    Paper(Mesh* mesh, const std::vector<vec2>& edgeVerts);
     Paper(SingleSide* sideA, SingleSide* sideB, short startSide=0, bool isOpen=false);
     
     // Rule of 5
-    Paper(const Paper& other) noexcept;
+    Paper(const Paper& other);
     Paper(Paper&& other) noexcept;
     ~Paper();
-    Paper& operator=(const Paper& other) noexcept;
+    Paper& operator=(const Paper& other);
     Paper& operator=(Paper&& other) noexcept;
 
     // getters
@@ -85,7 +85,7 @@ public:
 
 private:
     void clear();
-    void initFolds();
+    void initFolds(const std::vector<vec2>& edgeVerts);
 };
 
 #endif

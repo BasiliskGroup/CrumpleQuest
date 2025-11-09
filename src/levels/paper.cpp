@@ -1,11 +1,9 @@
 #include "levels/levels.h"
 
-Paper::PaperMesh::PaperMesh() : mesh(nullptr), verts() {}
-
-Paper::PaperMesh::PaperMesh(const std::vector<Vert>& verts) : mesh(nullptr), verts(verts) {
-    std::vector<float> data; 
-    Paper::flattenVertices(verts, data);
-    mesh = new Mesh(data);
+Paper::PaperMesh::PaperMesh(const std::vector<vec2> verts, const std::vector<Vert>& data) : Edger(verts), mesh(nullptr), data(data) {
+    std::vector<float> flatData; 
+    Paper::flattenVertices(data, flatData);
+    mesh = new Mesh(flatData);
 }
 
 Paper::PaperMesh::~PaperMesh() {
@@ -14,16 +12,16 @@ Paper::PaperMesh::~PaperMesh() {
 }
 
 // Copy constructor
-Paper::PaperMesh::PaperMesh(const PaperMesh& other) : verts(other.verts), mesh(nullptr) {
+Paper::PaperMesh::PaperMesh(const PaperMesh& other) : Edger(other.verts), data(other.data), mesh(nullptr) {
     if (other.mesh) {
-        std::vector<float> data;
-        Paper::flattenVertices(verts, data);
-        mesh = new Mesh(data);
+        std::vector<float> flatData;
+        Paper::flattenVertices(data, flatData);
+        mesh = new Mesh(flatData);
     }
 }
 
 // Move constructor
-Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : verts(std::move(other.verts)), mesh(other.mesh) {
+Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : Edger(std::move(other.verts)), data(std::move(other.data)), mesh(other.mesh) {
     other.mesh = nullptr;
 }
 
@@ -31,16 +29,14 @@ Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : verts(std::move(other.
 Paper::PaperMesh& Paper::PaperMesh::operator=(const PaperMesh& other) {
     if (this == &other) return *this;
     
+    // Copy-and-swap idiom for exception safety
+    PaperMesh temp(other);
+    
     delete mesh;
-    mesh = nullptr;
-    
-    verts = other.verts;
-    
-    if (other.mesh) {
-        std::vector<float> data;
-        Paper::flattenVertices(verts, data);
-        mesh = new Mesh(data);
-    }
+    mesh = temp.mesh;
+    data = std::move(temp.data);
+    verts = std::move(temp.verts);
+    temp.mesh = nullptr;
     
     return *this;
 }
@@ -51,6 +47,7 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(PaperMesh&& other) noexcept {
     
     delete mesh;
     
+    data = std::move(other.data);
     verts = std::move(other.verts);
     mesh = other.mesh;
     other.mesh = nullptr;
@@ -61,15 +58,16 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(PaperMesh&& other) noexcept {
 // ==================== Paper Implementation ====================
 
 Paper::Paper() 
-    : curSide(0), isOpen(false) 
+    : curSide(0), isOpen(false), activeFold(-1)
 {
     sides = { nullptr, nullptr };
     paperMeshes = { nullptr, nullptr };
 }
 
-Paper::Paper(Mesh* mesh) : 
+Paper::Paper(Mesh* mesh, const std::vector<vec2>& edgeVerts) : 
     curSide(0), 
-    isOpen(false), 
+    isOpen(false),
+    activeFold(-1),
     sides(nullptr, nullptr), 
     paperMeshes(nullptr, nullptr) 
 {
@@ -80,52 +78,56 @@ Paper::Paper(Mesh* mesh) :
         // no i + 2 since that is z and we're flat
         verts.push_back({ { meshVerts[i + 0], meshVerts[i + 1] }, { meshVerts[i + 2], meshVerts[i + 3] } });
     }
-    paperMeshes.first = new PaperMesh(verts);
+    paperMeshes.first = new PaperMesh(edgeVerts, verts);
 
     // reverse x direction for other side of paper
     for (Vert& v : verts) {
         v.pos.x = -v.pos.x;
         // TODO check if we need to invert UVs
     }
-    paperMeshes.second = new PaperMesh(verts);
+    paperMeshes.second = new PaperMesh(edgeVerts, verts);
 
-    initFolds();
+    initFolds(edgeVerts);
 }
 
-Paper::Paper(SingleSide* sideA, SingleSide* sideB, short startSide, bool isOpen) : isOpen(isOpen) {
+Paper::Paper(SingleSide* sideA, SingleSide* sideB, short startSide, bool isOpen) 
+    : isOpen(isOpen), curSide(startSide), activeFold(-1) 
+{
     sides = { sideA, sideB };
     paperMeshes = { nullptr, nullptr };
-    curSide = startSide;
 }
 
-// Copy constructor
-Paper::Paper(const Paper& other) noexcept
+Paper::Paper(const Paper& other)
     : curSide(other.curSide), 
       isOpen(other.isOpen),
       folds(other.folds),
-      activeFold(other.activeFold)
+      activeFold(other.activeFold),
+      sides({ nullptr, nullptr }),
+      paperMeshes({ nullptr, nullptr })
 {
-    // Deep copy sides
-    if (other.sides.first)
-        sides.first = new SingleSide(*other.sides.first);
-    else
-        sides.first = nullptr;
+    try {
+        // Deep copy sides
+        if (other.sides.first)
+            sides.first = new SingleSide(*other.sides.first);
+            
+        if (other.sides.second)
+            sides.second = new SingleSide(*other.sides.second);
         
-    if (other.sides.second)
-        sides.second = new SingleSide(*other.sides.second);
-    else
-        sides.second = nullptr;
-    
-    // Deep copy paperMeshes
-    if (other.paperMeshes.first)
-        paperMeshes.first = new PaperMesh(*other.paperMeshes.first);
-    else
-        paperMeshes.first = nullptr;
-        
-    if (other.paperMeshes.second)
-        paperMeshes.second = new PaperMesh(*other.paperMeshes.second);
-    else
-        paperMeshes.second = nullptr;
+        // Deep copy paperMeshes
+        if (other.paperMeshes.first)
+            paperMeshes.first = new PaperMesh(*other.paperMeshes.first);
+            
+        if (other.paperMeshes.second)
+            paperMeshes.second = new PaperMesh(*other.paperMeshes.second);
+    }
+    catch (...) {
+        // Clean up any partially constructed objects
+        delete sides.first;
+        delete sides.second;
+        delete paperMeshes.first;
+        delete paperMeshes.second;
+        throw;
+    }
 }
 
 // Move constructor
@@ -147,29 +149,22 @@ Paper::~Paper() {
     clear();
 }
 
-// Copy assignment
-Paper& Paper::operator=(const Paper& other) noexcept {
+// Copy assignment - REMOVED noexcept since it can throw
+Paper& Paper::operator=(const Paper& other) {
     if (this == &other) return *this;
     
-    clear();
-
-    // Copy sides
-    if (other.sides.first)
-        sides.first = new SingleSide(*other.sides.first);
-    if (other.sides.second)
-        sides.second = new SingleSide(*other.sides.second);
-
-    // Copy paperMeshes
-    if (other.paperMeshes.first)
-        paperMeshes.first = new PaperMesh(*other.paperMeshes.first);
-    if (other.paperMeshes.second)
-        paperMeshes.second = new PaperMesh(*other.paperMeshes.second);
-
-    curSide = other.curSide;
-    isOpen = other.isOpen;
-    folds = other.folds;
-    activeFold = other.activeFold;
+    // Copy-and-swap idiom for strong exception safety
+    Paper temp(other);
     
+    // Swap with temp
+    std::swap(sides, temp.sides);
+    std::swap(paperMeshes, temp.paperMeshes);
+    std::swap(curSide, temp.curSide);
+    std::swap(isOpen, temp.isOpen);
+    std::swap(folds, temp.folds);
+    std::swap(activeFold, temp.activeFold);
+    
+    // temp's destructor will clean up our old resources
     return *this;
 }
 
@@ -216,7 +211,7 @@ void Paper::clear() {
 }
 
 Paper::Fold::Fold(const std::vector<vec2>& verts, vec2 crease, int layer, int side) 
-    : crease(crease), layer(layer), side(side)
+    : Edger(verts), crease(crease), layer(layer), side(side)
 {
     // find indices
     std::vector<uint> inds;
@@ -243,17 +238,11 @@ bool Paper::Fold::contains(const vec2& pos) {
     return false;
 }
 
-void Paper::initFolds() {
+void Paper::initFolds(const std::vector<vec2>& edgeVerts) {
     if (paperMeshes.first == nullptr) {
         throw std::runtime_error("Cannot create fold with no paper mesh");
     }
-
-    std::vector<vec2> verts;
-    for (const auto& v : paperMeshes.first->verts) {
-        verts.push_back({ v.pos.x, v.pos.y });
-    }
-
-    folds.push_back(Fold(verts, {0, 0}, 0));
+    folds.push_back(Fold(edgeVerts, {0, 0}, 0));
 }
 
 Mesh* Paper::getMesh() { 
@@ -270,11 +259,9 @@ void Paper::activateFold(const vec2& start) {
     for (int i = static_cast<int>(folds.size()) - 1; i >= 0; i--) {
         if (folds[i].contains(start)) {
             activeFold = i;
-            std::cout << i << std::endl;
             return;
         }
     }
-    std::cout << -1 << std::endl;
 }
 
 void Paper::deactivateFold() {
@@ -285,8 +272,48 @@ void Paper::fold(const vec2& start, const vec2& end) {
     if (activeFold == -1 || glm::length2(start - end) < EPSILON) return;
 
     // 1. locate triangle that we are on
-    // 2. find edge that we are grabbing
-    // 3. get crease line
+    Fold& fold = folds[activeFold];
+    uint trindex = -1;
+    for (uint i = 0; i < fold.triangles.size(); i++) {
+        if (fold.triangles[i].contains(start)) {
+            trindex = i;
+            break;
+        }
+    }
+
+    if (trindex == -1) {
+        std::cout << "could not start identify triangle";
+        return;
+    }
+    Tri& clickedTri = fold.triangles[trindex];
+
+    std::cout << trindex << std::endl;
+
+    // 2. get crease line
+    vec2 dx = end - start;
+    vec2 creaseDir = { dx.y, -dx.x };
+
+    // get fold intersection data
+    vec2 edgeIntersect = fold.getNearestEdgeIntersection(start, -dx);
+    vec2 nearEdgePoint = fold.getNearestEdgePoint(start);
+
+    std::cout << edgeIntersect.x << ", " << edgeIntersect.y << std::endl;
+    std::cout << nearEdgePoint.x << ", " << nearEdgePoint.y << std::endl;
+
+    if (glm::dot(edgeIntersect - start, nearEdgePoint - start) < 0) {
+        std::cout << "unfold" << std::endl;
+    } else {
+        std::cout << "fold" << std::endl;
+    }
+
+    // TODO add in an unfold function
+
+    vec2 midPoint = 0.5f * (end + edgeIntersect);
+    float midDot = glm::dot(midPoint, dx);
+
+    // walk around the edge until we find all passing points
+
+
     // 4. create fold polygon
     // 5. clip polygon to remove folded over section
     // 6. earcut remaining paper and remap uvs

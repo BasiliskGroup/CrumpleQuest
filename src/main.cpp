@@ -70,7 +70,10 @@ int main() {
     }
 
     // create test paper
-    game->setPaper(new Paper(game->getMesh("paper")));
+    game->setPaper(new Paper(
+        game->getMesh("paper"), 
+        {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}}
+    ));
 
     // background paper
     // Node2D* paper = new Node2D(game->getScene(), { .mesh=game->getMesh("paper"), .material=game->getMaterial("paper") });
