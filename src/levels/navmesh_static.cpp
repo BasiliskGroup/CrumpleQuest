@@ -1,7 +1,7 @@
 #include "levels/navmesh.h"
 #include <earcut.hpp>
 
-
+// get triangle indices from earcut
 void Navmesh::earcut(const std::vector<std::vector<vec2>>& polygon, std::vector<uint>& indices) {
     std::vector<std::vector<std::array<double, 2>>> polyDouble;
     polyDouble.resize(polygon.size());
@@ -16,6 +16,7 @@ void Navmesh::earcut(const std::vector<std::vector<vec2>>& polygon, std::vector<
     indices = mapbox::earcut(polyDouble);
 }
 
+// get data that can be passed into a mesh object
 void Navmesh::convertToMesh(
     const std::vector<std::vector<vec2>>& polygon,
     std::vector<uint>& indices,

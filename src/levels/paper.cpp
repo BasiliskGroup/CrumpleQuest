@@ -255,8 +255,9 @@ void Paper::activateFold(const vec2& start) {
     activeFold = -1;
 
     // we push_back like a stack so the first fold we find is the top
-    // FIXED: was i >= 0 which causes undefined behavior with unsigned int
     for (int i = static_cast<int>(folds.size()) - 1; i >= 0; i--) {
+        if (folds[i].side != curSide) continue;
+
         if (folds[i].contains(start)) {
             activeFold = i;
             return;
@@ -289,7 +290,6 @@ void Paper::fold(const vec2& start, const vec2& end) {
     
     // 2. get crease line
     vec2 dx = end - start;
-    vec2 creaseDir = { dx.y, -dx.x };
     
     // get intersection and locality data
     vec2 edgeIntersectFold = fold.getNearestEdgeIntersection(start, -dx);
@@ -297,20 +297,22 @@ void Paper::fold(const vec2& start, const vec2& end) {
     vec2 edgeIntersectPaper = paperMesh->getNearestEdgeIntersection(start, -dx);
     vec2 nearEdgePointPaper = paperMesh->getNearestEdgePoint(start);
     vec2 deepestPointOnTri = clickedTri.leastDot(dx);
-    
-    if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) < 0) {
-        std::cout << "unfold" << std::endl;
-    } else {
-        std::cout << "fold" << std::endl;
-    }
+
+    // variable to modify "start" position of fold, drop and replace 
+    vec2 foldStart = nearEdgePointPaper;
+
+    dx = end - foldStart;
+    vec2 creaseDir = { dx.y, -dx.x };
 
     new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("paper"), .scale={0.25, 0.25}, .position=edgeIntersectPaper });
     
-    vec2 midPoint = 0.5f * (end + edgeIntersectPaper);
+    vec2 midPoint = 0.5f * (end + foldStart);
     float midDot = glm::dot(midPoint, dx);
     
     // make a new fold in the paper
-    if (true) {
+    if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
+        std::cout << "fold" << std::endl;
+
         vec2 searchStart = clickedTri.leastDot(dx);
         auto indexBounds = paperMesh->getVertexRangeBelowThreshold(dx, midDot, searchStart);
         
@@ -337,6 +339,25 @@ void Paper::fold(const vec2& start, const vec2& end) {
 
         new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .scale={0.25, 0.25}, .position=foldStart });
         new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .scale={0.25, 0.25}, .position=foldEnd });
+
+        // create new fold
+        std::vector<vec2> newFoldVerts = { foldStart, foldEnd };
+        paperMesh->reflectVerticesOverLine(newFoldVerts, indexBounds.first, indexBounds.second, midPoint, creaseDir);
+        for (vec2& v : newFoldVerts) v.y *= -1;
+        std::vector<uint> newFoldIndices;
+        Navmesh::earcut({newFoldVerts}, newFoldIndices);
+        std::vector<float> newFoldData;
+        Navmesh::convertToMesh({newFoldVerts}, newFoldIndices, newFoldData);
+        std::string meshName = std::to_string(midPoint.x) + " " + std::to_string(midPoint.y);
+        game->addMesh(meshName, new Mesh(newFoldData));
+        Node2D* tempNode = new Node2D(game->getScene(), { .mesh=game->getMesh(meshName), .material=game->getMaterial("box"), .position={0, 3} });
+        tempNode->setLayer(0.9);
+
+        // modify the mesh to accommodate new fold
+
+
+    } else {
+        std::cout << "unfold" << std::endl;
     }
     
     // TODO add in an unfold function

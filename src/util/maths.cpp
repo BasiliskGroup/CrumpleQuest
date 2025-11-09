@@ -81,3 +81,12 @@ vec2 nearestPointOnEdgeToPoint(const vec2& start, const vec2& end, const vec2& p
 float distancePointToEdge(const vec2& start, const vec2& end, const vec2& point) {
     return glm::length(point - nearestPointOnEdgeToPoint(start, end, point));
 }
+
+vec2 reflectPointOverLine(const vec2& pos, const vec2& dir, const vec2& point) {
+    vec2 nDir = glm::normalize(dir);
+    vec2 rel = point - pos;
+    vec2 proj = glm::dot(rel, nDir) * nDir;
+    vec2 perp = rel - proj;
+    vec2 reflected = rel - 2.0f * perp;
+    return pos + reflected;
+}

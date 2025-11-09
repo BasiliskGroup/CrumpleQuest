@@ -151,3 +151,30 @@ bool Edger::getEdgeIntersection(int edgeStartIndex, const vec2& pos, const vec2&
 
     return false; // No intersection found
 }
+
+void Edger::reflectVerticesOverLine(std::vector<vec2>& reflected, int a, int b, const vec2& pos, const vec2& dir) {
+    if (verts.empty())
+        return;
+
+    int n = static_cast<int>(verts.size());
+    a = glm::clamp(a, 0, n - 1);
+    b = glm::clamp(b, 0, n - 1);
+
+    // Collect indices in order, handling wrap-around if b < a
+    std::vector<int> indices;
+    for (int i = a;; i = (i + 1) % n) {
+        indices.push_back(i);
+        if (i == b) break;
+    }
+
+    // Reserve extra space without invalidating existing contents
+    reflected.reserve(reflected.size() + indices.size());
+
+    // Append reflected vertices in reverse order (so result is reversed),
+    // without modifying any existing elements in 'reflected'.
+    for (int idx = static_cast<int>(indices.size()) - 1; idx >= 0; --idx) {
+        int vindex = indices[idx];
+        reflected.push_back(reflectPointOverLine(pos, dir, verts[vindex]));
+    }
+}
+
