@@ -351,10 +351,20 @@ void Paper::fold(const vec2& start, const vec2& end) {
         std::string meshName = std::to_string(midPoint.x) + " " + std::to_string(midPoint.y);
         game->addMesh(meshName, new Mesh(newFoldData));
         Node2D* tempNode = new Node2D(game->getScene(), { .mesh=game->getMesh(meshName), .material=game->getMaterial("box"), .position={0, 3} });
-        tempNode->setLayer(0.9);
 
         // modify the mesh to accommodate new fold
+        Mesh* oldPaperMesh = paperMesh->mesh;
+        std::vector<vec2> newMeshVerts = { foldStart, foldEnd };
+        paperMesh->getUnreflectedVertices(newMeshVerts, indexBounds.first, indexBounds.second);
+        for (vec2& v : newMeshVerts) v.y *= -1;
+        std::vector<uint> newMeshIndices;
+        Navmesh::earcut({newMeshVerts}, newMeshIndices);
+        std::vector<float> newMeshData;
+        Navmesh::convertToMesh({newMeshVerts}, newMeshIndices, newMeshData);
+        paperMesh->mesh = new Mesh(newMeshData);
+        delete oldPaperMesh;
 
+        // TODO delete old mesh
 
     } else {
         std::cout << "unfold" << std::endl;

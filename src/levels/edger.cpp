@@ -178,3 +178,18 @@ void Edger::reflectVerticesOverLine(std::vector<vec2>& reflected, int a, int b, 
     }
 }
 
+void Edger::getUnreflectedVertices(std::vector<vec2>& unreflected, int a, int b) {
+    if (verts.empty())
+        return;
+
+    int n = static_cast<int>(verts.size());
+    a = glm::clamp(a, 0, n - 1);
+    b = glm::clamp(b, 0, n - 1);
+
+    // Collect everything *outside* the [a, b] segment
+    for (int i = (b + 1) % n;; i = (i + 1) % n) {
+        unreflected.push_back(verts[i]);
+        if (i == (a - 1 + n) % n)  // stop right before 'a'
+            break;
+    }
+}
