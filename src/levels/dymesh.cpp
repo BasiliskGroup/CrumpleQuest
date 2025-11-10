@@ -1,152 +1,44 @@
 #include "levels/dymesh.h"
 
-#include <stdexcept>
-#include <limits>
-#include <cmath>
-#include <algorithm>
-
-// -- Clipper2 namespace alias
-using namespace Clipper2Lib;
-
-// scale for converting float -> int64 to preserve precision
-static constexpr double CLIPPER_SCALE = 1e6;
-
-// ----------------------
-// Helpers: polygon & clipping
-// ----------------------
-static Paths64 makePaths64FromRegion(const std::vector<vec2>& region) {
-    Paths64 paths;
-    if (region.empty()) return paths;
-
-    Path64 p;
-    p.reserve(region.size());
-    for (const vec2& v : region) {
-        long long x = llround(v.x * CLIPPER_SCALE);
-        long long y = llround(v.y * CLIPPER_SCALE);
-        p.emplace_back(x, y);
-    }
-    paths.push_back(std::move(p));
-    return paths;
-}
-
-static std::vector<vec2> makeRegionFromPaths64(const Paths64& paths) {
-    // Choose the largest (by absolute area) path as the single region
-    if (paths.empty()) return {};
-
-    auto areaPath64 = [](const Path64& p) {
-        // Signed area using int64; return absolute value (in integer coords)
-        // area64 = sum(x_i*y_{i+1} - x_{i+1}*y_i) / 2
-        long double a = 0.0L;
-        for (size_t i = 0, n = p.size(); i < n; ++i) {
-            size_t j = (i + 1) % n;
-            a += (long double)p[i].x * (long double)p[j].y - (long double)p[j].x * (long double)p[i].y;
-        }
-        return fabsl(a) * 0.5L;
-    };
-
-    size_t bestIdx = 0;
-    long double bestA = -1.0L;
-    for (size_t i = 0; i < paths.size(); ++i) {
-        long double a = areaPath64(paths[i]);
-        if (a > bestA) {
-            bestA = a;
-            bestIdx = i;
-        }
-    }
-
-    const Path64& chosen = paths[bestIdx];
-    std::vector<vec2> out;
-    out.reserve(chosen.size());
-    for (const Point64& pt : chosen) {
-        out.emplace_back(static_cast<float>(pt.x / CLIPPER_SCALE), static_cast<float>(pt.y / CLIPPER_SCALE));
-    }
-    return out;
-}
-
-// compute signed area of polygon (positive = CCW)
-static float signedArea(const std::vector<vec2>& poly) {
-    double a = 0.0;
-    size_t n = poly.size();
-    if (n < 3) return 0.0f;
-    for (size_t i = 0; i < n; ++i) {
-        const vec2& p0 = poly[i];
-        const vec2& p1 = poly[(i + 1) % n];
-        a += (double)p0.x * (double)p1.y - (double)p1.x * (double)p0.y;
-    }
-    return static_cast<float>(0.5 * a);
-}
-
-static void ensureCCW(std::vector<vec2>& poly) {
-    if (signedArea(poly) < 0.0f) std::reverse(poly.begin(), poly.end());
-}
-
-// ----------------------
-// Helpers: earcut triangulation
-// ----------------------
-using Coord = double;
-using PointForEar = std::array<Coord, 2>;
-
-static std::vector<uint32_t> earcutIndicesFromRegion(const std::vector<vec2>& region) {
+// helper functions TODO move to own file
+std::vector<uint32_t> earcutIndicesFromRegion(const std::vector<vec2>& region) {
     // earcut expects vector< vector< Point > > where each point is an array of two numbers.
-    std::vector<std::vector<PointForEar>> polygon;
+    std::vector<std::vector<std::array<double, 2>>> polygon;
     polygon.emplace_back();
     polygon[0].reserve(region.size());
-    for (const vec2& v : region) polygon[0].push_back({ { static_cast<Coord>(v.x), static_cast<Coord>(v.y) } });
+    for (const vec2& v : region) polygon[0].push_back({ { static_cast<double>(v.x), static_cast<double>(v.y) } });
 
     return mapbox::earcut<uint32_t>(polygon);
 }
 
-// ----------------------
-// Helpers: sampling UVs from a Tri list
-// ----------------------
-static vec2 sampleUVFromTriList(const std::vector<Tri>& tris, const vec2& pos) {
+vec2 sampleUVFromTriList(const std::vector<Tri>& tris, const vec2& pos) {
     // Try direct contain test first
     for (const Tri& t : tris) {
         if (t.contains(pos)) {
             return t.sampleUV(pos);
         }
     }
+    throw std::runtime_error("Invalid copy location");
+}
 
-    // Fallback: sample from nearest triangle centroid
-    if (tris.empty()) return vec2(0.0f, 0.0f);
-    size_t best = 0;
-    float bestD = std::numeric_limits<float>::infinity();
-    for (size_t i = 0; i < tris.size(); ++i) {
-        vec2 a = tris[i].verts[0].pos;
-        vec2 b = tris[i].verts[1].pos;
-        vec2 c = tris[i].verts[2].pos;
-        vec2 centroid((a.x + b.x + c.x) / 3.0f, (a.y + b.y + c.y) / 3.0f);
-        float dx = centroid.x - pos.x;
-        float dy = centroid.y - pos.y;
-        float d = dx*dx + dy*dy;
-        if (d < bestD) { bestD = d; best = i; }
+DyMesh::DyMesh(const std::vector<vec2>& region, const std::vector<Tri>& data) : region(region), data(data) {
+    ensureCCW(this->region);
+}
+
+DyMesh::DyMesh(const std::vector<vec2>& region, Mesh* mesh) : region(region), data() {
+    std::vector<float>& verts = mesh->getVertices();
+    data.reserve(verts.size() / 15);
+
+    uint i = 0;
+    while (i < verts.size()) {
+        std::array<Vert, 3> tri;
+        for (uint j = 0; j < 3; j++) {
+            tri[j] = Vert({verts[i++], verts[i++]}, {verts[++i], verts[++i]});
+        }
+        data.push_back(tri);
     }
-    vec2 centroid = (tris[best].verts[0].pos + tris[best].verts[1].pos + tris[best].verts[2].pos) / 3.0f;
-    return tris[best].sampleUV(centroid);
 }
 
-// ----------------------
-// Constructors
-// ----------------------
-DyMesh::DyMesh(const std::vector<vec2>& region_, const std::vector<Tri>& data_) {
-    region = region_;
-    ensureCCW(region);
-    data = data_;
-}
-
-DyMesh::DyMesh(Mesh* mesh) {
-    if (mesh == nullptr) {
-        throw std::invalid_argument("DyMesh(Mesh*): mesh pointer is null");
-    }
-    throw std::runtime_error(
-        "DyMesh(Mesh*): conversion from Mesh to DyMesh not implemented here by design. "
-        "Implement this constructor externally to match your Mesh layout."
-    );
-}
-
-// ----------------------
-// cut: removes the given polygon region from this->region, re-triangulates, resamples UVs
-// ----------------------
 void DyMesh::cut(const std::vector<vec2>& clipRegion) {
     if (clipRegion.empty()) return;
 
@@ -201,9 +93,6 @@ void DyMesh::cut(const DyMesh& other) {
     cut(other.region);
 }
 
-// ----------------------
-// copy: override this mesh's UVs by sampling from the other DyMesh
-// ----------------------
 void DyMesh::copy(const DyMesh& other) {
     // For every triangle vertex in this mesh, sample UV from other
     for (Tri& t : data) {
@@ -215,10 +104,6 @@ void DyMesh::copy(const DyMesh& other) {
     }
 }
 
-// ----------------------
-// paste: cut incoming from this, re-triangulate this part, then append incoming triangles
-// and union regions to produce the new region. For pasted triangles we keep their UVs as-is.
-// ----------------------
 void DyMesh::paste(const DyMesh& other) {
     if (other.region.empty()) return;
 
@@ -252,23 +137,11 @@ void DyMesh::paste(const DyMesh& other) {
         ensureCCW(newRegion);
         region = std::move(newRegion);
     }
-    // Done. We intentionally do NOT re-earcut the unioned region into a single triangle set,
-    // because you requested to keep the incoming triangles as-is (so pasted triangles retain their UVs).
-    // If you prefer a final single earcut triangulation of the unioned region, we can add that as an option.
 }
 
-// ----------------------
-// sampleUV: find containing triangle in this->data and return sampled UV. Fallback to nearest triangle centroid.
-// ----------------------
 vec2 DyMesh::sampleUV(const vec2& pos) const {
-    // check for containing triangle first
-    for (const Tri& t : data) {
-        if (t.contains(pos)) {
-            return t.sampleUV(pos);
-        }
-    }
-    
-    throw std::runtime_error("invalid copy location");
+    std::cout << "internal sample" << std::endl;
+    return sampleUVFromTriList(data, pos);
 }
 
 void DyMesh::toData(std::vector<float>& data) {

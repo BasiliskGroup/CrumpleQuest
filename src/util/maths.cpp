@@ -90,3 +90,19 @@ vec2 reflectPointOverLine(const vec2& pos, const vec2& dir, const vec2& point) {
     vec2 reflected = rel - 2.0f * perp;
     return pos + reflected;
 }
+
+float signedArea(const std::vector<vec2>& poly) {
+    double a = 0.0;
+    size_t n = poly.size();
+    if (n < 3) return 0.0f;
+    for (size_t i = 0; i < n; ++i) {
+        const vec2& p0 = poly[i];
+        const vec2& p1 = poly[(i + 1) % n];
+        a += (double)p0.x * (double)p1.y - (double)p1.x * (double)p0.y;
+    }
+    return static_cast<float>(0.5 * a);
+}
+
+void ensureCCW(std::vector<vec2>& poly) {
+    if (signedArea(poly) < 0.0f) std::reverse(poly.begin(), poly.end());
+}

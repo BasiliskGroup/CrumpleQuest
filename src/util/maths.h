@@ -21,4 +21,7 @@ vec2 nearestPointOnEdgeToPoint(const vec2& start, const vec2& end, const vec2& p
 float distancePointToEdge(const vec2& start, const vec2& end, const vec2& point);
 vec2 reflectPointOverLine(const vec2& pos, const vec2& dir, const vec2& point);
 
+float signedArea(const std::vector<vec2>& poly);
+void ensureCCW(std::vector<vec2>& poly);
+
 #endif

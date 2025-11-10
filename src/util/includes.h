@@ -21,6 +21,8 @@ using namespace bsk;
 #include <set>
 #include <unordered_map>
 #include <algorithm>
+#include <limits>
+#include <cmath>
 
 #include <stdexcept>
 
