@@ -11,7 +11,7 @@ void Navmesh::Triangle::reset() {
 }
 
 Navmesh::Edge Navmesh::Triangle::operator[](size_t index) const {
-    return { verts[index], verts[(index + 1) % 3] };
+    return { verts[index].pos, verts[(index + 1) % 3].pos };
 }
 
 Navmesh::Navmesh(const std::vector<vec2>& paperMesh) {

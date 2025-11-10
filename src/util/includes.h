@@ -59,6 +59,7 @@ struct Vert {
     vec2 pos;
     vec2 uv;
 
+    Vert() : pos(), uv() {}
     Vert(vec2 pos, vec2 uv) : pos(pos), uv(uv) {}
     std::array<double, 5> flat() { return {pos.x, pos.y, 0, uv.x, uv.y}; }
 };
