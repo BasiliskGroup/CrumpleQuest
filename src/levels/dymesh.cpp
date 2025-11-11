@@ -40,6 +40,8 @@ DyMesh::DyMesh(const std::vector<vec2>& region, Mesh* mesh) : Edger(region), dat
     }
 }
 
+DyMesh::DyMesh(const std::vector<vec2>& region) : Edger(region), data() {}
+
 void DyMesh::cut(const std::vector<vec2>& clipRegion) {
     if (clipRegion.empty()) return;
 

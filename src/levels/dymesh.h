@@ -16,6 +16,7 @@ struct DyMesh : public Edger {
     // constructors, Mesh*, vector of vec2, Tri
     DyMesh(const std::vector<vec2>& region, Mesh* mesh);
     DyMesh(const std::vector<vec2>& region, const std::vector<Tri>& data);
+    DyMesh(const std::vector<vec2>& region); // NOTE probably temporary, 
 
     // geometry operations (implemented in dymesh.cpp)
     void cut(const std::vector<vec2>& clipRegion);

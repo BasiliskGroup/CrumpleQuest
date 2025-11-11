@@ -1,6 +1,6 @@
 #include "levels/levels.h"
 
-Paper::PaperMesh::PaperMesh(const std::vector<vec2> region, const std::vector<Vert>& data) : Edger(region), mesh(nullptr), data(data) {
+Paper::PaperMesh::PaperMesh(const std::vector<vec2> region, const std::vector<Vert>& data) : DyMesh(region), mesh(nullptr) {
     std::vector<float> flatData; 
     Paper::flattenVertices(data, flatData);
     mesh = new Mesh(flatData);
@@ -12,16 +12,16 @@ Paper::PaperMesh::~PaperMesh() {
 }
 
 // Copy constructor
-Paper::PaperMesh::PaperMesh(const PaperMesh& other) : Edger(other.region), data(other.data), mesh(nullptr) {
+Paper::PaperMesh::PaperMesh(const PaperMesh& other) : DyMesh(other.region), mesh(nullptr) {
     if (other.mesh) {
-        std::vector<float> flatData;
-        Paper::flattenVertices(data, flatData);
-        mesh = new Mesh(flatData);
+        std::vector<float> data;
+        toData(data);
+        mesh = new Mesh(data);
     }
 }
 
 // Move constructor
-Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : Edger(std::move(other.region)), data(std::move(other.data)), mesh(other.mesh) {
+Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : DyMesh(std::move(other.region)), mesh(other.mesh) {
     other.mesh = nullptr;
 }
 
@@ -34,7 +34,6 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(const PaperMesh& other) {
     
     delete mesh;
     mesh = temp.mesh;
-    data = std::move(temp.data);
     region = std::move(temp.region);
     temp.mesh = nullptr;
     
@@ -47,7 +46,6 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(PaperMesh&& other) noexcept {
     
     delete mesh;
     
-    data = std::move(other.data);
     region = std::move(other.region);
     mesh = other.mesh;
     other.mesh = nullptr;
@@ -211,7 +209,7 @@ void Paper::clear() {
 }
 
 Paper::Fold::Fold(const std::vector<vec2>& verts, vec2 crease, int layer, int side) 
-    : Edger(verts), crease(crease), layer(layer), side(side)
+    : DyMesh(verts), crease(crease), layer(layer), side(side)
 {
     // find indices
     std::vector<uint> inds;
@@ -219,7 +217,7 @@ Paper::Fold::Fold(const std::vector<vec2>& verts, vec2 crease, int layer, int si
     
     // create triangles
     for (uint i = 0; i < inds.size(); i += 3) {
-        triangles.push_back(Tri({ 
+        data.push_back(Tri({ 
             verts[inds[i + 0]],
             verts[inds[i + 1]],
             verts[inds[i + 2]]
@@ -232,7 +230,7 @@ Paper::Fold::Fold(const std::vector<vec2>& verts, vec2 crease, int layer, int si
 }
 
 bool Paper::Fold::contains(const vec2& pos) {
-    for (const Tri& tri : triangles) {
+    for (const Tri& tri : data) {
         if (tri.contains(pos)) return true;
     }
     return false;
@@ -275,8 +273,8 @@ void Paper::fold(const vec2& start, const vec2& end) {
     // 1. locate triangle that we are on
     Fold& fold = folds[activeFold];
     uint trindex = -1;
-    for (uint i = 0; i < fold.triangles.size(); i++) {
-        if (fold.triangles[i].contains(start)) {
+    for (uint i = 0; i < fold.data.size(); i++) {
+        if (fold.data[i].contains(start)) {
             trindex = i;
             break;
         }
@@ -285,7 +283,7 @@ void Paper::fold(const vec2& start, const vec2& end) {
         std::cout << "could not start identify triangle" << std::endl;
         return;
     }
-    Tri& clickedTri = fold.triangles[trindex];
+    Tri& clickedTri = fold.data[trindex];
     PaperMesh* paperMesh = curSide == 0 ? paperMeshes.first : paperMeshes.second;
     
     // 2. get crease line

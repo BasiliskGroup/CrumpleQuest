@@ -5,6 +5,7 @@
 #include "levels/singleSide.h"
 #include "levels/triangle.h"
 #include "levels/edger.h"
+#include "levels/dymesh.h"
 
 class Game;
 
@@ -14,8 +15,7 @@ public:
     static std::unordered_map<RoomTypes, std::vector<std::string>> papers;
 
 private:
-    struct Fold : public Edger {
-        std::vector<Tri> triangles;
+    struct Fold : public DyMesh {
         std::set<Fold> holds;
         vec2 crease;
         int layer;
@@ -32,8 +32,7 @@ private:
         }
     };
 
-    struct PaperMesh : public Edger{
-        std::vector<Vert> data;
+    struct PaperMesh : public DyMesh {
         Mesh* mesh;
 
         PaperMesh(const std::vector<vec2> verts, const std::vector<Vert>& data);
