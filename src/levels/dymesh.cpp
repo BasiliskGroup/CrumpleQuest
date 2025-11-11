@@ -21,11 +21,11 @@ vec2 sampleUVFromTriList(const std::vector<Tri>& tris, const vec2& pos) {
     throw std::runtime_error("Invalid copy location");
 }
 
-DyMesh::DyMesh(const std::vector<vec2>& region, const std::vector<Tri>& data) : region(region), data(data) {
+DyMesh::DyMesh(const std::vector<vec2>& region, const std::vector<Tri>& data) : Edger(region), data(data) {
     ensureCCW(this->region);
 }
 
-DyMesh::DyMesh(const std::vector<vec2>& region, Mesh* mesh) : region(region), data() {
+DyMesh::DyMesh(const std::vector<vec2>& region, Mesh* mesh) : Edger(region), data() {
     std::vector<float>& verts = mesh->getVertices();
     data.reserve(verts.size() / 15);
 
@@ -33,7 +33,8 @@ DyMesh::DyMesh(const std::vector<vec2>& region, Mesh* mesh) : region(region), da
     while (i < verts.size()) {
         std::array<Vert, 3> tri;
         for (uint j = 0; j < 3; j++) {
-            tri[j] = Vert({verts[i++], verts[i++]}, {verts[++i], verts[++i]});
+            tri[j] = Vert({verts[i + 0], verts[i + 1]}, {verts[i + 3], verts[i + 4]});
+            i += 5;
         }
         data.push_back(tri);
     }

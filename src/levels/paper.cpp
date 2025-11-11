@@ -1,6 +1,6 @@
 #include "levels/levels.h"
 
-Paper::PaperMesh::PaperMesh(const std::vector<vec2> verts, const std::vector<Vert>& data) : Edger(verts), mesh(nullptr), data(data) {
+Paper::PaperMesh::PaperMesh(const std::vector<vec2> region, const std::vector<Vert>& data) : Edger(region), mesh(nullptr), data(data) {
     std::vector<float> flatData; 
     Paper::flattenVertices(data, flatData);
     mesh = new Mesh(flatData);
@@ -12,7 +12,7 @@ Paper::PaperMesh::~PaperMesh() {
 }
 
 // Copy constructor
-Paper::PaperMesh::PaperMesh(const PaperMesh& other) : Edger(other.verts), data(other.data), mesh(nullptr) {
+Paper::PaperMesh::PaperMesh(const PaperMesh& other) : Edger(other.region), data(other.data), mesh(nullptr) {
     if (other.mesh) {
         std::vector<float> flatData;
         Paper::flattenVertices(data, flatData);
@@ -21,7 +21,7 @@ Paper::PaperMesh::PaperMesh(const PaperMesh& other) : Edger(other.verts), data(o
 }
 
 // Move constructor
-Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : Edger(std::move(other.verts)), data(std::move(other.data)), mesh(other.mesh) {
+Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : Edger(std::move(other.region)), data(std::move(other.data)), mesh(other.mesh) {
     other.mesh = nullptr;
 }
 
@@ -35,7 +35,7 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(const PaperMesh& other) {
     delete mesh;
     mesh = temp.mesh;
     data = std::move(temp.data);
-    verts = std::move(temp.verts);
+    region = std::move(temp.region);
     temp.mesh = nullptr;
     
     return *this;
@@ -48,7 +48,7 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(PaperMesh&& other) noexcept {
     delete mesh;
     
     data = std::move(other.data);
-    verts = std::move(other.verts);
+    region = std::move(other.region);
     mesh = other.mesh;
     other.mesh = nullptr;
     
@@ -323,11 +323,11 @@ void Paper::fold(const vec2& start, const vec2& end) {
         // Print the vertices that form these edges
         int leftStart = leftEdgeIndex;
         int leftEnd = indexBounds.first;
-        if (leftStart < 0) leftStart += paperMesh->verts.size();
-        if (leftEnd < 0) leftEnd += paperMesh->verts.size();
+        if (leftStart < 0) leftStart += paperMesh->region.size();
+        if (leftEnd < 0) leftEnd += paperMesh->region.size();
         
-        int rightStart = rightEdgeIndex % paperMesh->verts.size();
-        int rightEnd = (rightEdgeIndex + 1) % paperMesh->verts.size();
+        int rightStart = rightEdgeIndex % paperMesh->region.size();
+        int rightEnd = (rightEdgeIndex + 1) % paperMesh->region.size();
         
         vec2 foldStart, foldEnd;
         bool leftCheck = paperMesh->getEdgeIntersection(indexBounds.first - 1, midPoint, creaseDir, foldStart);

@@ -3,13 +3,14 @@
 
 #include "util/includes.h"
 #include "util/maths.h"
+
 #include "levels/triangle.h"
+#include "levels/edger.h"
 
 #include <earcut.hpp> // mapbox earcut imported through assimp
 #include "util/clipper_helper.h"
 
-struct DyMesh {
-    std::vector<vec2> region; // all vertices that make the perimeter of the shape, wound CCW
+struct DyMesh : public Edger {
     std::vector<Tri> data; // the current state of the mesh
 
     // constructors, Mesh*, vector of vec2, Tri
