@@ -126,6 +126,21 @@ std::pair<int, int> Edger::getVertexRangeBelowThreshold(const vec2& dir, float t
     return {first, second};
 }
 
+void Edger::addVertexRange(std::vector<vec2>& vecs, const std::pair<int, int> range) {
+    if (region.empty())
+        return;
+
+    int n = static_cast<int>(region.size());
+    int a = glm::clamp(range.first, 0, n - 1);
+    int b = glm::clamp(range.second, 0, n - 1);
+
+    // Collect indices in order, handling wrap-around if b < a
+    for (int i = a;; i = (i + 1) % n) {
+        vecs.push_back(region[i]);
+        if (i == b) break;
+    }
+}
+
 bool Edger::getEdgeIntersection(int edgeStartIndex, const vec2& pos, const vec2& dir, vec2& out) {
     size_t n = region.size();
     if (n < 2) {

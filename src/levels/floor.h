@@ -54,7 +54,7 @@ private:
 
     // play data
     Position playerPos;
-    SquareMap<Paper> roomMap;
+    SquareMap<Paper*> roomMap;
 
 public:
     Floor();

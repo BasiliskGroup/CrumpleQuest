@@ -1,9 +1,9 @@
 #include "levels/levels.h"
 
-Paper::PaperMesh::PaperMesh(const std::vector<vec2> region, const std::vector<Vert>& data) : DyMesh(region), mesh(nullptr) {
-    std::vector<float> flatData; 
-    Paper::flattenVertices(data, flatData);
-    mesh = new Mesh(flatData);
+Paper::PaperMesh::PaperMesh(const std::vector<vec2> verts, Mesh* mesh) : DyMesh(verts, mesh), mesh(nullptr) {
+    std::vector<float> data; 
+    toData(data);
+    this->mesh = new Mesh(data);
 }
 
 Paper::PaperMesh::~PaperMesh() {
@@ -11,21 +11,16 @@ Paper::PaperMesh::~PaperMesh() {
     mesh = nullptr;
 }
 
-// Copy constructor
-Paper::PaperMesh::PaperMesh(const PaperMesh& other) : DyMesh(other.region), mesh(nullptr) {
-    if (other.mesh) {
-        std::vector<float> data;
-        toData(data);
-        mesh = new Mesh(data);
-    }
+Paper::PaperMesh::PaperMesh(const PaperMesh& other) : DyMesh(other.region, other.data), mesh(nullptr) {
+    std::vector<float> data;
+    toData(data);
+    mesh = new Mesh(data);
 }
 
-// Move constructor
-Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : DyMesh(std::move(other.region)), mesh(other.mesh) {
+Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : DyMesh(std::move(other.region), std::move(other.data)), mesh(other.mesh) {
     other.mesh = nullptr;
 }
 
-// Copy assignment
 Paper::PaperMesh& Paper::PaperMesh::operator=(const PaperMesh& other) {
     if (this == &other) return *this;
     
@@ -35,6 +30,7 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(const PaperMesh& other) {
     delete mesh;
     mesh = temp.mesh;
     region = std::move(temp.region);
+    data = std::move(temp.data);
     temp.mesh = nullptr;
     
     return *this;
@@ -47,52 +43,32 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(PaperMesh&& other) noexcept {
     delete mesh;
     
     region = std::move(other.region);
+    data = std::move(other.data);
     mesh = other.mesh;
     other.mesh = nullptr;
     
     return *this;
 }
 
-// ==================== Paper Implementation ====================
+Paper::Paper() : 
+    curSide(0), 
+    isOpen(false),
+    activeFold(-1),
+    sides(nullptr, nullptr), 
+    paperMeshes(nullptr, nullptr) 
+{}
 
-Paper::Paper() 
-    : curSide(0), isOpen(false), activeFold(-1)
-{
-    sides = { nullptr, nullptr };
-    paperMeshes = { nullptr, nullptr };
-}
-
-Paper::Paper(Mesh* mesh, const std::vector<vec2>& edgeVerts) : 
+Paper::Paper(Mesh* mesh, const std::vector<vec2>& region) : 
     curSide(0), 
     isOpen(false),
     activeFold(-1),
     sides(nullptr, nullptr), 
     paperMeshes(nullptr, nullptr) 
 {
-    const auto& meshVerts = mesh->getVertices();
+    paperMeshes.first = new PaperMesh(region, mesh);
+    paperMeshes.second = new PaperMesh(region, mesh);
 
-    std::vector<Vert> verts;
-    for (uint i = 0; i < meshVerts.size(); i += 5) {
-        // no i + 2 since that is z and we're flat
-        verts.push_back({ { meshVerts[i + 0], meshVerts[i + 1] }, { meshVerts[i + 2], meshVerts[i + 3] } });
-    }
-    paperMeshes.first = new PaperMesh(edgeVerts, verts);
-
-    // reverse x direction for other side of paper
-    for (Vert& v : verts) {
-        v.pos.x = -v.pos.x;
-        // TODO check if we need to invert UVs
-    }
-    paperMeshes.second = new PaperMesh(edgeVerts, verts);
-
-    initFolds(edgeVerts);
-}
-
-Paper::Paper(SingleSide* sideA, SingleSide* sideB, short startSide, bool isOpen) 
-    : isOpen(isOpen), curSide(startSide), activeFold(-1) 
-{
-    sides = { sideA, sideB };
-    paperMeshes = { nullptr, nullptr };
+    initFolds(region);
 }
 
 Paper::Paper(const Paper& other)
@@ -206,10 +182,16 @@ void Paper::clear() {
     paperMeshes = { nullptr, nullptr };
     
     isOpen = true;
+
+    // Temporary
+    for (uint i = 0; i < regionNodes.size(); i++) {
+        delete regionNodes[i];
+    }
+    regionNodes.clear();
 }
 
-Paper::Fold::Fold(const std::vector<vec2>& verts, vec2 crease, int layer, int side) 
-    : DyMesh(verts), crease(crease), layer(layer), side(side)
+Paper::Fold::Fold(const std::vector<vec2>& verts, int side) 
+    : DyMesh(verts), side(side)
 {
     // find indices
     std::vector<uint> inds;
@@ -222,10 +204,6 @@ Paper::Fold::Fold(const std::vector<vec2>& verts, vec2 crease, int layer, int si
             verts[inds[i + 1]],
             verts[inds[i + 2]]
         }));
-        std::cout << "<" << verts[inds[i + 0]].x << ", " << verts[inds[i + 0]].y << ">";
-        std::cout << "<" << verts[inds[i + 1]].x << ", " << verts[inds[i + 1]].y << ">";
-        std::cout << "<" << verts[inds[i + 2]].x << ", " << verts[inds[i + 1]].y << ">";
-        std::cout << std::endl;
     }
 }
 
@@ -240,7 +218,7 @@ void Paper::initFolds(const std::vector<vec2>& edgeVerts) {
     if (paperMeshes.first == nullptr) {
         throw std::runtime_error("Cannot create fold with no paper mesh");
     }
-    folds.push_back(Fold(edgeVerts, {0, 0}, 0));
+    folds.push_back(Fold(edgeVerts));
 }
 
 Mesh* Paper::getMesh() { 
@@ -272,19 +250,13 @@ void Paper::fold(const vec2& start, const vec2& end) {
     
     // 1. locate triangle that we are on
     Fold& fold = folds[activeFold];
-    uint trindex = -1;
-    for (uint i = 0; i < fold.data.size(); i++) {
-        if (fold.data[i].contains(start)) {
-            trindex = i;
-            break;
-        }
-    }
+    uint trindex = fold.getTrindex(start);
     if (trindex == -1) {
         std::cout << "could not start identify triangle" << std::endl;
         return;
     }
-    Tri& clickedTri = fold.data[trindex];
     PaperMesh* paperMesh = curSide == 0 ? paperMeshes.first : paperMeshes.second;
+    Tri& clickedTri = paperMesh->data[trindex];
     
     // 2. get crease line
     vec2 dx = end - start;
@@ -302,30 +274,22 @@ void Paper::fold(const vec2& start, const vec2& end) {
     dx = end - foldStart;
     vec2 creaseDir = { dx.y, -dx.x };
 
-    new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("paper"), .scale={0.25, 0.25}, .position=edgeIntersectPaper });
+    new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("paper"), .scale={0.25, 0.25}, .position=foldStart });
     
     vec2 midPoint = 0.5f * (end + foldStart);
     float midDot = glm::dot(midPoint, dx);
     
     // make a new fold in the paper
-    if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
+    if (true || glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
         std::cout << "fold" << std::endl;
 
-        vec2 searchStart = clickedTri.leastDot(dx);
+        uint trindex = paperMesh->getTrindex(edgeIntersectPaper);
+        vec2 searchStart = paperMesh->data[trindex].leastDot(dx);
         auto indexBounds = paperMesh->getVertexRangeBelowThreshold(dx, midDot, searchStart);
         
         // Calculate the actual edge indices
         int leftEdgeIndex = indexBounds.first - 1;
         int rightEdgeIndex = indexBounds.second;
-        
-        // Print the vertices that form these edges
-        int leftStart = leftEdgeIndex;
-        int leftEnd = indexBounds.first;
-        if (leftStart < 0) leftStart += paperMesh->region.size();
-        if (leftEnd < 0) leftEnd += paperMesh->region.size();
-        
-        int rightStart = rightEdgeIndex % paperMesh->region.size();
-        int rightEnd = (rightEdgeIndex + 1) % paperMesh->region.size();
         
         vec2 foldStart, foldEnd;
         bool leftCheck = paperMesh->getEdgeIntersection(indexBounds.first - 1, midPoint, creaseDir, foldStart);
@@ -338,31 +302,43 @@ void Paper::fold(const vec2& start, const vec2& end) {
         new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .scale={0.25, 0.25}, .position=foldStart });
         new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .scale={0.25, 0.25}, .position=foldEnd });
 
+        std::cout << "New Fold Verts" << std::endl;
+
         // create new fold
-        std::vector<vec2> newFoldVerts = { foldStart, foldEnd };
-        paperMesh->reflectVerticesOverLine(newFoldVerts, indexBounds.first, indexBounds.second, midPoint, creaseDir);
-        for (vec2& v : newFoldVerts) v.y *= -1;
-        std::vector<uint> newFoldIndices;
-        Navmesh::earcut({newFoldVerts}, newFoldIndices);
+        std::vector<vec2> newFoldVerts = { foldStart };
+        paperMesh->addVertexRange(newFoldVerts, indexBounds);
+        newFoldVerts.push_back(foldEnd);
+        // paperMesh->reflectVerticesOverLine(newFoldVerts, indexBounds.first, indexBounds.second, midPoint, creaseDir);
+        std::reverse(newFoldVerts.begin(), newFoldVerts.end());
+        Fold newFold = Fold(newFoldVerts);
+
         std::vector<float> newFoldData;
-        Navmesh::convertToMesh({newFoldVerts}, newFoldIndices, newFoldData);
+        newFold.toData(newFoldData);
+        
         std::string meshName = std::to_string(midPoint.x) + " " + std::to_string(midPoint.y);
         game->addMesh(meshName, new Mesh(newFoldData));
-        Node2D* tempNode = new Node2D(game->getScene(), { .mesh=game->getMesh(meshName), .material=game->getMaterial("box"), .position={0, 3} });
+        Node2D* tempNode = new Node2D(game->getScene(), { .mesh=game->getMesh(meshName), .material=game->getMaterial("box") });
+        tempNode->setLayer(-0.9);
 
         // modify the mesh to accommodate new fold
+        paperMesh->cut(newFold);
         Mesh* oldPaperMesh = paperMesh->mesh;
-        std::vector<vec2> newMeshVerts = { foldStart, foldEnd };
-        paperMesh->getUnreflectedVertices(newMeshVerts, indexBounds.first, indexBounds.second);
-        for (vec2& v : newMeshVerts) v.y *= -1;
-        std::vector<uint> newMeshIndices;
-        Navmesh::earcut({newMeshVerts}, newMeshIndices);
         std::vector<float> newMeshData;
-        Navmesh::convertToMesh({newMeshVerts}, newMeshIndices, newMeshData);
+        paperMesh->toData(newMeshData);
         paperMesh->mesh = new Mesh(newMeshData);
         delete oldPaperMesh;
 
-        // TODO delete old mesh
+        // Display region for debug
+        for (uint i = 0; i < regionNodes.size(); i++) {
+            delete regionNodes[i];
+        }
+        regionNodes.clear();
+
+        for (auto& r : paperMesh->region) {
+            Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position=r, .scale={0.1, 0.1} });
+            n->setLayer(0.9);
+            regionNodes.push_back(n);
+        }
 
     } else {
         std::cout << "unfold" << std::endl;
@@ -370,11 +346,4 @@ void Paper::fold(const vec2& start, const vec2& end) {
     
     // TODO add in an unfold function
     // TODO add pulling a fold forward
-    
-    // 4. create fold polygon
-    // 5. clip polygon to remove folded over section
-    // 6. earcut remaining paper and remap uvs
-    // 7. earcut fold and mirror uvs
-    // 8. clip the back (should be no uv changes)
-    // 9. lock folds if they are folded back or covered. 
 }

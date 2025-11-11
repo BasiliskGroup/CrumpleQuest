@@ -11,10 +11,7 @@ void Paper::generateTemplates(Game* game) {
     // create templates
     // ---------------------
 
-    templates["empty"] = Paper(
-        new SingleSide(SingleSide::templates["empty"]),
-        new SingleSide(SingleSide::templates["empty"])
-    );
+    templates["empty"] = Paper(game->getMesh("paper"), {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}});
 
     // ---------------------
     // label templates

@@ -17,25 +17,21 @@ public:
 private:
     struct Fold : public DyMesh {
         std::set<Fold> holds;
-        vec2 crease;
-        int layer;
         int side; 
 
-        Fold(const std::vector<vec2>& verts, vec2 crease, int layer, int side=0);
+        Fold(const std::vector<vec2>& verts, int side=0);
         bool contains(const vec2& pos);
         
         // Fold needs operator< for std::set, if not already defined
         bool operator<(const Fold& other) const {
-            if (layer != other.layer) return layer < other.layer;
-            if (side != other.side) return side < other.side;
-            return crease.x < other.crease.x || (crease.x == other.crease.x && crease.y < other.crease.y);
+            return (long) this < (long) &other;
         }
     };
 
     struct PaperMesh : public DyMesh {
         Mesh* mesh;
 
-        PaperMesh(const std::vector<vec2> verts, const std::vector<Vert>& data);
+        PaperMesh(const std::vector<vec2> verts, Mesh* mesh);
         ~PaperMesh();
         
         // Rule of 5 for PaperMesh
@@ -56,14 +52,14 @@ private:
 
     // TODO temporary
     Game* game = nullptr;
+    std::vector<Node2D*> regionNodes;
 
     // tracking gameplay
     bool isOpen;
 
 public:
     Paper();
-    Paper(Mesh* mesh, const std::vector<vec2>& edgeVerts);
-    Paper(SingleSide* sideA, SingleSide* sideB, short startSide=0, bool isOpen=false);
+    Paper(Mesh* mesh, const std::vector<vec2>& region);
     
     // Rule of 5
     Paper(const Paper& other);

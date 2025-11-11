@@ -100,7 +100,9 @@ void Game::update(float dt) {
             paperNode = new Node2D(scene, { .mesh=meshes["quad"], .material=materials["paper"] });
         }
         if (paperNode->getMesh() != paper->getMesh()) {
-            paperNode->setMesh(paper->getMesh());
+            Mesh* paperMesh = paper->getMesh();
+            // std::cout << paperMesh << std::endl;
+            if (paperMesh != nullptr) paperNode->setMesh(paperMesh);
         }
 
     } else {
@@ -112,7 +114,7 @@ void Game::update(float dt) {
 
     // basilisk update
     engine->update();
-    scene->update(0.00001);
+    scene->update();
     scene->render();
     engine->render();
 }

@@ -58,7 +58,7 @@ void DyMesh::cut(const std::vector<vec2>& clipRegion) {
         solution = Difference(subj, clip, FillRule::NonZero);
     } catch (...) {
         // If Clipper fails for any reason, avoid corrupting the mesh
-        return;
+        return; // TODO return bool for failure
     }
 
     // Convert solution to a single region (pick the largest path)
@@ -72,7 +72,13 @@ void DyMesh::cut(const std::vector<vec2>& clipRegion) {
     }
 
     ensureCCW(newRegion);
-    region = newRegion;
+
+    std::cout << "Regions" << std::endl;
+    for (auto& r : newRegion) std::cout << "<" << r.x << " " << r.y << "> "; std::cout << std::endl;
+
+    this->region = newRegion;
+
+    for (auto& r : region) std::cout << "<" << r.x << " " << r.y << "> "; std::cout << std::endl;
 
     // Re-triangulate region with earcut
     std::vector<uint32_t> indices = earcutIndicesFromRegion(region);
@@ -117,7 +123,7 @@ void DyMesh::paste(const DyMesh& other) {
     cut(other.region);
 
     // 3) Deep copy incoming triangles into our data (their UVs preserved)
-    //    Note: we simply append; the caller requested that pasted triangles come from the incoming DyMesh.
+    // Note: we simply append; the caller requested that pasted triangles come from the incoming DyMesh.
     for (const Tri& t : other.data) {
         data.push_back(t); // Tri's default copy is a deep copy for our Vert array
     }
@@ -142,6 +148,10 @@ void DyMesh::paste(const DyMesh& other) {
     }
 }
 
+void pasteWithin(const DyMesh& other) {
+
+}
+
 vec2 DyMesh::sampleUV(const vec2& pos) const {
     std::cout << "internal sample" << std::endl;
     return sampleUVFromTriList(data, pos);
@@ -154,10 +164,21 @@ void DyMesh::toData(std::vector<float>& data) {
     for (uint i = 0; i < this->data.size(); i++) {
         for (const Vert& vert : this->data[i].verts) {
             data.push_back(vert.pos.x);
-            data.push_back(vert.pos.y);
+            data.push_back(-vert.pos.y);
             data.push_back(0.0);
             data.push_back(vert.uv.x);
-            data.push_back(vert.uv.y);
+            data.push_back(-vert.uv.y);
         }
     }
 }
+
+uint DyMesh::getTrindex(const vec2& pos) const {
+    uint trindex = -1;
+    for (uint i = 0; i < data.size(); i++) {
+        if (data[i].contains(pos)) {
+            trindex = i;
+            break;
+        }
+    }
+    return trindex;
+}   

@@ -106,3 +106,7 @@ float signedArea(const std::vector<vec2>& poly) {
 void ensureCCW(std::vector<vec2>& poly) {
     if (signedArea(poly) < 0.0f) std::reverse(poly.begin(), poly.end());
 }
+
+void flipPolyY(std::vector<vec2>& poly) {
+    for (vec2& v : poly) v.y *= -1;
+}

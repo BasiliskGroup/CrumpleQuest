@@ -13,20 +13,20 @@
 struct DyMesh : public Edger {
     std::vector<Tri> data; // the current state of the mesh
 
-    // constructors, Mesh*, vector of vec2, Tri
     DyMesh(const std::vector<vec2>& region, Mesh* mesh);
     DyMesh(const std::vector<vec2>& region, const std::vector<Tri>& data);
     DyMesh(const std::vector<vec2>& region); // NOTE probably temporary, 
 
-    // geometry operations (implemented in dymesh.cpp)
-    void cut(const std::vector<vec2>& clipRegion);
-    void cut(const DyMesh& other);
-    void copy(const DyMesh& other);
-    void paste(const DyMesh& other);
+    void cut(const std::vector<vec2>& clipRegion); // delete region
+    void cut(const DyMesh& other); // delete region
+    void copy(const DyMesh& other); // copy all uvs from containing shape
+    void paste(const DyMesh& other); // paste incoming shape intop of us
+    void pasteWithin(const DyMesh& other); // paste only sections that are within our region
 
-    // sample UV
     vec2 sampleUV(const vec2& pos) const;
     vec2 sampleUV(const Vert& v) const { return sampleUV(v.pos); }
+
+    uint getTrindex(const vec2& pos) const;
 
     // export
     void toData(std::vector<float>& data);

@@ -65,6 +65,7 @@ vec2 Tri::sampleUV(const vec2& pos) const {
 
     float denom = (b.y - c.y)*(a.x - c.x) + (c.x - b.x)*(a.y - c.y);
     const float eps = 1e-8f;
+    
     if (fabs(denom) < eps) {
         // Degenerate triangle: return nearest vertex UV
         float da = glm::distance(pos, a);
