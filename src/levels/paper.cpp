@@ -274,7 +274,7 @@ void Paper::fold(const vec2& start, const vec2& end) {
     dx = end - foldStart;
     vec2 creaseDir = { dx.y, -dx.x };
 
-    new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("paper"), .scale={0.25, 0.25}, .position=foldStart });
+    new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("paper"), .position=foldStart, .scale={0.25, 0.25} });
     
     vec2 midPoint = 0.5f * (end + foldStart);
     float midDot = glm::dot(midPoint, dx);
