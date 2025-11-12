@@ -299,8 +299,8 @@ void Paper::fold(const vec2& start, const vec2& end) {
         
         if (!check) throw std::runtime_error("Fold crease could not find intersection");
 
-        new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .scale={0.25, 0.25}, .position=foldStart });
-        new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .scale={0.25, 0.25}, .position=foldEnd });
+        new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position=foldStart, .scale={0.25, 0.25} });
+        new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position=foldEnd, .scale={0.25, 0.25} });
 
         std::cout << "New Fold Verts" << std::endl;
 
@@ -308,7 +308,9 @@ void Paper::fold(const vec2& start, const vec2& end) {
         std::vector<vec2> newFoldVerts = { foldStart };
         paperMesh->addVertexRange(newFoldVerts, indexBounds);
         newFoldVerts.push_back(foldEnd);
-        // paperMesh->reflectVerticesOverLine(newFoldVerts, indexBounds.first, indexBounds.second, midPoint, creaseDir);
+
+        paperMesh->reflectVerticesOverLine(newFoldVerts, indexBounds.first, indexBounds.second, midPoint, creaseDir);
+
         std::reverse(newFoldVerts.begin(), newFoldVerts.end());
         Fold newFold = Fold(newFoldVerts);
 
