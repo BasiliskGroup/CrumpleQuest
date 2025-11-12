@@ -4,8 +4,6 @@
 #include "util/includes.h"
 #include "character/character.h"
 
-auto onDamage = [](Character* hit) { hit->onDamage(5); };
-
 class DamageZone {
 private:
     Character* owner;
