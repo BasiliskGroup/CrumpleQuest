@@ -1,63 +1,5 @@
 #include "levels/levels.h"
 
-Paper::PaperMesh::PaperMesh(const std::vector<vec2> verts, Mesh* mesh) : DyMesh(verts, mesh), mesh(nullptr) {
-    std::vector<float> data; 
-    toData(data);
-    this->mesh = new Mesh(data);
-}
-
-Paper::PaperMesh::~PaperMesh() {
-    delete mesh; 
-    mesh = nullptr;
-}
-
-Paper::PaperMesh::PaperMesh(const PaperMesh& other) : DyMesh(other.region, other.data), mesh(nullptr) {
-    std::vector<float> data;
-    toData(data);
-    mesh = new Mesh(data);
-}
-
-Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : DyMesh(std::move(other.region), std::move(other.data)), mesh(other.mesh) {
-    other.mesh = nullptr;
-}
-
-Paper::PaperMesh& Paper::PaperMesh::operator=(const PaperMesh& other) {
-    if (this == &other) return *this;
-    
-    // Copy-and-swap idiom for exception safety
-    PaperMesh temp(other);
-    
-    delete mesh;
-    mesh = temp.mesh;
-    region = std::move(temp.region);
-    data = std::move(temp.data);
-    temp.mesh = nullptr;
-    
-    return *this;
-}
-
-// Move assignment
-Paper::PaperMesh& Paper::PaperMesh::operator=(PaperMesh&& other) noexcept {
-    if (this == &other) return *this;
-    
-    delete mesh;
-    
-    region = std::move(other.region);
-    data = std::move(other.data);
-    mesh = other.mesh;
-    other.mesh = nullptr;
-    
-    return *this;
-}
-
-void Paper::PaperMesh::regenerateMesh() {
-    Mesh* oldPaperMesh = mesh;
-    std::vector<float> newMeshData;
-    toData(newMeshData);
-    mesh = new Mesh(newMeshData);
-    delete oldPaperMesh;
-}
-
 Paper::Paper() : 
     curSide(0), 
     isOpen(false),
@@ -196,8 +138,6 @@ void Paper::clear() {
     regionNodes.clear();
 }
 
-Paper::Fold::Fold(const std::vector<vec2>& verts, int side) : DyMesh(verts), side(side) {}
-
 Mesh* Paper::getMesh() { 
     PaperMesh* curMesh = getPaperMesh();
     if (curMesh == nullptr) return nullptr;
@@ -249,14 +189,9 @@ void Paper::fold(const vec2& start, const vec2& end) {
     }
 
     // variable to modify "start" position of fold, drop and replace
-    vec2 foldStart = nearEdgePointPaper;
-
-    dx = end - foldStart;
+    dx = end - nearEdgePointPaper;
     vec2 creaseDir = { dx.y, -dx.x };
-
-    new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("paper"), .position=foldStart, .scale={0.25, 0.25} });
-    
-    vec2 midPoint = 0.5f * (end + foldStart);
+    vec2 midPoint = 0.5f * (end + nearEdgePointPaper);
     float midDot = glm::dot(midPoint, dx);
     
     // make a new fold in the paper
@@ -278,10 +213,6 @@ void Paper::fold(const vec2& start, const vec2& end) {
         bool check = leftCheck & rightCheck;
         if (!check) throw std::runtime_error("Fold crease could not find intersection");
 
-        // DEBUG
-        new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position=foldStart, .scale={0.25, 0.25} });
-        new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position=foldEnd, .scale={0.25, 0.25} });
-
         // create new fold
         std::vector<vec2> foldCutVerts = { foldStart };
         paperMesh->addVertexRange(foldCutVerts, indexBounds);
@@ -294,28 +225,18 @@ void Paper::fold(const vec2& start, const vec2& end) {
 
         DyMesh mirrorFold = foldCut.mirror(midPoint, creaseDir);
 
-        // DEBUG
-        std::vector<float> foldCutData;
-        foldCut.toData(foldCutData);
-        
-        std::string meshName = std::to_string(midPoint.x) + " " + std::to_string(midPoint.y);
-        game->addMesh(meshName, new Mesh(foldCutData));
-        Node2D* tempNode = new Node2D(game->getScene(), { .mesh=game->getMesh(meshName), .material=game->getMaterial("box"), .position={0, 0} });
-        tempNode->setLayer(0.9);
-        // END DEBUG
-
         // create full fold cut
         paperMesh->reflectVerticesOverLine(foldCutVerts, indexBounds.first, indexBounds.second, midPoint, creaseDir);
 
         foldCut = Fold(foldCutVerts);
-        check = foldCut.copy(*paperMesh); // will be used to save what was on the paper before fold
+        check = foldCut.copyIntersection(*paperMesh); // will be used to save what was on the paper before fold
         if (!check) { std::cout << "Failed to copy underlayer" << std::endl; return; }
         
         // modify the mesh to accommodate new fold
         paperMesh->cut(foldCut);
         paperMesh->paste(mirrorFold);
 
-        // Display region for debug
+        // DEBUG Display region for debug
         for (uint i = 0; i < regionNodes.size(); i++) {
             delete regionNodes[i];
         }

@@ -107,6 +107,72 @@ void DyMesh::cut(const std::vector<vec2>& clipRegion) {
     data = std::move(newData);
 }
 
+bool DyMesh::copyIntersection(const DyMesh& other) {
+    if (region.empty() || other.region.empty())
+        return false;
+
+    // 1. Compute geometric intersection
+    Paths64 subj = makePaths64FromRegion(region);
+    Paths64 clip = makePaths64FromRegion(other.region);
+    Paths64 sol;
+
+    try {
+        sol = Intersect(subj, clip, FillRule::NonZero);
+    } catch (...) {
+        std::cout << "  COPY INTERSECTION: Intersect failed!" << std::endl;
+        return false;
+    }
+
+    // 2. Convert intersection result to region
+    std::vector<vec2> newRegion = makeRegionFromPaths64(sol);
+    if (newRegion.size() < 3) {
+        return false; // no overlap
+    }
+
+    ensureCCW(newRegion);
+
+    // 3. Triangulate intersection
+    std::vector<uint32_t> indices = earcutIndicesFromRegion(newRegion);
+    if (indices.empty())
+        return false;
+
+    std::vector<Tri> newData;
+    newData.reserve(indices.size() / 3);
+
+    // 4. Build new triangles, sampling UVs from "other"
+    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+        vec2 p0 = newRegion[indices[i + 0]];
+        vec2 p1 = newRegion[indices[i + 1]];
+        vec2 p2 = newRegion[indices[i + 2]];
+
+        vec2 uv0, uv1, uv2;
+        bool ok0 = other.sampleUV(p0, uv0);
+        bool ok1 = other.sampleUV(p1, uv1);
+        bool ok2 = other.sampleUV(p2, uv2);
+
+        if (!(ok0 && ok1 && ok2)) {
+            // If UV sampling fails for any vertex, skip this triangle
+            continue;
+        }
+
+        std::array<Vert, 3> verts = {
+            Vert(p0, uv0),
+            Vert(p1, uv1),
+            Vert(p2, uv2)
+        };
+
+        newData.emplace_back(verts);
+    }
+
+    // 5. Replace this mesh data with intersection
+    if (newData.empty())
+        return false;
+
+    region = std::move(newRegion);
+    data = std::move(newData);
+
+    return true;
+}
 
 // cut overload that accepts another DyMesh
 void DyMesh::cut(const DyMesh& other) {

@@ -20,6 +20,7 @@ struct DyMesh : public Edger {
     void cut(const std::vector<vec2>& clipRegion); // delete region
     void cut(const DyMesh& other); // delete region
     bool copy(const DyMesh& other); // copy all uvs from containing shape
+    bool copyIntersection(const DyMesh& other); // copy region and UVs from intersection
     void paste(const DyMesh& other); // paste incoming shape intop of us
 
     bool contains(const vec2& pos) const;
