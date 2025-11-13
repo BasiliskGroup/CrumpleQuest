@@ -37,9 +37,13 @@ private:
         int side; 
 
         Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper, int side=0);
-
         ~Fold();
-        
+
+        Fold(const Fold& other);
+        Fold(Fold&& other) noexcept;
+        Fold& operator=(const Fold& other);
+        Fold& operator=(Fold&& other) noexcept;
+            
         // Fold needs operator< for std::set, if not already defined
         bool operator<(const Fold& other) const {
             return (long) this < (long) &other;
@@ -60,7 +64,6 @@ public: // DEBUG
     // TODO temporary
     Game* game = nullptr;
     std::vector<Node2D*> regionNodes;
-    int num_folds = 0;
 
     // tracking gameplay
     bool isOpen;

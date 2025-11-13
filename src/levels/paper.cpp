@@ -191,11 +191,20 @@ void Paper::fold(const vec2& start, const vec2& end) {
     // variable to modify "start" position of fold, drop and replace
     vec2 foldDir = end - nearEdgePointPaper;
     vec2 creasePos = 0.5f * (end + nearEdgePointPaper);
+
+    // Reactivate an old fold and reset its progress
+    // For now, we restore the fold to refold, maybe find more efficient solution layer
+    if (glm::length2(nearEdgePointFold - nearEdgePointPaper) < EPSILON) {
+        // cut out cover
+
+        // restore underside
+
+    }
     
     // Paper is being folded directly
     if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
-
-        Fold fold = Fold(paperMesh, creasePos, foldDir, edgeIntersectPaper, curSide);
+        folds.emplace_back(paperMesh, creasePos, foldDir, edgeIntersectPaper, curSide);
+        Fold& fold = folds.back();
         
         // modify the mesh to accommodate new fold
         paperMesh->cut(*fold.underside);
@@ -218,8 +227,6 @@ void Paper::fold(const vec2& start, const vec2& end) {
     } else {
         std::cout << "unfold" << std::endl;
     }
-    
-    num_folds++;
 
     // TODO add in an unfold function
     // TODO add pulling a fold forward

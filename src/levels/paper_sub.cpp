@@ -115,7 +115,62 @@ Paper::Fold::Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldD
     if (!check) { std::cout << "Failed to copy underlayer" << std::endl; return; }
 }
 
+// rule of 5
 Paper::Fold::~Fold() {
     delete underside; underside = nullptr;
     delete cover; cover = nullptr;
+}
+
+Paper::Fold::Fold(const Fold& other) :
+    underside(other.underside ? new DyMesh(*other.underside) : nullptr),
+    cover(other.cover ? new DyMesh(*other.cover) : nullptr),
+    holds(other.holds),
+    side(other.side)
+{}
+
+Paper::Fold::Fold(Fold&& other) noexcept :
+    underside(other.underside),
+    cover(other.cover),
+    holds(std::move(other.holds)),
+    side(other.side)
+{
+    other.underside = nullptr;
+    other.cover = nullptr;
+}
+
+Paper::Fold& Paper::Fold::operator=(const Fold& other) {
+    if (this == &other) return *this;
+    
+    // Copy-and-swap idiom for exception safety
+    Fold temp(other);
+    
+    delete underside;
+    delete cover;
+    
+    underside = temp.underside;
+    cover = temp.cover;
+    holds = std::move(temp.holds);
+    side = temp.side;
+    
+    temp.underside = nullptr;
+    temp.cover = nullptr;
+    
+    return *this;
+}
+
+Paper::Fold& Paper::Fold::operator=(Fold&& other) noexcept {
+    if (this == &other) return *this;
+    
+    delete underside;
+    delete cover;
+    
+    underside = other.underside;
+    cover = other.cover;
+    holds = std::move(other.holds);
+    side = other.side;
+    
+    other.underside = nullptr;
+    other.cover = nullptr;
+    
+    return *this;
 }
