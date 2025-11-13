@@ -300,6 +300,33 @@ bool DyMesh::contains(const vec2& pos) const {
     return false;
 }
 
+bool DyMesh::hasOverlap(const DyMesh& other) const {
+    if (region.size() < 3 || other.region.size() < 3)
+        return false;
+
+    Paths64 subj = makePaths64FromRegion(region);
+    Paths64 clip = makePaths64FromRegion(other.region);
+    Paths64 sol;
+
+    try {
+        sol = Intersect(subj, clip, FillRule::NonZero);
+    } catch (...) {
+        return false;
+    }
+
+    // No intersection polygons at all
+    if (sol.empty())
+        return false;
+
+    // Ensure overlap has a positive area (ignore touch-only intersections)
+    for (const Path64& p : sol) {
+        if (Area(p) > 0)      // Clipper area of path
+            return true;
+    }
+
+    return false;
+}
+
 void DyMesh::printData() {
     std::cout << "===== PRINT DATA ====" << std::endl;
     for (const Tri& tri : data) {

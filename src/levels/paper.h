@@ -33,7 +33,7 @@ private:
     struct Fold {
         DyMesh* underside;
         DyMesh* cover;
-        std::set<Fold> holds;
+        std::set<int> holds;
         int side; 
 
         Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper, int side=0);
@@ -43,17 +43,14 @@ private:
         Fold(Fold&& other) noexcept;
         Fold& operator=(const Fold& other);
         Fold& operator=(Fold&& other) noexcept;
-            
-        // Fold needs operator< for std::set, if not already defined
-        bool operator<(const Fold& other) const {
-            return (long) this < (long) &other;
-        }
+ 
+        bool isCovered() { return holds.size() > 0; }
     };
 
 public: // DEBUG
     
     // tracking folding
-    std::vector<Fold> folds;
+    std::vector<Fold> folds; // TODO, switch to ptrs
     int activeFold = NULL_FOLD;
 
     // side pairs
@@ -100,6 +97,9 @@ public:
 private:
     void clear();
     PaperMesh* getPaperMesh() { return curSide == 0 ? paperMeshes.first : paperMeshes.second; }
+
+    void pushFold(Fold& newFold);
+    void popFold(); // uses activeFold index
 };
 
 #endif

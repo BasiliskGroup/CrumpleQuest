@@ -203,8 +203,8 @@ void Paper::fold(const vec2& start, const vec2& end) {
     
     // Paper is being folded directly
     if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
-        folds.emplace_back(paperMesh, creasePos, foldDir, edgeIntersectPaper, curSide);
-        Fold& fold = folds.back();
+        Fold fold = Fold(paperMesh, creasePos, foldDir, edgeIntersectPaper, curSide);
+        pushFold(fold);
         
         // modify the mesh to accommodate new fold
         paperMesh->cut(*fold.underside);
@@ -230,4 +230,35 @@ void Paper::fold(const vec2& start, const vec2& end) {
 
     // TODO add in an unfold function
     // TODO add pulling a fold forward
+}
+
+void Paper::pushFold(Fold& newFold) {
+    std::set<int> seen;
+    int insertIndex = folds.size();
+
+    // iterate from top to bottom since covering folds will come after covered
+    for (int i = insertIndex - 1; i >= 0; i--) {
+        // prevents swapping unfold layers
+        Fold& fold = folds[i];
+        if (fold.underside->hasOverlap(*newFold.underside) == false) continue;
+
+        std::cout << "Covered" << std::endl;
+
+        fold.holds.insert(insertIndex);
+    }
+
+    folds.push_back(newFold);
+}
+
+void Paper::popFold() {
+    if (activeFold < 0 || activeFold >= folds.size()) return;
+
+    for (Fold& fold : folds) {
+        if (fold.holds.find(activeFold) != fold.holds.end()) {
+            fold.holds.erase(activeFold);
+        }
+    }
+
+    // active fold should be near to the back so this isn't the worst
+    folds.erase(folds.begin() + activeFold);
 }

@@ -17,11 +17,15 @@ struct DyMesh : public Edger {
     DyMesh(const std::vector<vec2>& region, const std::vector<Tri>& data);
     DyMesh(const std::vector<vec2>& region); // NOTE probably temporary, 
 
+    // modifier functions
     void cut(const std::vector<vec2>& clipRegion); // delete region
     void cut(const DyMesh& other); // delete region
     bool copy(const DyMesh& other); // copy all uvs from containing shape
     bool copyIntersection(const DyMesh& other); // copy region and UVs from intersection
     void paste(const DyMesh& other); // paste incoming shape intop of us
+
+    // collision checks
+    bool hasOverlap(const DyMesh& other) const;
 
     bool contains(const vec2& pos) const;
     
