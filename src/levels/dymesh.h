@@ -19,15 +19,15 @@ struct DyMesh : public Edger {
 
     void cut(const std::vector<vec2>& clipRegion); // delete region
     void cut(const DyMesh& other); // delete region
-    void copy(const DyMesh& other); // copy all uvs from containing shape
+    bool copy(const DyMesh& other); // copy all uvs from containing shape
     void paste(const DyMesh& other); // paste incoming shape intop of us
 
     bool contains(const vec2& pos) const;
     
     DyMesh mirror(const vec2& pos, const vec2& dir);
 
-    vec2 sampleUV(const vec2& pos) const;
-    vec2 sampleUV(const Vert& v) const { return sampleUV(v.pos); }
+    bool sampleUV(const vec2& v, vec2& uv) const;
+    bool sampleUV(const Vert& v, vec2& uv) const { return sampleUV(v.pos, uv); }
 
     int getTrindex(const vec2& pos) const;
 

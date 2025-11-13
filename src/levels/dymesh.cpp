@@ -11,13 +11,14 @@ std::vector<uint32_t> earcutIndicesFromRegion(const std::vector<vec2>& region) {
     return mapbox::earcut<uint32_t>(polygon);
 }
 
-vec2 sampleUVFromTriList(const std::vector<Tri>& tris, const vec2& pos) {
+bool sampleUVFromTriList(const std::vector<Tri>& tris, const vec2& pos, vec2& uv) {
     for (const Tri& t : tris) {
         if (t.contains(pos)) {
-            return t.sampleUV(pos);
+            uv = t.sampleUV(pos);
+            return true;
         }
     }
-    throw std::runtime_error("Invalid copy location");
+    return false;
 }
 
 DyMesh::DyMesh(const std::vector<vec2>& region, const std::vector<Tri>& data) : Edger(region), data(data) {
@@ -44,7 +45,7 @@ DyMesh::DyMesh(const std::vector<vec2>& region) : Edger(region), data() {
 
     // triangulate region with earcut
     std::vector<uint32_t> indices = earcutIndicesFromRegion(region);
-    data.reserve(indices.size() / 3);
+    // data.reserve(indices.size() / 3);
     for (size_t i = 0; i + 2 < indices.size(); i += 3) {
         Vert v0(region[indices[i + 0]], {0, 0});
         Vert v1(region[indices[i + 1]], {0, 1});
@@ -112,15 +113,17 @@ void DyMesh::cut(const DyMesh& other) {
     cut(other.region);
 }
 
-void DyMesh::copy(const DyMesh& other) {
+bool DyMesh::copy(const DyMesh& other) {
     // For every triangle vertex in this mesh, sample UV from other
     for (Tri& t : data) {
         for (int i = 0; i < 3; ++i) {
             vec2 p = t.verts[i].pos;
-            vec2 uv = other.sampleUV(p);
+            vec2 uv;
+             if (other.sampleUV(p, uv) == false) return false;
             t.verts[i].uv = uv;
         }
     }
+    return true;
 }
 
 void DyMesh::paste(const DyMesh& other) {
@@ -194,8 +197,8 @@ DyMesh DyMesh::mirror(const vec2& pos, const vec2& dir) {
     return mirroredMesh;
 }
 
-vec2 DyMesh::sampleUV(const vec2& pos) const {
-    return sampleUVFromTriList(data, pos);
+bool DyMesh::sampleUV(const vec2& pos, vec2& uv) const {
+    return sampleUVFromTriList(data, pos, uv);
 }
 
 void DyMesh::toData(std::vector<float>& exp) {

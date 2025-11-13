@@ -289,7 +289,8 @@ void Paper::fold(const vec2& start, const vec2& end) {
 
         Fold foldCut = Fold(foldCutVerts);
         
-        foldCut.copy(*paperMesh); // TODO cut from back side of page later
+        check = foldCut.copy(*paperMesh); // TODO cut from back side of page later
+        if (!check) { std::cout << "Failed to copy half-cut" << std::endl; return; }
 
         DyMesh mirrorFold = foldCut.mirror(midPoint, creaseDir);
 
@@ -299,7 +300,7 @@ void Paper::fold(const vec2& start, const vec2& end) {
         
         std::string meshName = std::to_string(midPoint.x) + " " + std::to_string(midPoint.y);
         game->addMesh(meshName, new Mesh(foldCutData));
-        Node2D* tempNode = new Node2D(game->getScene(), { .mesh=game->getMesh(meshName), .material=game->getMaterial("box"), .position={0, 3} });
+        Node2D* tempNode = new Node2D(game->getScene(), { .mesh=game->getMesh(meshName), .material=game->getMaterial("box"), .position={0, 0} });
         tempNode->setLayer(0.9);
         // END DEBUG
 
@@ -307,16 +308,12 @@ void Paper::fold(const vec2& start, const vec2& end) {
         paperMesh->reflectVerticesOverLine(foldCutVerts, indexBounds.first, indexBounds.second, midPoint, creaseDir);
 
         foldCut = Fold(foldCutVerts);
-        foldCut.copy(*paperMesh); // will be used to save what was on the paper before fold
+        check = foldCut.copy(*paperMesh); // will be used to save what was on the paper before fold
+        if (!check) { std::cout << "Failed to copy underlayer" << std::endl; return; }
         
         // modify the mesh to accommodate new fold
         paperMesh->cut(foldCut);
-        paperMesh->printData();
-        
-        //if (num_folds == 0) 
         paperMesh->paste(mirrorFold);
-
-        paperMesh->printData();
 
         // Display region for debug
         for (uint i = 0; i < regionNodes.size(); i++) {
