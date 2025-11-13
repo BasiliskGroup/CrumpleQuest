@@ -88,3 +88,9 @@ vec2 Tri::sampleUV(const vec2& pos) const {
     vec2 uv = verts[0].uv * w1 + verts[1].uv * w2 + verts[2].uv * w3;
     return uv;
 }
+
+void Tri::print() const {
+    std::cout << "| ";
+    for (const Vert& vert : verts) std::cout << vert.pos.x << " " << vert.pos.y << " " << vert.uv.x << " " << vert.uv.y << " | ";
+    std::cout << std::endl;
+}

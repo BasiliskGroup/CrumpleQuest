@@ -21,15 +21,19 @@ struct DyMesh : public Edger {
     void cut(const DyMesh& other); // delete region
     void copy(const DyMesh& other); // copy all uvs from containing shape
     void paste(const DyMesh& other); // paste incoming shape intop of us
-    void pasteWithin(const DyMesh& other); // paste only sections that are within our region
+
+    bool contains(const vec2& pos) const;
+    
+    DyMesh mirror(const vec2& pos, const vec2& dir);
 
     vec2 sampleUV(const vec2& pos) const;
     vec2 sampleUV(const Vert& v) const { return sampleUV(v.pos); }
 
-    uint getTrindex(const vec2& pos) const;
+    int getTrindex(const vec2& pos) const;
 
     // export
-    void toData(std::vector<float>& data);
+    void toData(std::vector<float>& exp);
+    void printData();
 };
 
 #endif

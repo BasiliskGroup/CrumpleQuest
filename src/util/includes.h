@@ -57,6 +57,11 @@ enum AttackAnimation {
     NULL_ANIM = -1
 };
 
+enum ActiveFoldTypes {
+    PAPER_FOLD = -1,
+    NULL_FOLD = -2
+};
+
 struct Vert {
     vec2 pos;
     vec2 uv;

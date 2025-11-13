@@ -20,7 +20,6 @@ private:
         int side; 
 
         Fold(const std::vector<vec2>& verts, int side=0);
-        bool contains(const vec2& pos);
         
         // Fold needs operator< for std::set, if not already defined
         bool operator<(const Fold& other) const {
@@ -39,11 +38,15 @@ private:
         PaperMesh(PaperMesh&& other) noexcept;
         PaperMesh& operator=(const PaperMesh& other);
         PaperMesh& operator=(PaperMesh&& other) noexcept;
+
+        void regenerateMesh();
     };
+
+public: // DEBUG
     
     // tracking folding
     std::vector<Fold> folds;
-    int activeFold = -1;
+    int activeFold = NULL_FOLD;
 
     // side pairs
     std::pair<SingleSide*, SingleSide*> sides;
@@ -53,6 +56,7 @@ private:
     // TODO temporary
     Game* game = nullptr;
     std::vector<Node2D*> regionNodes;
+    int num_folds = 0;
 
     // tracking gameplay
     bool isOpen;
@@ -88,7 +92,7 @@ public:
 
 private:
     void clear();
-    void initFolds(const std::vector<vec2>& edgeVerts);
+    PaperMesh* getPaperMesh() { return curSide == 0 ? paperMeshes.first : paperMeshes.second; }
 };
 
 #endif

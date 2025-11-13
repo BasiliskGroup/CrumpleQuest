@@ -99,11 +99,12 @@ void Game::update(float dt) {
         if (paperNode == nullptr) {
             paperNode = new Node2D(scene, { .mesh=meshes["quad"], .material=materials["paper"] });
         }
-        if (paperNode->getMesh() != paper->getMesh()) {
-            Mesh* paperMesh = paper->getMesh();
-            // std::cout << paperMesh << std::endl;
-            if (paperMesh != nullptr) paperNode->setMesh(paperMesh);
-        }
+
+        paper->paperMeshes.first->regenerateMesh();
+        
+        Mesh* paperMesh = paper->getMesh();
+        // std::cout << paperMesh << std::endl;
+        if (paperMesh != nullptr) paperNode->setMesh(paperMesh);
 
     } else {
         if (paperNode) {

@@ -12,7 +12,6 @@ std::vector<uint32_t> earcutIndicesFromRegion(const std::vector<vec2>& region) {
 }
 
 vec2 sampleUVFromTriList(const std::vector<Tri>& tris, const vec2& pos) {
-    // Try direct contain test first
     for (const Tri& t : tris) {
         if (t.contains(pos)) {
             return t.sampleUV(pos);
@@ -40,62 +39,73 @@ DyMesh::DyMesh(const std::vector<vec2>& region, Mesh* mesh) : Edger(region), dat
     }
 }
 
-DyMesh::DyMesh(const std::vector<vec2>& region) : Edger(region), data() {}
+DyMesh::DyMesh(const std::vector<vec2>& region) : Edger(region), data() {
+    ensureCCW(this->region);
+
+    // triangulate region with earcut
+    std::vector<uint32_t> indices = earcutIndicesFromRegion(region);
+    data.reserve(indices.size() / 3);
+    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+        Vert v0(region[indices[i + 0]], {0, 0});
+        Vert v1(region[indices[i + 1]], {0, 1});
+        Vert v2(region[indices[i + 2]], {1, 1});
+        std::array<Vert, 3> verts = { v0, v1, v2 };
+        data.emplace_back(verts);
+    }
+}
 
 void DyMesh::cut(const std::vector<vec2>& clipRegion) {
     if (clipRegion.empty()) return;
 
-    // backup old data to resample from
-    std::vector<Tri> oldData = data;
-
-    // Clipper input
-    Paths64 subj = makePaths64FromRegion(this->region);
-    Paths64 clip = makePaths64FromRegion(clipRegion);
-
-    // Perform difference: subj - clip
-    Paths64 solution;
-    try {
-        solution = Difference(subj, clip, FillRule::NonZero);
-    } catch (...) {
-        // If Clipper fails for any reason, avoid corrupting the mesh
-        return; // TODO return bool for failure
-    }
-
-    // Convert solution to a single region (pick the largest path)
-    std::vector<vec2> newRegion = makeRegionFromPaths64(solution);
-
-    if (newRegion.empty()) {
-        // fully cut away - clear data & region
-        region.clear();
-        data.clear();
-        return;
-    }
-
-    ensureCCW(newRegion);
-
-    std::cout << "Regions" << std::endl;
-    for (auto& r : newRegion) std::cout << "<" << r.x << " " << r.y << "> "; std::cout << std::endl;
-
-    this->region = newRegion;
-
-    for (auto& r : region) std::cout << "<" << r.x << " " << r.y << "> "; std::cout << std::endl;
-
-    // Re-triangulate region with earcut
-    std::vector<uint32_t> indices = earcutIndicesFromRegion(region);
-
-    // Rebuild data triangles and resample UVs from oldData
     std::vector<Tri> newData;
-    newData.reserve(indices.size() / 3);
-    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
-        Vert v0(region[indices[i + 0]], sampleUVFromTriList(oldData, region[indices[i + 0]]));
-        Vert v1(region[indices[i + 1]], sampleUVFromTriList(oldData, region[indices[i + 1]]));
-        Vert v2(region[indices[i + 2]], sampleUVFromTriList(oldData, region[indices[i + 2]]));
-        std::array<Vert, 3> verts = { v0, v1, v2 };
-        newData.emplace_back(verts);
+    newData.reserve(data.size());
+
+    for (const Tri& tri : data) {
+        std::vector<vec2> triPoly = tri.toPolygon();  // 3 vertices
+        Paths64 subj = makePaths64FromRegion(triPoly);
+        Paths64 clip = makePaths64FromRegion(clipRegion);
+        Paths64 sol;
+
+        try {
+            sol = Difference(subj, clip, FillRule::NonZero);
+        } catch (...) {
+            continue;
+        }
+
+        // If nothing remains, triangle fully cut away
+        if (sol.empty()) continue;
+
+        // Each path in solution = one clipped polygon piece
+        for (auto& p : sol) {
+            std::vector<vec2> clipped = makeRegionFromPaths64({p});
+            if (clipped.size() < 3) continue;
+
+            ensureCCW(clipped);
+            auto indices = earcutIndicesFromRegion(clipped);
+
+            for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+                vec2 p0 = clipped[indices[i]];
+                vec2 p1 = clipped[indices[i+1]];
+                vec2 p2 = clipped[indices[i+2]];
+
+                // Sample UVs from *original triangle* for more local accuracy
+                Vert v0(p0, tri.sampleUV(p0));
+                Vert v1(p1, tri.sampleUV(p1));
+                Vert v2(p2, tri.sampleUV(p2));
+                newData.emplace_back(std::array<Vert,3>{v0, v1, v2});
+            }
+        }
     }
+
+    // Rebuild region if needed
+    Paths64 subjAll = makePaths64FromRegion(region);
+    Paths64 clip = makePaths64FromRegion(clipRegion);
+    Paths64 sol = Difference(subjAll, clip, FillRule::NonZero);
+    region = makeRegionFromPaths64(sol);
 
     data = std::move(newData);
 }
+
 
 // cut overload that accepts another DyMesh
 void DyMesh::cut(const DyMesh& other) {
@@ -116,65 +126,96 @@ void DyMesh::copy(const DyMesh& other) {
 void DyMesh::paste(const DyMesh& other) {
     if (other.region.empty()) return;
 
-    // 1) Make a backup of our current data to resample UVs after the cut
-    std::vector<Tri> oldData = data;
-
-    // 2) Cut the incoming region from ourselves (this updates this->region and this->data)
-    cut(other.region);
-
-    // 3) Deep copy incoming triangles into our data (their UVs preserved)
-    // Note: we simply append; the caller requested that pasted triangles come from the incoming DyMesh.
+    // 3) Deep copy incoming triangles
     for (const Tri& t : other.data) {
-        data.push_back(t); // Tri's default copy is a deep copy for our Vert array
+        data.push_back(t);
     }
 
-    // 4) Update region to be union(this->region, other.region) using Clipper2
+    // 4) Update region to union
     Paths64 a = makePaths64FromRegion(this->region);
     Paths64 b = makePaths64FromRegion(other.region);
 
-    // If our region is empty (we were fully cut), a will be empty; union should then just be b
     Paths64 unionSol;
     try {
         unionSol = Union(a, b, FillRule::NonZero);
     } catch (...) {
-        // union failed; bail out but keep current data (which contains appended triangles)
+        std::cout << "  PASTE: Union failed!" << std::endl;
         return;
     }
 
     std::vector<vec2> newRegion = makeRegionFromPaths64(unionSol);
+    
     if (!newRegion.empty()) {
         ensureCCW(newRegion);
         region = std::move(newRegion);
     }
 }
 
-void pasteWithin(const DyMesh& other) {
+DyMesh DyMesh::mirror(const vec2& pos, const vec2& dir) {
+    // Normalize the direction
+    vec2 nDir = glm::normalize(dir);
 
+    // Helper to mirror a point across a line
+    auto mirrorPoint = [&](const vec2& p) -> vec2 {
+        vec2 rel = p - pos;
+        float proj = glm::dot(rel, nDir);        // use float
+        vec2 alongLine = proj * nDir;            // safe now
+        vec2 perp = rel - alongLine;
+        return pos + alongLine - perp;           // mirror perpendicular component
+    };
+
+    // Mirror the region
+    std::vector<vec2> mirroredRegion(region.size());
+    for (size_t i = 0; i < region.size(); ++i) {
+        mirroredRegion[i] = mirrorPoint(region[i]);
+    }
+
+    // Ensure CCW winding
+    ensureCCW(mirroredRegion);
+
+    // Mirror the triangles
+    std::vector<Tri> mirroredData(data.size());
+    for (size_t i = 0; i < data.size(); ++i) {
+        const Tri& t = data[i];
+        std::array<Vert, 3> mirroredVerts;
+        for (int j = 0; j < 3; ++j) {
+            const Vert& v = t.verts[j];
+            vec2 mirroredPos = mirrorPoint(v.pos);
+            vec2 mirroredUV = v.uv; // Usually UVs are kept relative, mirror if needed
+            mirroredVerts[j] = Vert(mirroredPos, mirroredUV);
+        }
+        // Reverse winding to maintain CCW
+        std::swap(mirroredVerts[1], mirroredVerts[2]);
+        mirroredData[i] = Tri(mirroredVerts);
+    }
+
+    // Construct and return new DyMesh
+    DyMesh mirroredMesh(mirroredRegion, mirroredData);
+    return mirroredMesh;
 }
 
 vec2 DyMesh::sampleUV(const vec2& pos) const {
-    std::cout << "internal sample" << std::endl;
     return sampleUVFromTriList(data, pos);
 }
 
-void DyMesh::toData(std::vector<float>& data) {
-    data.clear();
-    data.reserve(this->data.size() * 3 * 5);
+void DyMesh::toData(std::vector<float>& exp) {
+    exp.clear();
+    exp.reserve(this->data.size() * 3 * 5);
 
     for (uint i = 0; i < this->data.size(); i++) {
         for (const Vert& vert : this->data[i].verts) {
-            data.push_back(vert.pos.x);
-            data.push_back(-vert.pos.y);
-            data.push_back(0.0);
-            data.push_back(vert.uv.x);
-            data.push_back(-vert.uv.y);
+            exp.push_back(vert.pos.x);
+            exp.push_back(-vert.pos.y);
+            exp.push_back(0.0);
+            exp.push_back(vert.uv.x);
+            exp.push_back(-vert.uv.y);
         }
     }
 }
 
-uint DyMesh::getTrindex(const vec2& pos) const {
-    uint trindex = -1;
-    for (uint i = 0; i < data.size(); i++) {
+int DyMesh::getTrindex(const vec2& pos) const {
+    int trindex = -1;
+    for (int i = 0; i < data.size(); i++) {
         if (data[i].contains(pos)) {
             trindex = i;
             break;
@@ -182,3 +223,17 @@ uint DyMesh::getTrindex(const vec2& pos) const {
     }
     return trindex;
 }   
+
+bool DyMesh::contains(const vec2& pos) const {
+    for (const Tri& tri : data) {
+        if (tri.contains(pos)) return true;
+    }
+    return false;
+}
+
+void DyMesh::printData() {
+    std::cout << "===== PRINT DATA ====" << std::endl;
+    for (const Tri& tri : data) {
+        tri.print();
+    }
+}

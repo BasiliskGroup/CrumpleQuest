@@ -23,6 +23,11 @@ struct Tri {
 
     vec2 sampleUV(const vec2& pos) const;
     vec2 sampleUV(const Vert& v) const { return sampleUV(v.pos); }
+
+    void print() const;
+
+    inline std::vector<vec2> toPolygon() const { return { verts[0].pos, verts[1].pos, verts[2].pos }; }
+
 };
 
 #endif
