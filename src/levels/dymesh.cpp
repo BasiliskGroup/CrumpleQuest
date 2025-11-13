@@ -220,7 +220,7 @@ void DyMesh::paste(const DyMesh& other) {
     }
 }
 
-DyMesh DyMesh::mirror(const vec2& pos, const vec2& dir) {
+DyMesh* DyMesh::mirror(const vec2& pos, const vec2& dir) {
     // Normalize the direction
     vec2 nDir = glm::normalize(dir);
 
@@ -259,7 +259,7 @@ DyMesh DyMesh::mirror(const vec2& pos, const vec2& dir) {
     }
 
     // Construct and return new DyMesh
-    DyMesh mirroredMesh(mirroredRegion, mirroredData);
+    DyMesh* mirroredMesh = new DyMesh(mirroredRegion, mirroredData);
     return mirroredMesh;
 }
 

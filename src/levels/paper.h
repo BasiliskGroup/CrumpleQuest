@@ -15,18 +15,6 @@ public:
     static std::unordered_map<RoomTypes, std::vector<std::string>> papers;
 
 private:
-    struct Fold : public DyMesh {
-        std::set<Fold> holds;
-        int side; 
-
-        Fold(const std::vector<vec2>& verts, int side=0);
-        
-        // Fold needs operator< for std::set, if not already defined
-        bool operator<(const Fold& other) const {
-            return (long) this < (long) &other;
-        }
-    };
-
     struct PaperMesh : public DyMesh {
         Mesh* mesh;
 
@@ -40,6 +28,22 @@ private:
         PaperMesh& operator=(PaperMesh&& other) noexcept;
 
         void regenerateMesh();
+    };
+
+    struct Fold {
+        DyMesh* underside;
+        DyMesh* cover;
+        std::set<Fold> holds;
+        int side; 
+
+        Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper, int side=0);
+
+        ~Fold();
+        
+        // Fold needs operator< for std::set, if not already defined
+        bool operator<(const Fold& other) const {
+            return (long) this < (long) &other;
+        }
     };
 
 public: // DEBUG

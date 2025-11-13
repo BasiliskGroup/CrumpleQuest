@@ -25,7 +25,7 @@ struct DyMesh : public Edger {
 
     bool contains(const vec2& pos) const;
     
-    DyMesh mirror(const vec2& pos, const vec2& dir);
+    DyMesh* mirror(const vec2& pos, const vec2& dir);
 
     bool sampleUV(const vec2& v, vec2& uv) const;
     bool sampleUV(const Vert& v, vec2& uv) const { return sampleUV(v.pos, uv); }

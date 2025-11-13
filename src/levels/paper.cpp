@@ -151,7 +151,7 @@ void Paper::activateFold(const vec2& start) {
     for (int i = static_cast<int>(folds.size()) - 1; i >= 0; i--) {
         if (folds[i].side != curSide) continue;
 
-        if (folds[i].contains(start)) {
+        if (folds[i].cover->contains(start)) {
             activeFold = i;
             return;
         }
@@ -184,57 +184,22 @@ void Paper::fold(const vec2& start, const vec2& end) {
         nearEdgePointFold = nearEdgePointPaper;
     } else {
         Fold& clickedFold = folds[activeFold];
-        edgeIntersectFold = clickedFold.getNearestEdgeIntersection(start, -dx);
-        nearEdgePointFold = clickedFold.getNearestEdgePoint(start);
+        edgeIntersectFold = clickedFold.cover->getNearestEdgeIntersection(start, -dx);
+        nearEdgePointFold = clickedFold.cover->getNearestEdgePoint(start);
     }
 
     // variable to modify "start" position of fold, drop and replace
-    dx = end - nearEdgePointPaper;
-    vec2 creaseDir = { dx.y, -dx.x };
-    vec2 midPoint = 0.5f * (end + nearEdgePointPaper);
-    float midDot = glm::dot(midPoint, dx);
+    vec2 foldDir = end - nearEdgePointPaper;
+    vec2 creasePos = 0.5f * (end + nearEdgePointPaper);
     
-    // make a new fold in the paper
+    // Paper is being folded directly
     if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
 
-        // get region vertex that is on the fold
-        uint trindex = paperMesh->getTrindex(edgeIntersectPaper);
-        vec2 searchStart = paperMesh->data[trindex].leastDot(dx);
-
-        // get new fold geometry by intersecting crease with paper
-        auto indexBounds = paperMesh->getVertexRangeBelowThreshold(dx, midDot, searchStart);
-        int leftEdgeIndex = indexBounds.first - 1;
-        int rightEdgeIndex = indexBounds.second;
-        
-        vec2 foldStart, foldEnd;
-        bool leftCheck = paperMesh->getEdgeIntersection(indexBounds.first - 1, midPoint, creaseDir, foldStart);
-        bool rightCheck = paperMesh->getEdgeIntersection(indexBounds.second, midPoint, creaseDir, foldEnd);
-
-        bool check = leftCheck & rightCheck;
-        if (!check) throw std::runtime_error("Fold crease could not find intersection");
-
-        // create new fold
-        std::vector<vec2> foldCutVerts = { foldStart };
-        paperMesh->addVertexRange(foldCutVerts, indexBounds);
-        foldCutVerts.push_back(foldEnd);
-
-        Fold foldCut = Fold(foldCutVerts);
-        
-        check = foldCut.copy(*paperMesh); // TODO cut from back side of page later
-        if (!check) { std::cout << "Failed to copy half-cut" << std::endl; return; }
-
-        DyMesh mirrorFold = foldCut.mirror(midPoint, creaseDir);
-
-        // create full fold cut
-        paperMesh->reflectVerticesOverLine(foldCutVerts, indexBounds.first, indexBounds.second, midPoint, creaseDir);
-
-        foldCut = Fold(foldCutVerts);
-        check = foldCut.copyIntersection(*paperMesh); // will be used to save what was on the paper before fold
-        if (!check) { std::cout << "Failed to copy underlayer" << std::endl; return; }
+        Fold fold = Fold(paperMesh, creasePos, foldDir, edgeIntersectPaper, curSide);
         
         // modify the mesh to accommodate new fold
-        paperMesh->cut(foldCut);
-        paperMesh->paste(mirrorFold);
+        paperMesh->cut(*fold.underside);
+        paperMesh->paste(*fold.cover);
 
         // DEBUG Display region for debug
         for (uint i = 0; i < regionNodes.size(); i++) {
@@ -242,11 +207,14 @@ void Paper::fold(const vec2& start, const vec2& end) {
         }
         regionNodes.clear();
 
-        for (auto& r : paperMesh->region) {
-            Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position=r, .scale={0.1, 0.1} });
+        for (int i = 0; i < paperMesh->region.size(); i++) {
+            auto& r = paperMesh->region[i];
+            Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position=r, .scale={0.1 + 0.025 * i, 0.1 + 0.025 * i} });
             n->setLayer(0.9);
             regionNodes.push_back(n);
         }
+        // END DEBUG
+
     } else {
         std::cout << "unfold" << std::endl;
     }
