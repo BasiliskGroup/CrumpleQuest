@@ -52,7 +52,7 @@ Game::~Game() {
     delete paper; paper = nullptr;
 
     // scene2D will handle deletion
-    buttons.clear();
+    uiElements.clear();
 
     // basilisk closing, must be last
     delete engine; engine = nullptr;
@@ -94,8 +94,8 @@ void Game::update(float dt) {
     // }
 
     // update buttons
-    for (Button* button : buttons) {
-        button->event(mousePos, leftIsDown);
+    for (UIElement* elem : uiElements) {
+        elem->event(mousePos, leftIsDown);
     }
 
     leftWasDown = leftIsDown;

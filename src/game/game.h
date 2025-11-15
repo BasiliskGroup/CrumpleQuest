@@ -7,7 +7,7 @@
 #include "levels/paper.h"
 
 class Floor;
-class Button;
+class UIElement;
 
 class Game {
 private:
@@ -34,7 +34,7 @@ private:
     vec2 LeftStartDown = vec2();
 
     // TODO maybe nove these to ui scenes
-    std::vector<Button*> buttons;
+    std::vector<UIElement*> uiElements;
 
 public:
     Game();
@@ -47,7 +47,7 @@ public:
 
     // TODO temporary debug
     void addEnemy(Enemy* enemy) { this->enemies.push_back(enemy); }
-    void addButton(Button* button) { this->buttons.push_back(button); }
+    void addUI(UIElement* uiElement) { this->uiElements.push_back(uiElement); }
     
     // getters
     Image* getImage(std::string name)       { return images[name]; }
@@ -59,6 +59,8 @@ public:
     Scene2D*& getScene() { return scene; }
     Scene2D* getVoidScene() { return voidScene; }
     Paper* getPaper() { return paper; }
+
+    auto& getEnemies() { return enemies; }
 
     // setters
     void setPlayer(Player* player) { this->player = player; }

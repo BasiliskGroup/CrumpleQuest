@@ -40,7 +40,16 @@ int main() {
         game->addEnemy(new Enemy(3, 0.1, enemyNode, nullptr, nullptr));
     });
 
-    game->addButton(testButton);
+    game->addUI(testButton);
+
+    // slider
+    Slider* testSlider = new Slider(game, { -4, 4 }, { 0, 4 }, { .pegMaterial=game->getMaterial("box") });
+    testSlider->setCallback([game](float proportion) {
+        for (Enemy* enemy : game->getEnemies()) {
+            enemy->setSpeed(5 * proportion);
+        }
+    });
+    game->addUI(testSlider);
 
     // create test paper
     game->setPaper(new Paper(
