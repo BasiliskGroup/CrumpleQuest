@@ -45,10 +45,14 @@ file(GLOB_RECURSE SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
 
+# Add miniaudio implementation
+list(APPEND SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/include/miniaudio/miniaudio.cpp)
+
 add_executable(game ${SRC_FILES})
 
 target_include_directories(game PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}/_deps/assimp-src/contrib/earcut-hpp
 )
 

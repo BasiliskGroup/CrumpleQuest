@@ -1,7 +1,7 @@
 #ifndef AUDIO_AUDIO_SYSTEM_H_
 #define AUDIO_AUDIO_SYSTEM_H_
 
-#include "miniaudio.h"
+#include "miniaudio/miniaudio.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
