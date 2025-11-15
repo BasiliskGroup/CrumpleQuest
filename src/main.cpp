@@ -2,6 +2,7 @@
 #include "game/game.h"
 #include "ui/ui.h"
 #include "levels/levels.h"
+#include "audio/audio_manager.h"
 #include <earcut.hpp>
 
 #include <iostream>
@@ -47,6 +48,26 @@ int main() {
         game->getMesh("paper"), 
         {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}}
     ));
+
+    // audio
+    auto& audio = audio::AudioManager::GetInstance();
+    if (!audio.Initialize()) {
+        std::cerr << "Failed to initialize audio system\n";
+        return 1;
+    }
+    std::cout << "Audio system initialized successfully\n";
+    
+    audio.SetMasterVolume(1.0f);
+    
+    auto music_group = audio.CreateGroup("music");
+    
+    audio.SetGroupVolume(music_group, 0.7f);
+    
+    auto parchment_track = audio.CreateTrack();
+    audio.AddLayer(parchment_track, "parchment", "sounds/parchment.wav", "music");
+    audio.SetLayerVolume(parchment_track, "parchment", 1.0f);
+    
+    audio.PlayTrack(parchment_track);
 
     while (game->getEngine()->isRunning()) {
         game->update(1.0 / 120);
