@@ -5,7 +5,9 @@ Button::Button(Game* game, Node2D::Params params, Button::Params callbacks) :
     onDown(callbacks.onDown),
     onUp(callbacks.onUp),
     onHover(callbacks.onHover)
-{}
+{
+    setLayer(0.9);
+}
 
 bool Button::isHovered(const vec2& pos) {
     return (this->position.x - this->scale.x < pos.x && pos.x < this->position.x + this->scale.x) 

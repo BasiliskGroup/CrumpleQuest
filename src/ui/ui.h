@@ -3,5 +3,6 @@
 
 #include "game/game.h"
 #include "ui/button.h"
+#include "ui/slider.h"
 
 #endif
