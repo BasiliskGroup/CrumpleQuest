@@ -1,6 +1,3 @@
-#define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-
 #include "util/includes.h"
 #include "game/game.h"
 #include "ui/ui.h"
