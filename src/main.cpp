@@ -1,3 +1,6 @@
+#define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+
 #include "util/includes.h"
 #include "game/game.h"
 #include "ui/ui.h"
@@ -82,5 +85,8 @@ int main() {
         game->update(1.0 / 120);
     }
 
+    // Shutdown audio system before deleting game
+    audio.Shutdown();
+    
     delete game;
 }

@@ -12,7 +12,12 @@ AudioSystem::AudioSystem() : master_volume_(1.0f) {
 }
 
 AudioSystem::~AudioSystem() {
-  groups_.clear();  // Destroy all groups first
+  groups_.clear();  // Destroy all groups first, while engine is still valid
+  
+  // Stop the engine to flush all remaining sounds
+  ma_engine_stop(&engine_);
+  
+  // Then uninit the engine
   ma_engine_uninit(&engine_);
 }
 
