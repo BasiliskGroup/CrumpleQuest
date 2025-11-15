@@ -67,10 +67,11 @@ void Paper::PaperMesh::regenerateMesh() {
 // ------------------------------------------------------------
 
 // called when creating a fold
-Paper::Fold::Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper, int side) :
+Paper::Fold::Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper, const vec2& start, int side) :
     underside(nullptr),
     cover(nullptr),
     holds(),
+    start(start),
     side(side)
 {
     // precalculate reference geometry
@@ -101,7 +102,7 @@ Paper::Fold::Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldD
 
     // we store the cut so that it can be accessed by the paper outside, don't midify the PaperMesh in the Fold constructor
     DyMesh cut = DyMesh(cutVerts);
-    check = cut.copyIntersection(*paperMesh); // TODO cut from back side of page later
+    check = cut.copy(*paperMesh); // TODO cut from back side of page later
     if (!check) throw std::runtime_error("Failed to copy negative-cut");
 
     // folding the paper back mirrors it from its normal position

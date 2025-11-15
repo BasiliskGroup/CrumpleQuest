@@ -34,9 +34,10 @@ private:
         DyMesh* underside;
         DyMesh* cover;
         std::set<int> holds;
+        vec2 start;
         int side; 
 
-        Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper, int side=0);
+        Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper, const vec2& start, int side=0);
         ~Fold();
 
         Fold(const Fold& other);

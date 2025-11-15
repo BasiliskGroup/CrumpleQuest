@@ -1,4 +1,5 @@
 #include "levels/levels.h"
+#include "ui/ui.h"
 
 Game::Game() : 
     player(nullptr), 
@@ -50,6 +51,9 @@ Game::~Game() {
 
     delete paper; paper = nullptr;
 
+    // scene2D will handle deletion
+    buttons.clear();
+
     // basilisk closing, must be last
     delete engine; engine = nullptr;
     delete scene; scene = nullptr;
@@ -83,6 +87,17 @@ void Game::update(float dt) {
             paper->deactivateFold();
         }
     }
+
+    // continuous fold
+    // if (leftIsDown && paper) {
+    //     paper->fold(LeftStartDown, mousePos);
+    // }
+
+    // update buttons
+    for (Button* button : buttons) {
+        button->event(mousePos, leftIsDown);
+    }
+
     leftWasDown = leftIsDown;
 
     // entity update
@@ -112,6 +127,7 @@ void Game::update(float dt) {
             paperNode = nullptr;
         }
     }
+
 
     // basilisk update
     engine->update();

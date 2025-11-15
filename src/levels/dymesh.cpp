@@ -62,7 +62,7 @@ void DyMesh::cut(const std::vector<vec2>& clipRegion) {
     newData.reserve(data.size());
 
     for (const Tri& tri : data) {
-        std::vector<vec2> triPoly = tri.toPolygon();  // 3 vertices
+        std::vector<vec2> triPoly = tri.toPolygon();
         Paths64 subj = makePaths64FromRegion(triPoly);
         Paths64 clip = makePaths64FromRegion(clipRegion);
         Paths64 sol;
@@ -73,7 +73,6 @@ void DyMesh::cut(const std::vector<vec2>& clipRegion) {
             continue;
         }
 
-        // If nothing remains, triangle fully cut away
         if (sol.empty()) continue;
 
         // Each path in solution = one clipped polygon piece
@@ -89,7 +88,6 @@ void DyMesh::cut(const std::vector<vec2>& clipRegion) {
                 vec2 p1 = clipped[indices[i+1]];
                 vec2 p2 = clipped[indices[i+2]];
 
-                // Sample UVs from *original triangle* for more local accuracy
                 Vert v0(p0, tri.sampleUV(p0));
                 Vert v1(p1, tri.sampleUV(p1));
                 Vert v2(p2, tri.sampleUV(p2));
@@ -98,11 +96,20 @@ void DyMesh::cut(const std::vector<vec2>& clipRegion) {
         }
     }
 
-    // Rebuild region if needed
+    // Rebuild region - makeRegionFromPaths64 already extracts outer boundary
     Paths64 subjAll = makePaths64FromRegion(region);
     Paths64 clip = makePaths64FromRegion(clipRegion);
     Paths64 sol = Difference(subjAll, clip, FillRule::NonZero);
-    region = makeRegionFromPaths64(sol);
+    
+    std::vector<vec2> newRegion = makeRegionFromPaths64(sol);
+    
+    if (newRegion.size() >= 3) {
+        ensureCCW(newRegion);
+        // Optional: simplify to remove collinear points
+        region = simplifyCollinear(newRegion);
+    } else {
+        region.clear(); // Completely cut away
+    }
 
     data = std::move(newData);
 }
@@ -111,7 +118,6 @@ bool DyMesh::copyIntersection(const DyMesh& other) {
     if (region.empty() || other.region.empty())
         return false;
 
-    // 1. Compute geometric intersection
     Paths64 subj = makePaths64FromRegion(region);
     Paths64 clip = makePaths64FromRegion(other.region);
     Paths64 sol;
@@ -123,15 +129,17 @@ bool DyMesh::copyIntersection(const DyMesh& other) {
         return false;
     }
 
-    // 2. Convert intersection result to region
+    // makeRegionFromPaths64 already extracts outer boundary
     std::vector<vec2> newRegion = makeRegionFromPaths64(sol);
+    
     if (newRegion.size() < 3) {
-        return false; // no overlap
+        return false;
     }
 
     ensureCCW(newRegion);
+    newRegion = simplifyCollinear(newRegion);
 
-    // 3. Triangulate intersection
+    // Triangulate intersection
     std::vector<uint32_t> indices = earcutIndicesFromRegion(newRegion);
     if (indices.empty())
         return false;
@@ -139,7 +147,6 @@ bool DyMesh::copyIntersection(const DyMesh& other) {
     std::vector<Tri> newData;
     newData.reserve(indices.size() / 3);
 
-    // 4. Build new triangles, sampling UVs from "other"
     for (size_t i = 0; i + 2 < indices.size(); i += 3) {
         vec2 p0 = newRegion[indices[i + 0]];
         vec2 p1 = newRegion[indices[i + 1]];
@@ -151,7 +158,6 @@ bool DyMesh::copyIntersection(const DyMesh& other) {
         bool ok2 = other.sampleUV(p2, uv2);
 
         if (!(ok0 && ok1 && ok2)) {
-            // If UV sampling fails for any vertex, skip this triangle
             continue;
         }
 
@@ -164,7 +170,6 @@ bool DyMesh::copyIntersection(const DyMesh& other) {
         newData.emplace_back(verts);
     }
 
-    // 5. Replace this mesh data with intersection
     if (newData.empty())
         return false;
 
@@ -195,12 +200,12 @@ bool DyMesh::copy(const DyMesh& other) {
 void DyMesh::paste(const DyMesh& other) {
     if (other.region.empty()) return;
 
-    // 3) Deep copy incoming triangles
+    // Deep copy incoming triangles
     for (const Tri& t : other.data) {
         data.push_back(t);
     }
 
-    // 4) Update region to union
+    // Update region to union - makeRegionFromPaths64 already extracts outer boundary
     Paths64 a = makePaths64FromRegion(this->region);
     Paths64 b = makePaths64FromRegion(other.region);
 
@@ -214,9 +219,10 @@ void DyMesh::paste(const DyMesh& other) {
 
     std::vector<vec2> newRegion = makeRegionFromPaths64(unionSol);
     
-    if (!newRegion.empty()) {
+    if (newRegion.size() >= 3) {
         ensureCCW(newRegion);
-        region = std::move(newRegion);
+        // Optional: simplify to remove collinear points
+        region = simplifyCollinear(newRegion);
     }
 }
 

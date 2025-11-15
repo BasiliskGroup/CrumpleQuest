@@ -9,8 +9,8 @@ using namespace Clipper2Lib;
 // Scale for converting float -> int64
 constexpr double CLIPPER_SCALE = 1e6;
 
-// Fully-qualified types
 Paths64 makePaths64FromRegion(const std::vector<vec2>& region);
 std::vector<vec2> makeRegionFromPaths64(const Paths64& paths);
+std::vector<vec2> simplifyCollinear(const std::vector<vec2>& region, float epsilon=EPSILON);
 
 #endif

@@ -1,1 +1,0 @@
-DyMesh: make a copy function that will copy intersection region and data. 

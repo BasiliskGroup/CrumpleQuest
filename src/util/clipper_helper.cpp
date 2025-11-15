@@ -39,12 +39,56 @@ std::vector<vec2> makeRegionFromPaths64(const Paths64& paths) {
             bestIdx = i;
         }
     }
-
+    
     const Path64& chosen = paths[bestIdx];
     std::vector<vec2> out;
     out.reserve(chosen.size());
     for (const Point64& pt : chosen) {
-        out.emplace_back(static_cast<float>(pt.x / CLIPPER_SCALE), static_cast<float>(pt.y / CLIPPER_SCALE));
+        out.emplace_back(
+            static_cast<float>(pt.x / CLIPPER_SCALE), 
+            static_cast<float>(pt.y / CLIPPER_SCALE)
+        );
     }
-    return out;
+    
+    // NEW: Simplify before returning
+    return simplifyCollinear(out);
 }
+
+std::vector<vec2> simplifyCollinear(const std::vector<vec2>& region, float epsilon) {
+    if (region.size() < 3) return region;
+    
+    std::vector<vec2> simplified;
+    simplified.reserve(region.size());
+    
+    size_t n = region.size();
+    for (size_t i = 0; i < n; ++i) {
+        const vec2& prev = region[(i + n - 1) % n];
+        const vec2& curr = region[i];
+        const vec2& next = region[(i + 1) % n];
+        
+        vec2 v1 = curr - prev;
+        vec2 v2 = next - curr;
+        
+        float len1 = glm::length(v1);
+        float len2 = glm::length(v2);
+        
+        // Keep degenerate cases
+        if (len1 < 1e-6f || len2 < 1e-6f) {
+            simplified.push_back(curr);
+            continue;
+        }
+        
+        // Check if collinear using cross product
+        v1 /= len1;
+        v2 /= len2;
+        float cross = std::abs(v1.x * v2.y - v1.y * v2.x);
+        
+        // Keep if angle is significant (not collinear)
+        if (cross > epsilon) {
+            simplified.push_back(curr);
+        }
+    }
+    
+    return (simplified.size() >= 3) ? simplified : region;
+}
+

@@ -7,6 +7,7 @@
 #include "levels/paper.h"
 
 class Floor;
+class Button;
 
 class Game {
 private:
@@ -32,6 +33,9 @@ private:
     bool leftWasDown = false;
     vec2 LeftStartDown = vec2();
 
+    // TODO maybe nove these to ui scenes
+    std::vector<Button*> buttons;
+
 public:
     Game();
     ~Game();
@@ -41,7 +45,9 @@ public:
     void addMesh(std::string name, Mesh* mesh)             { this->meshes[name] = mesh; }
     void addCollider(std::string name, Collider* collider) { this->colliders[name] = collider; }
 
+    // TODO temporary debug
     void addEnemy(Enemy* enemy) { this->enemies.push_back(enemy); }
+    void addButton(Button* button) { this->buttons.push_back(button); }
     
     // getters
     Image* getImage(std::string name)       { return images[name]; }

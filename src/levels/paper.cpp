@@ -169,7 +169,7 @@ void Paper::deactivateFold() {
 void Paper::fold(const vec2& start, const vec2& end) {
     if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) return;
     
-    // get starting zero
+    // get starting geometry
     PaperMesh* paperMesh = getPaperMesh();
     vec2 dx = end - start;
 
@@ -179,13 +179,14 @@ void Paper::fold(const vec2& start, const vec2& end) {
 
     // fold intersections or use paper if we didn't click a fold
     vec2 edgeIntersectFold, nearEdgePointFold;
+    Fold* clickedFold;
     if (activeFold == PAPER_FOLD) {
         edgeIntersectFold = edgeIntersectPaper;
         nearEdgePointFold = nearEdgePointPaper;
     } else {
-        Fold& clickedFold = folds[activeFold];
-        edgeIntersectFold = clickedFold.cover->getNearestEdgeIntersection(start, -dx);
-        nearEdgePointFold = clickedFold.cover->getNearestEdgePoint(start);
+        clickedFold = &folds[activeFold];
+        edgeIntersectFold = clickedFold->cover->getNearestEdgeIntersection(start, -dx);
+        nearEdgePointFold = clickedFold->cover->getNearestEdgePoint(start);
     }
 
     // variable to modify "start" position of fold, drop and replace
@@ -194,30 +195,27 @@ void Paper::fold(const vec2& start, const vec2& end) {
 
     // Reactivate an old fold and reset its progress
     // For now, we restore the fold to refold, maybe find more efficient solution layer
-    if (glm::length2(nearEdgePointFold - nearEdgePointPaper) < EPSILON) {
-        // cut out cover
-
-        // restore underside
-
-    }
+    // if (activeFold != PAPER_FOLD 
+    //  && glm::length2(nearEdgePointFold - nearEdgePointPaper) < EPSILON 
+    //  && clickedFold->holds.empty()
+    // ) {
+    //     popFold();
+    // }
     
     // Paper is being folded directly
     if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
-        Fold fold = Fold(paperMesh, creasePos, foldDir, edgeIntersectPaper, curSide);
+        Fold fold = Fold(paperMesh, creasePos, foldDir, edgeIntersectPaper, start, curSide);
         pushFold(fold);
         
-        // modify the mesh to accommodate new fold
-        paperMesh->cut(*fold.underside);
-        paperMesh->paste(*fold.cover);
-
         // DEBUG Display region for debug
         for (uint i = 0; i < regionNodes.size(); i++) {
             delete regionNodes[i];
         }
         regionNodes.clear();
 
-        for (int i = 0; i < paperMesh->region.size(); i++) {
-            auto& r = paperMesh->region[i];
+        auto& printRegion = paperMesh->region; // folds.back().underside->region;
+        for (int i = 0; i < printRegion.size(); i++) {
+            auto& r = printRegion[i];
             Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position=r, .scale={0.1 + 0.025 * i, 0.1 + 0.025 * i} });
             n->setLayer(0.9);
             regionNodes.push_back(n);
@@ -227,13 +225,10 @@ void Paper::fold(const vec2& start, const vec2& end) {
     } else {
         std::cout << "unfold" << std::endl;
     }
-
-    // TODO add in an unfold function
-    // TODO add pulling a fold forward
 }
 
 void Paper::pushFold(Fold& newFold) {
-    std::set<int> seen;
+    std::set<int> seen; // TODO implement cover cache
     int insertIndex = folds.size();
 
     // iterate from top to bottom since covering folds will come after covered
@@ -241,17 +236,25 @@ void Paper::pushFold(Fold& newFold) {
         // prevents swapping unfold layers
         Fold& fold = folds[i];
         if (fold.underside->hasOverlap(*newFold.underside) == false) continue;
-
-        std::cout << "Covered" << std::endl;
-
         fold.holds.insert(insertIndex);
     }
 
     folds.push_back(newFold);
+
+    // modify the mesh to accommodate new fold
+    PaperMesh* paperMesh = getPaperMesh();
+    paperMesh->cut(*newFold.underside);
+    paperMesh->paste(*newFold.cover);
 }
 
 void Paper::popFold() {
     if (activeFold < 0 || activeFold >= folds.size()) return;
+
+    // restore mesh from fold
+    Fold& oldFold = folds[activeFold];
+    PaperMesh* paperMesh = getPaperMesh();
+    paperMesh->cut(*oldFold.underside);
+    paperMesh->paste(*oldFold.underside);
 
     for (Fold& fold : folds) {
         if (fold.holds.find(activeFold) != fold.holds.end()) {
