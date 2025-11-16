@@ -11,15 +11,19 @@ class Character;
 class Weapon {
 private:
     DamageZone zone;
-    Character* owner;
     std::string team;
 
 public:
-    Weapon(Character* owner, DamageZone zone);
+    Weapon(DamageZone zone);
     ~Weapon() = default;
 
     void attack(const vec2& origin, const vec2& direction);
 
+    // getters
+    Character* getOwner() { return this->zone.getOwner(); }
+
+    // setters
+    void setOwner(Character* owner) { this->zone.setOwner(owner); }
 };
 
 #endif

@@ -3,6 +3,7 @@
 #include "ui/ui.h"
 #include "levels/levels.h"
 #include "audio/audio_manager.h"
+#include "weapon/weapon.h"
 #include <earcut.hpp>
 
 #include <iostream>
@@ -25,10 +26,15 @@ int main() {
     // collider
     game->addCollider("quad", new Collider(game->getScene()->getSolver(), {{0.5f, 0.5f}, {-0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, -0.5f}}));
 
+    // create weapons
+    // Weapon* melee = new Weapon(ContactZone(nullptr, ))
+
     // create player
     Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .scale={1, 1}, .collider=game->getCollider("quad") });
     Player* player = new Player(3, 3, playerNode, nullptr);
     game->setPlayer(player);
+
+
 
     // test add button
     Button* testButton = new Button(game, { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 

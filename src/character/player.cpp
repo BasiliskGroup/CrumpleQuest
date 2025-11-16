@@ -4,6 +4,7 @@ Player::Player(int health, float speed, Node2D* node, Weapon* weapon) : Characte
 
 void Player::onDamage(int damage) {
     Character::onDamage(damage);
+    std::cout << "Player Health: " << health << std::endl;
 }
 
 void Player::move(float dt) {

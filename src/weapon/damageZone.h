@@ -25,9 +25,13 @@ public:
     void hit(Character* other);
     bool update(float dt);
 
+    // getters
+    Character* getOwner() { return this->owner; }
+
     // setters
     void setOnHit(std::function<void(Character*)> func) { onHit = std::move(func); }
     void setOnExpire(std::function<void()> func) { onExpire = std::move(func); }
+    void setOwner(Character* owner) { this->owner = owner; }
 };
 
 #endif

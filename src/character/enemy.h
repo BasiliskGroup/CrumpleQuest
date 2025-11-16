@@ -7,7 +7,6 @@
 class Enemy : public Character {
 private:
     AI* ai;
-    
 
 public:
     Enemy(int health, float speed, Node2D* node, Weapon* weapon, AI* ai);
