@@ -43,6 +43,17 @@ void Sound::Play() {
   // First cleanup any finished instances
   CleanupFinishedInstances();
   
+  // If looping and already playing, don't create a new instance
+  if (looping_ && !sound_instances_.empty()) {
+    // Just ensure the existing instance is playing
+    for (auto& instance : sound_instances_) {
+      if (instance->sound && ma_sound_is_playing(instance->sound) == MA_FALSE) {
+        ma_sound_start(instance->sound);
+      }
+    }
+    return;
+  }
+  
   // Create new instance
   auto instance = std::make_unique<SoundInstance>();
   instance->sound = new ma_sound;

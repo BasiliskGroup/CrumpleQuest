@@ -88,5 +88,8 @@ int main() {
         game->update(1.0 / 120);
     }
 
+    // Shutdown audio system before deleting game
+    audio.Shutdown();
+    
     delete game;
 }

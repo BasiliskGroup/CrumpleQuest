@@ -100,11 +100,20 @@ void AudioManager::Shutdown() {
         update_thread_.join();
     }
 
-    // Clean up resources
+    // Clean up resources in proper order
     lock_guard<mutex> lock(resource_mutex_);
+    
+    // First stop all tracks to ensure sounds stop before being destroyed
+    for (auto& [handle, track] : tracks_) {
+        if (track) {
+            track->Stop();
+        }
+    }
+    
+    // Then clear all resources
     tracks_.clear();
-    groups_.clear();
-    sounds_.clear();
+    sounds_.clear();  // Clear sounds before groups
+    groups_.clear();  // Clear groups before audio system
     group_names_.clear();
 
     // Audio system will be cleaned up by its destructor

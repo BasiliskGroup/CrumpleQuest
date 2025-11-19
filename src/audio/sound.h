@@ -1,7 +1,7 @@
 #ifndef AUDIO_SOUND_H_
 #define AUDIO_SOUND_H_
 
-#include "miniaudio.h"
+#include "miniaudio/miniaudio.h"
 #include <memory>
 #include <string>
 #include <vector>

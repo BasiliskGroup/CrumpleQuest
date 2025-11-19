@@ -49,6 +49,7 @@ add_executable(game ${SRC_FILES})
 
 target_include_directories(game PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}/_deps/assimp-src/contrib/earcut-hpp
 )
 
