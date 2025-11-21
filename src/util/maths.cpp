@@ -91,20 +91,50 @@ vec2 reflectPointOverLine(const vec2& pos, const vec2& dir, const vec2& point) {
     return pos + reflected;
 }
 
+double signedArea(const std::vector<Point64>& poly) {
+    double a = 0.0;
+    size_t n = poly.size();
+    if (n < 3) return 0.0;
+    
+    for (size_t i = 0; i < n; ++i) {
+        const Point64& p0 = poly[i];
+        const Point64& p1 = poly[(i + 1) % n];
+        
+        // Calculate cross product: p0.x * p1.y - p1.x * p0.y
+        // Use double to handle large int64_t values safely
+        a += static_cast<double>(p0.x) * static_cast<double>(p1.y) - 
+             static_cast<double>(p1.x) * static_cast<double>(p0.y);
+    }
+    
+    return 0.5 * a;
+}
+
+// Ensure polygon is wound counter-clockwise
+void ensureCCW(std::vector<Point64>& poly) {
+    if (signedArea(poly) < 0.0) {
+        std::reverse(poly.begin(), poly.end());
+    }
+}
+
 float signedArea(const std::vector<vec2>& poly) {
     double a = 0.0;
     size_t n = poly.size();
     if (n < 3) return 0.0f;
+    
     for (size_t i = 0; i < n; ++i) {
         const vec2& p0 = poly[i];
         const vec2& p1 = poly[(i + 1) % n];
-        a += (double)p0.x * (double)p1.y - (double)p1.x * (double)p0.y;
+        a += static_cast<double>(p0.x) * static_cast<double>(p1.y) - 
+             static_cast<double>(p1.x) * static_cast<double>(p0.y);
     }
+    
     return static_cast<float>(0.5 * a);
 }
 
 void ensureCCW(std::vector<vec2>& poly) {
-    if (signedArea(poly) < 0.0f) std::reverse(poly.begin(), poly.end());
+    if (signedArea(poly) < 0.0f) {
+        std::reverse(poly.begin(), poly.end());
+    }
 }
 
 void flipPolyY(std::vector<vec2>& poly) {

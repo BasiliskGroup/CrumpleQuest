@@ -30,11 +30,9 @@ int main() {
     // Weapon* melee = new Weapon(ContactZone(nullptr, ))
 
     // create player
-    Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .scale={1, 1}, .collider=game->getCollider("quad") });
+    Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .scale={1, 1}, .collider=game->getCollider("quad"), .velocity={0, 0, 20} });
     Player* player = new Player(3, 3, playerNode, nullptr);
     game->setPlayer(player);
-
-
 
     // test add button
     Button* testButton = new Button(game, { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 

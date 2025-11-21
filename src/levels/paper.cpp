@@ -15,8 +15,14 @@ Paper::Paper(Mesh* mesh, const std::vector<vec2>& region) :
     sides(nullptr, nullptr), 
     paperMeshes(nullptr, nullptr) 
 {
-    paperMeshes.first = new PaperMesh(region, mesh);
-    paperMeshes.second = new PaperMesh(region, mesh);
+    std::vector<Point64> pointRegion;
+    pointRegion.reserve(region.size());
+    for (const vec2& r : region) {
+        pointRegion.push_back(vec2ToPoint64(r));
+    }
+
+    paperMeshes.first = new PaperMesh(pointRegion, mesh);
+    paperMeshes.second = new PaperMesh(pointRegion, mesh);
 }
 
 Paper::Paper(const Paper& other)
@@ -166,65 +172,87 @@ void Paper::deactivateFold() {
     activeFold = NULL_FOLD;
 }
 
-void Paper::fold(const vec2& start, const vec2& end) {
-    if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) return;
+void Paper::fold(const vec2& mouseStart, const vec2& mouseEnd) {
+    if (activeFold == NULL_FOLD || glm::length2(mouseStart - mouseEnd) < EPSILON) return;
+
+    std::cout << "\n=== PAPER FOLD DEBUG ===" << std::endl;
+    std::cout << "MouseStart: (" << mouseStart.x << ", " << mouseStart.y << ")" << std::endl;
+    std::cout << "MouseEnd: (" << mouseEnd.x << ", " << mouseEnd.y << ")" << std::endl;
+
+    Point64 start = vec2ToPoint64(mouseStart);
+    Point64 end = vec2ToPoint64(mouseEnd);
     
-    // get starting geometry
+    std::cout << "Start (Point64): (" << start.x << ", " << start.y << ")" << std::endl;
+    std::cout << "End (Point64): (" << end.x << ", " << end.y << ")" << std::endl;
+    
     PaperMesh* paperMesh = getPaperMesh();
-    vec2 dx = end - start;
-
-    // paper intersections
-    vec2 edgeIntersectPaper = paperMesh->getNearestEdgeIntersection(start, -dx);
-    vec2 nearEdgePointPaper = paperMesh->getNearestEdgePoint(start);
-
-    // fold intersections or use paper if we didn't click a fold
-    vec2 edgeIntersectFold, nearEdgePointFold;
-    Fold* clickedFold;
-    if (activeFold == PAPER_FOLD) {
-        edgeIntersectFold = edgeIntersectPaper;
-        nearEdgePointFold = nearEdgePointPaper;
-    } else {
-        clickedFold = &folds[activeFold];
-        edgeIntersectFold = clickedFold->cover->getNearestEdgeIntersection(start, -dx);
-        nearEdgePointFold = clickedFold->cover->getNearestEdgePoint(start);
+    std::cout << "Paper region vertices: " << paperMesh->region.size() << std::endl;
+    for (size_t i = 0; i < paperMesh->region.size(); i++) {
+        std::cout << "  V" << i << ": (" << paperMesh->region[i].x << ", " << paperMesh->region[i].y << ")" << std::endl;
     }
 
-    // variable to modify "start" position of fold, drop and replace
-    vec2 foldDir = end - nearEdgePointPaper;
-    vec2 creasePos = 0.5f * (end + nearEdgePointPaper);
-
-    // Reactivate an old fold and reset its progress
-    // For now, we restore the fold to refold, maybe find more efficient solution layer
-    // if (activeFold != PAPER_FOLD 
-    //  && glm::length2(nearEdgePointFold - nearEdgePointPaper) < EPSILON 
-    //  && clickedFold->holds.empty()
-    // ) {
-    //     popFold();
-    // }
+    Point64 edgeIntersectPaper;
+    bool check = paperMesh->getNearestEdgeIntersection(start, end, edgeIntersectPaper);
     
-    // Paper is being folded directly
-    if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
-        Fold fold = Fold(paperMesh, creasePos, foldDir, edgeIntersectPaper, start, curSide);
-        pushFold(fold);
-        
-        // DEBUG Display region for debug
-        for (uint i = 0; i < regionNodes.size(); i++) {
-            delete regionNodes[i];
-        }
-        regionNodes.clear();
-
-        auto& printRegion = paperMesh->region; // folds.back().underside->region;
-        for (int i = 0; i < printRegion.size(); i++) {
-            auto& r = printRegion[i];
-            Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position=r, .scale={0.1 + 0.025 * i, 0.1 + 0.025 * i} });
-            n->setLayer(0.9);
-            regionNodes.push_back(n);
-        }
-        // END DEBUG
-
-    } else {
-        std::cout << "unfold" << std::endl;
+    if (!check) {
+        std::cout << "No intersection with paper edge" << std::endl;
+        return;
     }
+    
+    std::cout << "EdgeIntersectPaper: (" << edgeIntersectPaper.x << ", " << edgeIntersectPaper.y << ")" << std::endl;
+
+    // Calculate fold direction
+    Point64 foldDirection = end - start;
+    std::cout << "FoldDirection: (" << foldDirection.x << ", " << foldDirection.y << ")" << std::endl;
+    
+    // Crease line is perpendicular to fold direction
+    Point64 creasePerpendicular = {-foldDirection.y, foldDirection.x};
+    std::cout << "CreasePerpendicular (unscaled): (" << creasePerpendicular.x << ", " << creasePerpendicular.y << ")" << std::endl;
+    
+    // Scale the perpendicular
+    double perpLen = std::sqrt(static_cast<double>(length264(creasePerpendicular)));
+    std::cout << "Perpendicular length: " << perpLen << std::endl;
+    
+    if (perpLen < 1e-10) {
+        std::cout << "Invalid fold direction (perpLen too small)" << std::endl;
+        return;
+    }
+    
+    int64_t targetLength = 20000000;
+    
+    Point64 scaledPerp = {
+        static_cast<int64_t>((creasePerpendicular.x * targetLength) / perpLen),
+        static_cast<int64_t>((creasePerpendicular.y * targetLength) / perpLen)
+    };
+    
+    std::cout << "ScaledPerp: (" << scaledPerp.x << ", " << scaledPerp.y << ")" << std::endl;
+    
+    Point64 crease0 = {
+        edgeIntersectPaper.x - scaledPerp.x,
+        edgeIntersectPaper.y - scaledPerp.y
+    };
+    
+    Point64 crease1 = {
+        edgeIntersectPaper.x + scaledPerp.x,
+        edgeIntersectPaper.y + scaledPerp.y
+    };
+    
+    std::cout << "Crease0: (" << crease0.x << ", " << crease0.y << ")" << std::endl;
+    std::cout << "Crease1: (" << crease1.x << ", " << crease1.y << ")" << std::endl;
+    std::cout << "Crease line length: " << std::sqrt(static_cast<double>(length264(crease1 - crease0))) << std::endl;
+
+    if (activeFold == PAPER_FOLD) {
+        try {
+            Fold fold = Fold(paperMesh, crease0, crease1, edgeIntersectPaper, start, curSide);
+            pushFold(fold);
+            
+            // ... rest of code
+        } catch (const std::exception& e) {
+            std::cout << "Fold failed: " << e.what() << std::endl;
+        }
+    }
+    
+    std::cout << "=== END PAPER FOLD DEBUG ===\n" << std::endl;
 }
 
 void Paper::pushFold(Fold& newFold) {
@@ -265,3 +293,17 @@ void Paper::popFold() {
     // active fold should be near to the back so this isn't the worst
     folds.erase(folds.begin() + activeFold);
 }
+
+// How to make a new fold on a piece of paper (no fold extensions)
+// find start and end points of fold direction
+// find when the fold line pointing from end to start meets the paper (fold interscetion direction)
+// find the closes point on the paper to the start of the fold (origin of fold)
+// using these, determine if we are folding or unfolding. if unfolding, return. 
+// create a new fold object
+// - find crease line
+// - find intersection of crease line and paper
+// - copy the part to be removed from the piece of paper & its UVs (UVs will be changed later but this is good for testing)
+// - reflect over crease line to get the fold cover
+// - construct the hidden part underneath the fold using the union geometry from removal and reflected parts
+// cut the underneath out of the paper (we cant see it any more)
+// paste the cover onto the paper (this is what we see)

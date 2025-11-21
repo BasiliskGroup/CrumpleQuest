@@ -88,6 +88,14 @@ void Game::update(float dt) {
         }
     }
 
+    // FOLD Debug
+    // if (paper && paper->getPaperMesh()) {
+    //     for (const Point64& v : paper->getPaperMesh()->region) {
+    //         std::cout << v.x << ", " << v.y << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
     // continuous fold
     // if (leftIsDown && paper) {
     //     paper->fold(LeftStartDown, mousePos);

@@ -18,7 +18,7 @@ private:
     struct PaperMesh : public DyMesh {
         Mesh* mesh;
 
-        PaperMesh(const std::vector<vec2> verts, Mesh* mesh);
+        PaperMesh(const std::vector<Point64>& verts, Mesh* mesh);
         ~PaperMesh();
         
         // Rule of 5 for PaperMesh
@@ -34,10 +34,10 @@ private:
         DyMesh* underside;
         DyMesh* cover;
         std::set<int> holds;
-        vec2 start;
+        Point64 start;
         int side; 
 
-        Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper, const vec2& start, int side=0);
+        Fold(PaperMesh* paperMesh, const Point64& crease0, const Point64& crease1, const Point64& edgeIntersectPaper, const Point64& start, int side=0);
         ~Fold();
 
         Fold(const Fold& other);
@@ -79,13 +79,14 @@ public:
 
     // getters
     Mesh* getMesh();
+    PaperMesh* getPaperMesh() { return curSide == 0 ? paperMeshes.first : paperMeshes.second; }
     SingleSide* getSingleSide() { return curSide ? sides.second : sides.first; }
 
     void flip();
     void open();
-    void fold(const vec2& start, const vec2& end);
+    void fold(const vec2& mouseStart, const vec2& mouseEnd);
 
-    void activateFold(const vec2& start);
+    void activateFold(const vec2& mouseStart);
     void deactivateFold();
 
     // TODO temporary
@@ -97,7 +98,7 @@ public:
 
 private:
     void clear();
-    PaperMesh* getPaperMesh() { return curSide == 0 ? paperMeshes.first : paperMeshes.second; }
+    
 
     void pushFold(Fold& newFold);
     void popFold(); // uses activeFold index

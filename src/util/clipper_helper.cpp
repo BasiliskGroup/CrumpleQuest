@@ -1,20 +1,5 @@
 #include "util/clipper_helper.h"
 
-Paths64 makePaths64FromRegion(const std::vector<vec2>& region) {
-    Paths64 paths;
-    if (region.empty()) return paths;
-
-    Path64 p;
-    p.reserve(region.size());
-    for (const vec2& v : region) {
-        long long x = llround(v.x * CLIPPER_SCALE);
-        long long y = llround(v.y * CLIPPER_SCALE);
-        p.emplace_back(x, y);
-    }
-    paths.push_back(std::move(p));
-    return paths;
-}
-
 std::vector<vec2> makeRegionFromPaths64(const Paths64& paths) {
     // Choose the largest (by absolute area) path as the single region
     if (paths.empty()) return {};
