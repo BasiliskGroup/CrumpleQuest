@@ -225,6 +225,14 @@ void Paper::fold(const vec2& start, const vec2& end) {
             n->setLayer(0.9);
             regionNodes.push_back(n);
         }
+
+        for (const Tri& d : getPaperMesh()->data) {
+            for (const Vert& v : d.verts) {
+                Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position=v.pos, .scale={0.1, 0.1} });
+                n->setLayer(0.9);
+                regionNodes.push_back(n);
+            }
+        }
         // END DEBUG
 
     } else {
@@ -274,6 +282,12 @@ void Paper::pushFold(Fold& newFold) {
     }
 
     paperCopy->removeAll(insides);
+    paperCopy->pruneDups();
+
+    std::cout << "final vertices: " << paperCopy->region.size() << std::endl;
+    for (const vec2& v : paperCopy->region) {
+        std::cout << v.x << " " << v.y << std::endl;
+    }
 
     // swap meshes with cut
     delete paperMesh;

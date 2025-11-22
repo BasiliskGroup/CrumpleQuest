@@ -6,22 +6,53 @@ Tri::Tri(std::array<vec2, 3> verts) {
     }
 }
 
-bool Tri::contains(const vec2& pos) const {
-    auto sign_eps = [](const vec2& p1, const vec2& p2, const vec2& p3) {
-        const float eps = 1e-6f;
-        float val = (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
-        if (fabs(val) < eps) return 0.0f; // Treat as zero if very close
-        return val;
+float Tri::distance(const vec2& pos) const {
+    // Find the closest point on the triangle to pos
+    vec2 closestPoint = closestPointOnTriangle(pos);
+    return glm::distance(pos, closestPoint);
+}
+
+vec2 Tri::closestPointOnTriangle(const vec2& pos) const {
+    const vec2& a = verts[0].pos;
+    const vec2& b = verts[1].pos;
+    const vec2& c = verts[2].pos;
+
+    // Check if point is inside triangle
+    auto sign = [](const vec2& p1, const vec2& p2, const vec2& p3) {
+        return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
     };
 
-    float d1 = sign_eps(pos, verts[0].pos, verts[1].pos);
-    float d2 = sign_eps(pos, verts[1].pos, verts[2].pos);
-    float d3 = sign_eps(pos, verts[2].pos, verts[0].pos);
+    float d1 = sign(pos, a, b);
+    float d2 = sign(pos, b, c);
+    float d3 = sign(pos, c, a);
 
-    bool hasNeg = d1 < 0 || d2 < 0 || d3 < 0;
-    bool hasPos = d1 > 0 || d2 > 0 || d3 > 0;
+    bool hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+    bool hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0);
 
-    return !(hasNeg && hasPos);
+    // If inside triangle, return the point itself
+    if (!(hasNeg && hasPos)) {
+        return pos;
+    }
+
+    // Point is outside, find closest point on edges
+    auto closestPointOnSegment = [](const vec2& p, const vec2& a, const vec2& b) {
+        vec2 ab = b - a;
+        float t = glm::dot(p - a, ab) / glm::dot(ab, ab);
+        t = glm::clamp(t, 0.0f, 1.0f);
+        return a + t * ab;
+    };
+
+    vec2 p1 = closestPointOnSegment(pos, a, b);
+    vec2 p2 = closestPointOnSegment(pos, b, c);
+    vec2 p3 = closestPointOnSegment(pos, c, a);
+
+    float dist1 = glm::distance(pos, p1);
+    float dist2 = glm::distance(pos, p2);
+    float dist3 = glm::distance(pos, p3);
+
+    if (dist1 <= dist2 && dist1 <= dist3) return p1;
+    if (dist2 <= dist3) return p2;
+    return p3;
 }
 
 vec2 Tri::intersect(const vec2& pos, const vec2& dir) {
@@ -56,9 +87,13 @@ vec2 Tri::leastDot(const vec2& dir) {
 }
 
 // ----------------------------
-// New function: sampleUV()
+// Updated function: sampleUV()
+// Now samples UV at the nearest point on the triangle
 // ----------------------------
 vec2 Tri::sampleUV(const vec2& pos) const {
+    // First find the nearest point on the triangle
+    vec2 nearestPoint = closestPointOnTriangle(pos);
+
     const vec2& a = verts[0].pos;
     const vec2& b = verts[1].pos;
     const vec2& c = verts[2].pos;
@@ -68,19 +103,20 @@ vec2 Tri::sampleUV(const vec2& pos) const {
     
     if (fabs(denom) < eps) {
         // Degenerate triangle: return nearest vertex UV
-        float da = glm::distance(pos, a);
-        float db = glm::distance(pos, b);
-        float dc = glm::distance(pos, c);
+        float da = glm::distance(nearestPoint, a);
+        float db = glm::distance(nearestPoint, b);
+        float dc = glm::distance(nearestPoint, c);
         if (da <= db && da <= dc) return verts[0].uv;
         if (db <= da && db <= dc) return verts[1].uv;
         return verts[2].uv;
     }
 
-    float w1 = ((b.y - c.y)*(pos.x - c.x) + (c.x - b.x)*(pos.y - c.y)) / denom;
-    float w2 = ((c.y - a.y)*(pos.x - c.x) + (a.x - c.x)*(pos.y - c.y)) / denom;
+    // Calculate barycentric coordinates for the nearest point
+    float w1 = ((b.y - c.y)*(nearestPoint.x - c.x) + (c.x - b.x)*(nearestPoint.y - c.y)) / denom;
+    float w2 = ((c.y - a.y)*(nearestPoint.x - c.x) + (a.x - c.x)*(nearestPoint.y - c.y)) / denom;
     float w3 = 1.0f - w1 - w2;
 
-    // Clamp weights to [0,1] to avoid slight negative values from floating point errors
+    // Clamp weights to [0,1]
     w1 = glm::clamp(w1, 0.0f, 1.0f);
     w2 = glm::clamp(w2, 0.0f, 1.0f);
     w3 = glm::clamp(w3, 0.0f, 1.0f);

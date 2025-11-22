@@ -41,6 +41,9 @@ struct DyMesh : public Edger {
     // export
     void toData(std::vector<float>& exp);
     void printData();
+
+    // cleaning
+    void removeDataOutside();
 };
 
 #endif

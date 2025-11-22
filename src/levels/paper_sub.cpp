@@ -80,10 +80,7 @@ bool Paper::Fold::initialize(PaperMesh* paperMesh, const vec2& creasePos, const 
     // precalculate reference geometry
     float midDot = glm::dot(creasePos, foldDir);
     vec2 creaseDir = { foldDir.y, -foldDir.x };
-
-    // get region vertex that is on the fold
-    uint trindex = paperMesh->getTrindex(edgeIntersectPaper);
-    vec2 searchStart = paperMesh->data[trindex].leastDot(foldDir);
+    vec2 searchStart = edgeIntersectPaper; // reference TODO remove?
 
     // get new fold geometry by intersecting crease with paper
     auto indexBounds = paperMesh->getVertexRangeBelowThreshold(foldDir, midDot, searchStart);

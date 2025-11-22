@@ -12,12 +12,25 @@ std::vector<uint32_t> earcutIndicesFromRegion(const std::vector<vec2>& region) {
 }
 
 bool sampleUVFromTriList(const std::vector<Tri>& tris, const vec2& pos, vec2& uv) {
+    const float eps = 1e-6f;
+    float minDistance = std::numeric_limits<float>::max();
+    vec2 closestUV;
+    bool found = false;
+
     for (const Tri& t : tris) {
-        if (t.contains(pos)) {
-            uv = t.sampleUV(pos);
-            return true;
+        float dist = t.distance(pos);
+        if (dist < minDistance) {
+            minDistance = dist;
+            closestUV = t.sampleUV(pos);
+            found = true;
         }
     }
+
+    if (found && minDistance <= eps) {
+        uv = closestUV;
+        return true;
+    }
+
     return false;
 }
 
@@ -114,11 +127,13 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion) {
 
     ensureCCW(newRegion);
 
-    // remove unwanted vertices
-
     // all tests passed
     region = std::move(newRegion);
     data = std::move(newData);
+
+    // remove unwanted vertices
+    pruneDups();
+    removeDataOutside();
 
     return true;
 }
@@ -182,8 +197,13 @@ bool DyMesh::copyIntersection(const DyMesh& other) {
     if (newData.empty())
         return false;
 
+    // all test passed
     region = std::move(newRegion);
     data = std::move(newData);
+
+    // cleaning
+    pruneDups();
+    removeDataOutside();
 
     return true;
 }
@@ -248,6 +268,7 @@ bool DyMesh::paste(const DyMesh& other, int expected) {
     }
 
     region = std::move(newRegion);
+    pruneDups();
 
     return true;
 }
@@ -317,7 +338,7 @@ void DyMesh::toData(std::vector<float>& exp) {
 int DyMesh::getTrindex(const vec2& pos) const {
     int trindex = -1;
     for (int i = 0; i < data.size(); i++) {
-        if (data[i].contains(pos)) {
+        if (data[i].distance(pos) < 1e-6f) {
             trindex = i;
             break;
         }
@@ -327,7 +348,7 @@ int DyMesh::getTrindex(const vec2& pos) const {
 
 bool DyMesh::contains(const vec2& pos) const {
     for (const Tri& tri : data) {
-        if (tri.contains(pos)) return true;
+        if (tri.distance(pos) < 1e-6f) return true;
     }
     return false;
 }
@@ -363,5 +384,32 @@ void DyMesh::printData() {
     std::cout << "===== PRINT DATA ====" << std::endl;
     for (const Tri& tri : data) {
         tri.print();
+    }
+}
+
+void DyMesh::removeDataOutside() {
+    // NOTE disable
+    return;
+
+    if (data.empty()) return;
+
+    int i = static_cast<int>(data.size()) - 1;
+
+    while (i >= 0) {
+
+        bool remove = false;
+        for (const Vert& v : data[i].verts) {
+            if (isPointOutside(v.pos)) {
+                remove = true;
+                break;
+            }
+        }
+
+        if (remove) {
+            data.erase(data.begin() + i);
+            std::cout << "cleaning" << std::endl;
+        }
+
+        i--;
     }
 }

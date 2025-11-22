@@ -84,7 +84,7 @@ float Navmesh::heuristic(int cur, int dest){
 
 int Navmesh::posToTriangle(const vec2& pos){
     for (int i = 0; i < triangles.size(); i++) {
-        if (triangles[i].contains(pos)) {
+        if (triangles[i].distance(pos) < 1e-8f) {
             return i;
         }
     }

@@ -209,9 +209,9 @@ void Edger::addRangeOutside(std::vector<vec2>& unreflected, int a, int b) {
 }
 
 // testing functions
-bool Edger::isPointInside(const vec2& p) const {
+bool Edger::isPointOutside(const vec2& p, float eps) const {
     size_t n = region.size();
-    if (n < 3) return false;
+    if (n < 3) return true; // degenerate polygon → everything outside
 
     bool inside = false;
 
@@ -219,7 +219,19 @@ bool Edger::isPointInside(const vec2& p) const {
         const vec2& a = region[i];
         const vec2& b = region[j];
 
-        // Check if edge intersects ray to the right
+        // --- EPS boundary check: if p is near edge → treat as inside ---
+        vec2 ab = b - a;
+        float abLen2 = dot(ab, ab);
+
+        float t = glm::clamp(dot(p - a, ab) / (abLen2 + 1e-20f), 0.0f, 1.0f);
+        vec2 proj = a + t * ab;
+
+        // Distance to the edge or the vertices
+        if (length(p - proj) <= eps) return false; // NOT outside
+        if (length(p - a) <= eps) return false;    // NOT outside
+        if (length(p - b) <= eps) return false;    // NOT outside
+
+        // --- Standard even–odd raycast test ---
         bool intersect =
             ((a.y > p.y) != (b.y > p.y)) &&
             (p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y + 1e-12f) + a.x);
@@ -228,19 +240,11 @@ bool Edger::isPointInside(const vec2& p) const {
             inside = !inside;
     }
 
-    return inside;
+    // If inside → not outside
+    return !inside;
 }
 
-void Edger::collectPointsInside(const std::vector<vec2>& points, std::vector<vec2>& out) const {
-    out.clear();
-    out.reserve(points.size());
 
-    for (const vec2& p : points) {
-        if (isPointInside(p)) {
-            out.push_back(p);
-        }
-    }
-}
 
 void Edger::removeAll(const std::vector<vec2> removes, float epsilon) {
     if (region.empty() || removes.empty()) return;
@@ -267,4 +271,19 @@ void Edger::removeAll(const std::vector<vec2> removes, float epsilon) {
     }
 
     region.swap(filtered);
+}
+
+void Edger::pruneDups() {
+    if (region.size() <= 1) return;
+    
+    const float eps = 1e-6f;
+    
+    for (int i = 0; i < region.size(); i++) {
+        for (int j = i + 1; j < region.size(); j++) {
+            if (glm::all(glm::epsilonEqual(region[i], region[j], eps))) {
+                region.erase(region.begin() + j);
+                j--; 
+            }
+        }
+    }
 }

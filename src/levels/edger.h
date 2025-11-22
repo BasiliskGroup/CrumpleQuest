@@ -17,11 +17,11 @@ struct Edger {
     void addRangeOutside(std::vector<vec2>& unreflected, int a, int b);
 
     // tesing functions
-    bool isPointInside(const vec2& p) const;
-    void collectPointsInside(const std::vector<vec2>& points, std::vector<vec2>& out) const;
+    bool isPointOutside(const vec2& p, float eps=1e-8f) const;
 
     // cleaning functions
     void removeAll(const std::vector<vec2> removes, float epsilon=1e-6f);
+    void pruneDups();
 };
 
 #endif

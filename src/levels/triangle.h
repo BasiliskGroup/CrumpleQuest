@@ -12,8 +12,10 @@ struct Tri {
     Tri(std::array<vec2, 3> verts);
 
     // Core methods
-    bool contains(const vec2& pos) const;
-    bool contains(const Vert& v) const { return contains(v.pos); }
+    float distance(const vec2& pos) const;
+    float distance(const Vert& v) const { return distance(v.pos); }
+
+    vec2 closestPointOnTriangle(const vec2& pos) const;
 
     vec2 intersect(const vec2& pos, const vec2& dir);
     vec2 intersect(const Vert& v, const vec2& dir) { return intersect(v.pos, dir); }
