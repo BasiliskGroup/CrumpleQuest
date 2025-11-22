@@ -65,9 +65,18 @@ void Game::update(float dt) {
     // always unhide mouse 
     this->engine->getMouse()->setVisible();
 
+    // keyboard
+    auto keys = this->engine->getKeyboard();
+    if (keys->getPressed(GLFW_KEY_F) && kWasDown == false) {
+        paper->flip();
+    }
+    kWasDown = keys->getPressed(GLFW_KEY_F);
+
     // folding
     bool leftIsDown = engine->getMouse()->getLeftDown();
     vec2 mousePos = { engine->getMouse()->getX(), engine->getMouse()->getY() };
+
+    std::cout << engine->getMouse()->getWorldX(scene->getCamera()) << " " << engine->getMouse()->getWorldX(scene->getCamera()) << std::endl;
 
     // hard code mouse to world coordinates TODO replace this with world coordinate mouse call
     mousePos -= vec2{ 400, 400 };
@@ -115,10 +124,11 @@ void Game::update(float dt) {
             paperNode = new Node2D(scene, { .mesh=meshes["quad"], .material=materials["test"] });
         }
 
+        // reconstruct meshes TODO bring this back into paper class
         paper->paperMeshes.first->regenerateMesh();
+        paper->paperMeshes.second->regenerateMesh();
         
         Mesh* paperMesh = paper->getMesh();
-        // std::cout << paperMesh << std::endl;
         if (paperMesh != nullptr) paperNode->setMesh(paperMesh);
 
     } else {
@@ -127,7 +137,6 @@ void Game::update(float dt) {
             paperNode = nullptr;
         }
     }
-
 
     // basilisk update
     engine->update();

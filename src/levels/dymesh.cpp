@@ -115,6 +115,11 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion) {
     Paths64 subjAll = makePaths64FromRegion(region);
     Paths64 clip = makePaths64FromRegion(clipRegion);
     Paths64 sol = Difference(subjAll, clip, FillRule::NonZero);
+
+    if (sol.size() > 1) {
+        std::cout << "Polygon was cut into multiple pieces" << std::endl;
+        return false;
+    }
     
     std::vector<vec2> newRegion = makeRegionFromPaths64(sol);
 
@@ -414,5 +419,12 @@ void DyMesh::removeDataOutside() {
         }
 
         i--;
+    }
+}
+
+void DyMesh::flipHorizontal() {
+    Edger::flipHorizontal();
+    for (Tri& tri : data) {
+        for (Vert& v : tri.verts) v.pos.x *= -1;
     }
 }

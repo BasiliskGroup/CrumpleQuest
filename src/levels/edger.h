@@ -17,7 +17,7 @@ struct Edger {
     void addRangeOutside(std::vector<vec2>& unreflected, int a, int b);
 
     // cut specific 
-    void oneMinus();
+    void flipHorizontal();
 
     // tesing functions
     bool isPointOutside(const vec2& p, float eps=1e-8f) const;
@@ -26,5 +26,9 @@ struct Edger {
     void removeAll(const std::vector<vec2> removes, float epsilon=1e-6f);
     void pruneDups();
 };
+
+inline void flipVecsHorizontal(std::vector<vec2>& vecs) {
+    for (vec2& v : vecs) v.x *= -1;
+}
 
 #endif

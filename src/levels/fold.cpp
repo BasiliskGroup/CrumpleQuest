@@ -1,72 +1,5 @@
 #include "levels/levels.h"
 
-// ------------------------------------------------------------
-// PaperMesh
-// ------------------------------------------------------------
-
-Paper::PaperMesh::PaperMesh(const std::vector<vec2> verts, Mesh* mesh) : DyMesh(verts, mesh), mesh(nullptr) {
-    std::vector<float> data; 
-    toData(data);
-    this->mesh = new Mesh(data);
-}
-
-Paper::PaperMesh::~PaperMesh() {
-    delete mesh; 
-    mesh = nullptr;
-}
-
-Paper::PaperMesh::PaperMesh(const PaperMesh& other) : DyMesh(other.region, other.data), mesh(nullptr) {
-    std::vector<float> data;
-    toData(data);
-    mesh = new Mesh(data);
-}
-
-Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : DyMesh(std::move(other.region), std::move(other.data)), mesh(other.mesh) {
-    other.mesh = nullptr;
-}
-
-Paper::PaperMesh& Paper::PaperMesh::operator=(const PaperMesh& other) {
-    if (this == &other) return *this;
-    
-    // Copy-and-swap idiom for exception safety
-    PaperMesh temp(other);
-    
-    delete mesh;
-    mesh = temp.mesh;
-    region = std::move(temp.region);
-    data = std::move(temp.data);
-    temp.mesh = nullptr;
-    
-    return *this;
-}
-
-// Move assignment
-Paper::PaperMesh& Paper::PaperMesh::operator=(PaperMesh&& other) noexcept {
-    if (this == &other) return *this;
-    
-    delete mesh;
-    
-    region = std::move(other.region);
-    data = std::move(other.data);
-    mesh = other.mesh;
-    other.mesh = nullptr;
-    
-    return *this;
-}
-
-void Paper::PaperMesh::regenerateMesh() {
-    Mesh* oldPaperMesh = mesh;
-    std::vector<float> newMeshData;
-    toData(newMeshData);
-    mesh = new Mesh(newMeshData);
-    delete oldPaperMesh;
-}
-
-// ------------------------------------------------------------
-// Fold
-// ------------------------------------------------------------
-
-// called when creating a fold
 Paper::Fold::Fold(const vec2& start, int side) :
     underside(nullptr),
     backside(nullptr),
@@ -96,50 +29,39 @@ bool Paper::Fold::initialize(PaperMeshPair meshes, const vec2& creasePos, const 
         std::cout << "Fold crease could not find intersection" << std::endl;
         return false;
     }
-
+    
     crease = { foldStart, foldEnd };
 
-    // create cut dymesh (negative part of fold)
-    // TODO, check if these are always wound the correct direction
+    // create cut region
     std::vector<vec2> cutVerts = { foldStart };
     meshes.first->addRangeInside(cutVerts, indexBounds);
     cutVerts.push_back(foldEnd);
-
-    // we store the cut so that it can be accessed by the paper outside, don't midify the PaperMesh in the Fold constructor
-    backside = new DyMesh(cutVerts);
     
-    backside->oneMinus();
-    check = backside->copy(*meshes.second); // TODO cut from back side of page later
-    backside->oneMinus();
-
+    // sample from back side of paper
+    std::vector<vec2> backVerts = cutVerts;
+    flipVecsHorizontal(backVerts);
+    ensureCCW(backVerts);
+    
+    backside = new DyMesh(backVerts);
+    check = backside->copy(*meshes.second);  // Get UVs from back of paper
     if (!check) {
         std::cout << "Failed to copy negative-cut" << std::endl;
         return false;
     }
 
-    // folding the paper back mirrors it from its normal position
-    cover = backside->mirror(creasePos, creaseDir);
+    // find the cover region on front side
+    DyMesh backFlipped = DyMesh(*backside);
+    backFlipped.flipHorizontal(); // flip before mirroring?
+    cover = backFlipped.mirror(creasePos, creaseDir);
 
-    // check if cover is too close to existing points
-    check = true;
-    for (const vec2& r : meshes.first->region) {
-        for (const vec2& c : cover->region) {
-            if (glm::all(glm::epsilonEqual(r, c, 1e-2f))) {
-                check = false;
-                break;
-            }
-        }
-        if (check == false) {
-            std::cout << "Cover vertex too close to paper vertex" << std::endl;
-            return false;
-        }
-    }
+    // TODO vertex proximity check ...
 
-    // finish creating the underside
-    // TODO check if these are CCW
-    meshes.first->reflectVerticesOverLine(cutVerts, indexBounds.first, indexBounds.second, creasePos, creaseDir);
-    underside = new DyMesh(cutVerts);
-    check = underside->copyIntersection(*meshes.first); // will be used to save what was on the paper before fold
+    // find sandwiched overed region
+    std::vector<vec2> undersideVerts = cutVerts;
+    meshes.first->reflectVerticesOverLine(undersideVerts, indexBounds.first, indexBounds.second, creasePos, creaseDir);
+    
+    underside = new DyMesh(undersideVerts);
+    check = underside->copyIntersection(*meshes.first);
     if (!check) { 
         std::cout << "Failed to copy underlayer" << std::endl; 
         return false; 

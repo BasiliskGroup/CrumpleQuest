@@ -10,8 +10,6 @@
 #include <earcut.hpp> // mapbox earcut imported through assimp
 #include "util/clipper_helper.h"
 
-// NOTE all functions should return success and not make any modifications to the dymesh until we are sure that they have succeeded.
-
 struct DyMesh : public Edger {
     std::vector<Tri> data; // the current state of the mesh
 
@@ -28,15 +26,13 @@ struct DyMesh : public Edger {
 
     // collision checks
     bool hasOverlap(const DyMesh& other) const;
-
     bool contains(const vec2& pos) const;
-    
-    DyMesh* mirror(const vec2& pos, const vec2& dir);
-
+    int getTrindex(const vec2& pos) const;
     bool sampleUV(const vec2& v, vec2& uv) const;
     bool sampleUV(const Vert& v, vec2& uv) const { return sampleUV(v.pos, uv); }
-
-    int getTrindex(const vec2& pos) const;
+    
+    DyMesh* mirror(const vec2& pos, const vec2& dir);
+    void flipHorizontal();
 
     // export
     void toData(std::vector<float>& exp);

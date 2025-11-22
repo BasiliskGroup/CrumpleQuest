@@ -29,9 +29,11 @@ private:
     Paper* paper;
     Node2D* paperNode;
 
-    // track mouse inputs
+    // track inputs
     bool leftWasDown = false;
     vec2 LeftStartDown = vec2();
+
+    bool kWasDown = false;
 
     // TODO maybe nove these to ui scenes
     std::vector<UIElement*> uiElements;
