@@ -50,7 +50,6 @@ std::vector<vec2> makeRegionFromPaths64(const Paths64& paths) {
         );
     }
     
-    // NEW: Simplify before returning
     return simplifyCollinear(out);
 }
 

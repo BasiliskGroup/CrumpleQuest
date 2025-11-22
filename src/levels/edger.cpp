@@ -287,3 +287,7 @@ void Edger::pruneDups() {
         }
     }
 }
+
+void Edger::oneMinus() {
+    for (vec2 v : region) v.x = 1 - v.x;
+}

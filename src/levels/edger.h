@@ -16,6 +16,9 @@ struct Edger {
     void reflectVerticesOverLine(std::vector<vec2>& reflected, int a, int b, const vec2& pos, const vec2& dir);
     void addRangeOutside(std::vector<vec2>& unreflected, int a, int b);
 
+    // cut specific 
+    void oneMinus();
+
     // tesing functions
     bool isPointOutside(const vec2& p, float eps=1e-8f) const;
 

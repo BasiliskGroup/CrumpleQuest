@@ -132,6 +132,7 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion) {
     data = std::move(newData);
 
     // remove unwanted vertices
+    region = simplifyCollinear(region);
     pruneDups();
     removeDataOutside();
 
@@ -161,7 +162,7 @@ bool DyMesh::copyIntersection(const DyMesh& other) {
     }
 
     ensureCCW(newRegion);
-    newRegion = simplifyCollinear(newRegion);
+    newRegion = newRegion;
 
     // Triangulate intersection
     std::vector<uint32_t> indices = earcutIndicesFromRegion(newRegion);
@@ -202,6 +203,7 @@ bool DyMesh::copyIntersection(const DyMesh& other) {
     data = std::move(newData);
 
     // cleaning
+    region = simplifyCollinear(region);
     pruneDups();
     removeDataOutside();
 
@@ -268,6 +270,7 @@ bool DyMesh::paste(const DyMesh& other, int expected) {
     }
 
     region = std::move(newRegion);
+    region = simplifyCollinear(region);
     pruneDups();
 
     return true;

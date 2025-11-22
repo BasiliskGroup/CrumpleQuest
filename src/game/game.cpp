@@ -112,7 +112,7 @@ void Game::update(float dt) {
     // add paper stuff to the scene
     if (paper) {
         if (paperNode == nullptr) {
-            paperNode = new Node2D(scene, { .mesh=meshes["quad"], .material=materials["paper"] });
+            paperNode = new Node2D(scene, { .mesh=meshes["quad"], .material=materials["test"] });
         }
 
         paper->paperMeshes.first->regenerateMesh();

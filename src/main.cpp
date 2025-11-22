@@ -13,14 +13,14 @@ int main() {
     Game* game = new Game();
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
     }
 
     // mesh
-    std::vector<std::string> meshNames = { "quad", "paper" };
+    std::vector<std::string> meshNames = { "quad", "paper0", "paper1" };
     for (std::string& name : meshNames) game->addMesh(name, new Mesh("models/" + name + ".obj"));
 
     // collider
@@ -33,8 +33,6 @@ int main() {
     Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .scale={1, 1}, .collider=game->getCollider("quad") });
     Player* player = new Player(3, 3, playerNode, nullptr);
     game->setPlayer(player);
-
-
 
     // test add button
     Button* testButton = new Button(game, { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 
@@ -60,7 +58,8 @@ int main() {
 
     // create test paper
     game->setPaper(new Paper(
-        game->getMesh("paper"), 
+        game->getMesh("paper0"), 
+        game->getMesh("paper1"),
         {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}}
     ));
 

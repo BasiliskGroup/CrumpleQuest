@@ -8,15 +8,15 @@ Paper::Paper() :
     paperMeshes(nullptr, nullptr) 
 {}
 
-Paper::Paper(Mesh* mesh, const std::vector<vec2>& region) : 
+Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region) : 
     curSide(0), 
     isOpen(false),
     activeFold(NULL_FOLD),
     sides(nullptr, nullptr), 
     paperMeshes(nullptr, nullptr) 
 {
-    paperMeshes.first = new PaperMesh(region, mesh);
-    paperMeshes.second = new PaperMesh(region, mesh);
+    paperMeshes.first = new PaperMesh(region, mesh0);
+    paperMeshes.second = new PaperMesh(region, mesh1);
 }
 
 Paper::Paper(const Paper& other)
@@ -195,46 +195,22 @@ void Paper::fold(const vec2& start, const vec2& end) {
 
     // Reactivate an old fold and reset its progress
     // For now, we restore the fold to refold, maybe find more efficient solution layer
-    // if (activeFold != PAPER_FOLD 
-    //  && glm::length2(nearEdgePointFold - nearEdgePointPaper) < EPSILON 
-    //  && clickedFold->holds.empty()
-    // ) {
-    //     popFold();
-    // }
+    if (activeFold != PAPER_FOLD 
+     && glm::length2(nearEdgePointFold - nearEdgePointPaper) < EPSILON 
+     && clickedFold->holds.empty()
+    ) {
+        popFold();
+    }
     
     // Paper is being folded directly
     if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
         Fold fold = Fold(start, curSide);
-        bool check = fold.initialize(paperMesh, creasePos, foldDir, edgeIntersectPaper);
+        bool check = fold.initialize(paperMeshes, creasePos, foldDir, edgeIntersectPaper);
 
         // stop fold if we run into trouble
         if (!check) return;
 
         pushFold(fold);
-        
-        // DEBUG Display region for debug
-        for (uint i = 0; i < regionNodes.size(); i++) {
-            delete regionNodes[i];
-        }
-        regionNodes.clear();
-
-        auto& printRegion = getPaperMesh()->region; // folds.back().underside->region;
-        for (int i = 0; i < printRegion.size(); i++) {
-            auto& r = printRegion[i];
-            Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position=r, .scale={0.1 + 0.025 * i, 0.1 + 0.025 * i} });
-            n->setLayer(0.9);
-            regionNodes.push_back(n);
-        }
-
-        for (const Tri& d : getPaperMesh()->data) {
-            for (const Vert& v : d.verts) {
-                Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position=v.pos, .scale={0.1, 0.1} });
-                n->setLayer(0.9);
-                regionNodes.push_back(n);
-            }
-        }
-        // END DEBUG
-
     } else {
         std::cout << "unfold" << std::endl;
     }
@@ -262,6 +238,8 @@ void Paper::pushFold(Fold& newFold) {
     bool check = paperCopy->cut(*newFold.underside);
     if (!check) return;
 
+    // TODO find any points that are cut specific and remove them with the insides, remove simplifyCollinear?
+
     check = paperCopy->paste(*newFold.cover);
     if (!check) return;
 
@@ -284,11 +262,6 @@ void Paper::pushFold(Fold& newFold) {
     paperCopy->removeAll(insides);
     paperCopy->pruneDups();
 
-    std::cout << "final vertices: " << paperCopy->region.size() << std::endl;
-    for (const vec2& v : paperCopy->region) {
-        std::cout << v.x << " " << v.y << std::endl;
-    }
-
     // swap meshes with cut
     delete paperMesh;
     
@@ -297,6 +270,8 @@ void Paper::pushFold(Fold& newFold) {
     } else {
         this->paperMeshes.second = paperCopy;
     }
+
+    dotData();
 }
 
 void Paper::popFold() {
@@ -316,4 +291,29 @@ void Paper::popFold() {
 
     // active fold should be near to the back so this isn't the worst
     folds.erase(folds.begin() + activeFold);
+
+    dotData();
+}
+
+void Paper::dotData() {
+    for (uint i = 0; i < regionNodes.size(); i++) {
+        delete regionNodes[i];
+    }
+    regionNodes.clear();
+
+    auto& printRegion = getPaperMesh()->region; // folds.back().underside->region;
+    for (int i = 0; i < printRegion.size(); i++) {
+        auto& r = printRegion[i];
+        Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position=r, .scale={0.1 + 0.025 * i, 0.1 + 0.025 * i} });
+        n->setLayer(0.9);
+        regionNodes.push_back(n);
+    }
+
+    for (const Tri& d : getPaperMesh()->data) {
+        for (const Vert& v : d.verts) {
+            Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position=v.pos, .scale={0.05, 0.05} });
+            n->setLayer(0.9);
+            regionNodes.push_back(n);
+        }
+    }
 }

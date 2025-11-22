@@ -11,7 +11,7 @@ void Paper::generateTemplates(Game* game) {
     // create templates
     // ---------------------
 
-    templates["empty"] = Paper(game->getMesh("paper"), {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}});
+    templates["empty"] = Paper(game->getMesh("paper0"), game->getMesh("paper1"), {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}});
 
     // ---------------------
     // label templates

@@ -30,8 +30,11 @@ private:
         void regenerateMesh();
     };
 
+    using PaperMeshPair = std::pair<PaperMesh*, PaperMesh*>;
+
     struct Fold {
         DyMesh* underside;
+        DyMesh* backside;
         DyMesh* cover;
         std::set<int> holds;
         vec2 start;
@@ -41,7 +44,7 @@ private:
         Fold(const vec2& start, int side=0);
         ~Fold();
 
-        bool initialize(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper);
+        bool initialize(PaperMeshPair meshes, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper);
 
         Fold(const Fold& other);
         Fold(Fold&& other) noexcept;
@@ -59,7 +62,7 @@ public: // DEBUG
 
     // side pairs
     std::pair<SingleSide*, SingleSide*> sides;
-    std::pair<PaperMesh*, PaperMesh*> paperMeshes;
+    PaperMeshPair paperMeshes;
     short curSide;
 
     // TODO temporary
@@ -71,7 +74,7 @@ public: // DEBUG
 
 public:
     Paper();
-    Paper(Mesh* mesh, const std::vector<vec2>& region);
+    Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region);
     
     // Rule of 5
     Paper(const Paper& other);
@@ -101,9 +104,13 @@ public:
 private:
     void clear();
     PaperMesh* getPaperMesh() { return curSide == 0 ? paperMeshes.first : paperMeshes.second; }
+    PaperMesh* getBackPaperMesh() { return curSide == 1 ? paperMeshes.first : paperMeshes.second; }
 
     void pushFold(Fold& newFold);
     void popFold(); // uses activeFold index
+
+    // DEBUG
+    void dotData();
 };
 
 #endif
