@@ -55,12 +55,14 @@ DyMesh::DyMesh(const std::vector<vec2>& region) : Edger(region), data() {
     }
 }
 
-void DyMesh::cut(const std::vector<vec2>& clipRegion) {
-    if (clipRegion.empty()) return;
+bool DyMesh::cut(const std::vector<vec2>& clipRegion) {
+    if (clipRegion.empty()) return false;
 
     std::vector<Tri> newData;
     newData.reserve(data.size());
 
+    // TODO check if indivdual triangles were cut correctly
+    // count remaining vertices? 
     for (const Tri& tri : data) {
         std::vector<vec2> triPoly = tri.toPolygon();
         Paths64 subj = makePaths64FromRegion(triPoly);
@@ -102,16 +104,23 @@ void DyMesh::cut(const std::vector<vec2>& clipRegion) {
     Paths64 sol = Difference(subjAll, clip, FillRule::NonZero);
     
     std::vector<vec2> newRegion = makeRegionFromPaths64(sol);
-    
-    if (newRegion.size() >= 3) {
-        ensureCCW(newRegion);
-        // Optional: simplify to remove collinear points
-        region = simplifyCollinear(newRegion);
-    } else {
-        region.clear(); // Completely cut away
+
+    // we have completely deleted the region
+    if (newRegion.size() < 3) {
+        region.clear();
+        data.clear();
+        return true;
     }
 
+    ensureCCW(newRegion);
+
+    // remove unwanted vertices
+
+    // all tests passed
+    region = std::move(newRegion);
     data = std::move(newData);
+
+    return true;
 }
 
 bool DyMesh::copyIntersection(const DyMesh& other) {
@@ -180,8 +189,8 @@ bool DyMesh::copyIntersection(const DyMesh& other) {
 }
 
 // cut overload that accepts another DyMesh
-void DyMesh::cut(const DyMesh& other) {
-    cut(other.region);
+bool DyMesh::cut(const DyMesh& other) {
+    return cut(other.region);
 }
 
 bool DyMesh::copy(const DyMesh& other) {
@@ -197,10 +206,11 @@ bool DyMesh::copy(const DyMesh& other) {
     return true;
 }
 
-void DyMesh::paste(const DyMesh& other) {
-    if (other.region.empty()) return;
+bool DyMesh::paste(const DyMesh& other, int expected) {
+    if (other.region.empty()) return false;
 
     // Deep copy incoming triangles
+    // no float inprecision here
     for (const Tri& t : other.data) {
         data.push_back(t);
     }
@@ -213,17 +223,33 @@ void DyMesh::paste(const DyMesh& other) {
     try {
         unionSol = Union(a, b, FillRule::NonZero);
     } catch (...) {
-        std::cout << "  PASTE: Union failed!" << std::endl;
-        return;
+        std::cout << "paste union failed" << std::endl;
+        return false;
     }
 
     std::vector<vec2> newRegion = makeRegionFromPaths64(unionSol);
-    
-    if (newRegion.size() >= 3) {
-        ensureCCW(newRegion);
-        // Optional: simplify to remove collinear points
-        region = simplifyCollinear(newRegion);
+
+    if (newRegion.size() < 3) {
+        if (expected > 0) {
+            std::cout << "paste region is 0" << std::endl;
+            return false;
+        } 
+
+        region.clear();
+        data.clear();
+        return true;
     }
+
+    ensureCCW(newRegion);
+
+    if (expected != -1 && newRegion.size() != expected) {
+        std::cout << "paste incorrect vertex count " << newRegion.size() << " " << expected << std::endl;
+        return false;
+    }
+
+    region = std::move(newRegion);
+
+    return true;
 }
 
 DyMesh* DyMesh::mirror(const vec2& pos, const vec2& dir) {

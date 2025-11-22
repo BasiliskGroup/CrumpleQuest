@@ -10,6 +10,8 @@
 #include <earcut.hpp> // mapbox earcut imported through assimp
 #include "util/clipper_helper.h"
 
+// NOTE all functions should return success and not make any modifications to the dymesh until we are sure that they have succeeded.
+
 struct DyMesh : public Edger {
     std::vector<Tri> data; // the current state of the mesh
 
@@ -18,11 +20,11 @@ struct DyMesh : public Edger {
     DyMesh(const std::vector<vec2>& region); // NOTE probably temporary, 
 
     // modifier functions
-    void cut(const std::vector<vec2>& clipRegion); // delete region
-    void cut(const DyMesh& other); // delete region
+    bool cut(const std::vector<vec2>& clipRegion); // delete region
+    bool cut(const DyMesh& other); // delete region
     bool copy(const DyMesh& other); // copy all uvs from containing shape
     bool copyIntersection(const DyMesh& other); // copy region and UVs from intersection
-    void paste(const DyMesh& other); // paste incoming shape intop of us
+    bool paste(const DyMesh& other, int expected = -1); // paste incoming shape intop of us
 
     // collision checks
     bool hasOverlap(const DyMesh& other) const;

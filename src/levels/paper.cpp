@@ -204,7 +204,12 @@ void Paper::fold(const vec2& start, const vec2& end) {
     
     // Paper is being folded directly
     if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
-        Fold fold = Fold(paperMesh, creasePos, foldDir, edgeIntersectPaper, start, curSide);
+        Fold fold = Fold(start, curSide);
+        bool check = fold.initialize(paperMesh, creasePos, foldDir, edgeIntersectPaper);
+
+        // stop fold if we run into trouble
+        if (!check) return;
+
         pushFold(fold);
         
         // DEBUG Display region for debug
@@ -213,7 +218,7 @@ void Paper::fold(const vec2& start, const vec2& end) {
         }
         regionNodes.clear();
 
-        auto& printRegion = paperMesh->region; // folds.back().underside->region;
+        auto& printRegion = getPaperMesh()->region; // folds.back().underside->region;
         for (int i = 0; i < printRegion.size(); i++) {
             auto& r = printRegion[i];
             Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position=r, .scale={0.1 + 0.025 * i, 0.1 + 0.025 * i} });
@@ -242,9 +247,42 @@ void Paper::pushFold(Fold& newFold) {
     folds.push_back(newFold);
 
     // modify the mesh to accommodate new fold
+    // copy mesh so we can quit fold is shit goes wrong
     PaperMesh* paperMesh = getPaperMesh();
-    paperMesh->cut(*newFold.underside);
-    paperMesh->paste(*newFold.cover);
+    PaperMesh* paperCopy = new PaperMesh(*paperMesh);
+
+    bool check = paperCopy->cut(*newFold.underside);
+    if (!check) return;
+
+    check = paperCopy->paste(*newFold.cover);
+    if (!check) return;
+
+    // check for erroneous points
+    auto& reg = newFold.underside->region;
+    auto& cA = newFold.crease[0];
+    auto& cB = newFold.crease[1];
+
+    std::vector<vec2> insides;
+    insides.reserve(reg.size());
+
+    for (const vec2& v : reg) {
+        // skip if equal to either crease point
+        if (glm::all(glm::epsilonEqual(v, cA, 1e-6f))) continue;
+        if (glm::all(glm::epsilonEqual(v, cB, 1e-6f))) continue;
+
+        insides.push_back(v);
+    }
+
+    paperCopy->removeAll(insides);
+
+    // swap meshes with cut
+    delete paperMesh;
+    
+    if (curSide == 0) {
+        this->paperMeshes.first = paperCopy;
+    } else {
+        this->paperMeshes.second = paperCopy;
+    }
 }
 
 void Paper::popFold() {

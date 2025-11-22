@@ -36,9 +36,12 @@ private:
         std::set<int> holds;
         vec2 start;
         int side; 
+        Vec2Pair crease;
 
-        Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper, const vec2& start, int side=0);
+        Fold(const vec2& start, int side=0);
         ~Fold();
+
+        bool initialize(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper);
 
         Fold(const Fold& other);
         Fold(Fold&& other) noexcept;

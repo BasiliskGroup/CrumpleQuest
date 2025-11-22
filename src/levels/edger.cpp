@@ -30,8 +30,7 @@ vec2 Edger::getNearestEdgeIntersection(const vec2& pos, const vec2& dir) {
 
 vec2 Edger::getNearestEdgePoint(const vec2& pos) {
     size_t n = region.size();
-    if (n == 0) return pos;
-    if (n == 1) return region[0];
+    if (n < 2) return pos;
 
     float bestDistSq = std::numeric_limits<float>::max();
     vec2 bestPoint = pos;
@@ -126,7 +125,7 @@ std::pair<int, int> Edger::getVertexRangeBelowThreshold(const vec2& dir, float t
     return {first, second};
 }
 
-void Edger::addVertexRange(std::vector<vec2>& vecs, const std::pair<int, int> range) {
+void Edger::addRangeInside(std::vector<vec2>& vecs, const std::pair<int, int> range) {
     if (region.empty())
         return;
 
@@ -193,7 +192,7 @@ void Edger::reflectVerticesOverLine(std::vector<vec2>& reflected, int a, int b, 
     }
 }
 
-void Edger::getUnreflectedVertices(std::vector<vec2>& unreflected, int a, int b) {
+void Edger::addRangeOutside(std::vector<vec2>& unreflected, int a, int b) {
     if (region.empty())
         return;
 
@@ -207,4 +206,65 @@ void Edger::getUnreflectedVertices(std::vector<vec2>& unreflected, int a, int b)
         if (i == (a - 1 + n) % n)  // stop right before 'a'
             break;
     }
+}
+
+// testing functions
+bool Edger::isPointInside(const vec2& p) const {
+    size_t n = region.size();
+    if (n < 3) return false;
+
+    bool inside = false;
+
+    for (size_t i = 0, j = n - 1; i < n; j = i++) {
+        const vec2& a = region[i];
+        const vec2& b = region[j];
+
+        // Check if edge intersects ray to the right
+        bool intersect =
+            ((a.y > p.y) != (b.y > p.y)) &&
+            (p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y + 1e-12f) + a.x);
+
+        if (intersect)
+            inside = !inside;
+    }
+
+    return inside;
+}
+
+void Edger::collectPointsInside(const std::vector<vec2>& points, std::vector<vec2>& out) const {
+    out.clear();
+    out.reserve(points.size());
+
+    for (const vec2& p : points) {
+        if (isPointInside(p)) {
+            out.push_back(p);
+        }
+    }
+}
+
+void Edger::removeAll(const std::vector<vec2> removes, float epsilon) {
+    if (region.empty() || removes.empty()) return;
+
+    float epsSq = epsilon * epsilon;
+
+    std::vector<vec2> filtered;
+    filtered.reserve(region.size());
+
+    for (const vec2& v : region) {
+        bool tooClose = false;
+
+        for (const vec2& r : removes) {
+            vec2 d = v - r;
+            if (glm::dot(d, d) <= epsSq) {
+                tooClose = true;
+                break;
+            }
+        }
+
+        if (!tooClose) {
+            filtered.push_back(v);
+        }
+    }
+
+    region.swap(filtered);
 }

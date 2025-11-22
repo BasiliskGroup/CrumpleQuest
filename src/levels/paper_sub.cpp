@@ -67,13 +67,16 @@ void Paper::PaperMesh::regenerateMesh() {
 // ------------------------------------------------------------
 
 // called when creating a fold
-Paper::Fold::Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper, const vec2& start, int side) :
+Paper::Fold::Fold(const vec2& start, int side) :
     underside(nullptr),
     cover(nullptr),
     holds(),
     start(start),
-    side(side)
-{
+    side(side),
+    crease()
+{}
+
+bool Paper::Fold::initialize(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper) {
     // precalculate reference geometry
     float midDot = glm::dot(creasePos, foldDir);
     vec2 creaseDir = { foldDir.y, -foldDir.x };
@@ -92,18 +95,26 @@ Paper::Fold::Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldD
 
     // TODO switch to graceful error handling for more reliable game play
     bool check = leftCheck & rightCheck;
-    if (!check) throw std::runtime_error("Fold crease could not find intersection");
+    if (!check) {
+        std::cout << "Fold crease could not find intersection" << std::endl;
+        return false;
+    }
+
+    crease = { foldStart, foldEnd };
 
     // create cut dymesh (negative part of fold)
     // TODO, check if these are always wound the correct direction
     std::vector<vec2> cutVerts = { foldStart };
-    paperMesh->addVertexRange(cutVerts, indexBounds);
+    paperMesh->addRangeInside(cutVerts, indexBounds);
     cutVerts.push_back(foldEnd);
 
     // we store the cut so that it can be accessed by the paper outside, don't midify the PaperMesh in the Fold constructor
     DyMesh cut = DyMesh(cutVerts);
     check = cut.copy(*paperMesh); // TODO cut from back side of page later
-    if (!check) throw std::runtime_error("Failed to copy negative-cut");
+    if (!check) {
+        std::cout << "Failed to copy negative-cut" << std::endl;
+        return false;
+    }
 
     // folding the paper back mirrors it from its normal position
     cover = cut.mirror(creasePos, creaseDir);
@@ -113,7 +124,12 @@ Paper::Fold::Fold(PaperMesh* paperMesh, const vec2& creasePos, const vec2& foldD
     paperMesh->reflectVerticesOverLine(cutVerts, indexBounds.first, indexBounds.second, creasePos, creaseDir);
     underside = new DyMesh(cutVerts);
     check = underside->copyIntersection(*paperMesh); // will be used to save what was on the paper before fold
-    if (!check) { std::cout << "Failed to copy underlayer" << std::endl; return; }
+    if (!check) { 
+        std::cout << "Failed to copy underlayer" << std::endl; 
+        return false; 
+    }
+
+    return true;
 }
 
 // rule of 5
