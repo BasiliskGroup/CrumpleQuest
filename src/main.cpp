@@ -15,7 +15,7 @@ int main() {
     Game* game = new Game();
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
@@ -24,6 +24,10 @@ int main() {
     // mesh
     std::vector<std::string> meshNames = { "quad", "paper0", "paper1" };
     for (std::string& name : meshNames) game->addMesh(name, new Mesh("models/" + name + ".obj"));
+
+    // load levels
+    SingleSide::generateTemplates(game);
+    game->setSide("empty");
 
     // collider
     game->addCollider("quad", new Collider(game->getScene()->getSolver(), {{0.5f, 0.5f}, {-0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, -0.5f}}));

@@ -5,8 +5,6 @@ std::unordered_map<std::string, Paper> Paper::templates;
 std::unordered_map<RoomTypes, std::vector<std::string>> Paper::papers;
 
 void Paper::generateTemplates(Game* game) {
-    Scene2D* voidScene = game->getVoidScene();
-
     // ---------------------
     // create templates
     // ---------------------

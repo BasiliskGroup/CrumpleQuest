@@ -5,22 +5,11 @@ Game::Game() :
     player(nullptr), 
     floor(nullptr),
     engine(nullptr),
-    scene(nullptr),
-    voidScene(nullptr),
-    camera(nullptr),
+    currentSide(nullptr),
     paper(nullptr),
     paperNode(nullptr)
 {
-    // basilisk preamble
     this->engine = new Engine(1600, 900, "Crumple Quest");
-    this->scene = new Scene2D(this->engine);
-    this->scene->getSolver()->setGravity(0);
-    this->camera = new StaticCamera2D(engine);
-    this->camera->setScale(9.0f);
-    this->scene->setCamera(this->camera);
-    
-    // storing templates
-    this->voidScene = new Scene2D(this->engine);
 }
 
 Game::~Game() {
@@ -45,11 +34,6 @@ Game::~Game() {
     }
     meshes.clear();
 
-    for (Enemy* enemy : enemies) {
-        delete enemy;
-    }
-    enemies.clear();
-
     delete paper; paper = nullptr;
 
     // scene2D will handle deletion
@@ -57,9 +41,7 @@ Game::~Game() {
 
     // basilisk closing, must be last
     delete engine; engine = nullptr;
-    delete scene; scene = nullptr;
-    delete camera; camera = nullptr;
-    delete voidScene; voidScene = nullptr;
+    delete currentSide; currentSide = nullptr;
 }
 
 void Game::update(float dt) {
@@ -75,7 +57,7 @@ void Game::update(float dt) {
 
     // folding
     bool leftIsDown = engine->getMouse()->getLeftDown();
-    vec2 mousePos = { engine->getMouse()->getWorldX(scene->getCamera()), engine->getMouse()->getWorldY(scene->getCamera()) };
+    vec2 mousePos = { engine->getMouse()->getWorldX(getScene()->getCamera()), engine->getMouse()->getWorldY(getScene()->getCamera()) };
 
     if (!leftWasDown && leftIsDown) { // we just clicked
         LeftStartDown = mousePos;
@@ -108,14 +90,14 @@ void Game::update(float dt) {
         player->move(dt);
     }
 
-    for (Enemy* enemy : enemies) {
+    for (Enemy* enemy : getEnemies()) {
         enemy->move(player->getPosition(), dt);
     }
 
     // add paper stuff to the scene
     if (paper) {
         if (paperNode == nullptr) {
-            paperNode = new Node2D(scene, { .mesh=meshes["quad"], .material=materials["test"] });
+            paperNode = new Node2D(getScene(), { .mesh=meshes["quad"], .material=materials["test"] });
             paperNode->setLayer(-0.8);
         }
         
@@ -131,7 +113,6 @@ void Game::update(float dt) {
 
     // basilisk update
     engine->update();
-    scene->update();
-    scene->render();
+    currentSide->update(-1);
     engine->render();
 }
