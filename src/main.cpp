@@ -13,7 +13,7 @@ int main() {
     Game* game = new Game();
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
