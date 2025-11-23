@@ -24,6 +24,7 @@ struct Edger {
 
     // cleaning functions
     void removeAll(const std::vector<vec2> removes, float epsilon=1e-6f);
+    void keepOnly(const std::vector<vec2> keeps, float epsilon=1e-6f);
     void pruneDups();
 };
 

@@ -271,6 +271,33 @@ void Edger::removeAll(const std::vector<vec2> removes, float epsilon) {
     region.swap(filtered);
 }
 
+void Edger::keepOnly(const std::vector<vec2> keeps, float epsilon) {
+    if (region.empty() || keeps.empty()) return;
+
+    float epsSq = epsilon * epsilon;
+
+    std::vector<vec2> filtered;
+    filtered.reserve(region.size());
+
+    for (const vec2& v : region) {
+        bool tooClose = false;
+
+        for (const vec2& r : keeps) {
+            vec2 d = v - r;
+            if (glm::dot(d, d) <= epsSq) {
+                tooClose = true;
+                break;
+            }
+        }
+
+        if (tooClose) {
+            filtered.push_back(v);
+        }
+    }
+
+    region.swap(filtered);
+}
+
 void Edger::pruneDups() {
     if (region.size() <= 1) return;
     

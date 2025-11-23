@@ -7,7 +7,8 @@ Paper::Fold::Fold(const vec2& start, int side) :
     holds(),
     start(start),
     side(side),
-    crease()
+    crease(),
+    cleanVerts()
 {}
 
 bool Paper::Fold::initialize(PaperMeshPair meshes, const vec2& creasePos, const vec2& foldDir, const vec2& edgeIntersectPaper) {
@@ -36,6 +37,10 @@ bool Paper::Fold::initialize(PaperMeshPair meshes, const vec2& creasePos, const 
     std::vector<vec2> cutVerts = { foldStart };
     meshes.first->addRangeInside(cutVerts, indexBounds);
     cutVerts.push_back(foldEnd);
+
+    meshes.first->addRangeOutside(cleanVerts, indexBounds.first, indexBounds.second); // cleaning, used in Paper
+    cleanVerts.push_back(foldStart);
+    cleanVerts.push_back(foldEnd);
     
     // sample from back side of paper
     std::vector<vec2> backVerts = cutVerts;

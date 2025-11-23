@@ -41,6 +41,9 @@ private:
         int side; 
         Vec2Pair crease;
 
+        // cleaning
+        std::vector<vec2> cleanVerts;
+
         Fold(const vec2& start, int side=0);
         ~Fold();
 

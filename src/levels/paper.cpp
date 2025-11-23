@@ -247,8 +247,6 @@ void Paper::pushFold(Fold& newFold) {
         return;
     }
 
-    // TODO find any points that are cut specific and remove them with the insides, remove simplifyCollinear?
-
     check = paperCopy->paste(*newFold.cover);
     if (!check) {
         delete paperCopy; paperCopy = nullptr;
@@ -256,20 +254,20 @@ void Paper::pushFold(Fold& newFold) {
     }
 
     // check for erroneous points
-    auto& reg = newFold.underside->region;
-    auto& cA = newFold.crease[0];
-    auto& cB = newFold.crease[1];
+    // auto& reg = newFold.underside->region;
+    // auto& cA = newFold.crease[0];
+    // auto& cB = newFold.crease[1];
 
-    std::vector<vec2> insides;
-    insides.reserve(reg.size());
+    // std::vector<vec2> insides;
+    // insides.reserve(reg.size());
 
-    for (const vec2& v : reg) {
-        // skip if equal to either crease point
-        if (glm::all(glm::epsilonEqual(v, cA, 1e-6f))) continue;
-        if (glm::all(glm::epsilonEqual(v, cB, 1e-6f))) continue;
+    // for (const vec2& v : reg) {
+    //     // skip if equal to either crease point
+    //     if (glm::all(glm::epsilonEqual(v, cA, 1e-6f))) continue;
+    //     if (glm::all(glm::epsilonEqual(v, cB, 1e-6f))) continue;
 
-        insides.push_back(v);
-    }
+    //     insides.push_back(v);
+    // }
 
     // TODO make a copy first
     PaperMesh* backMesh = getBackPaperMesh();
@@ -282,7 +280,7 @@ void Paper::pushFold(Fold& newFold) {
     }
 
     // all tests passed
-    paperCopy->removeAll(insides);
+    paperCopy->keepOnly(newFold.cleanVerts);
     paperCopy->pruneDups();
 
     backCopy->pruneDups();
