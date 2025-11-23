@@ -335,6 +335,7 @@ void DyMesh::printData() {
 
 void DyMesh::removeDataOutside() {
     ensureCCW(region);
+    return;
 
     if (data.empty()) return;
 
@@ -365,6 +366,5 @@ void DyMesh::flipHorizontal() {
         for (Vert& v : tri.verts) {
             v.pos.x *= -1;
         }
-        // tri.flipUVx();
     }
 }

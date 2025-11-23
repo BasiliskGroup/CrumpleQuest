@@ -196,12 +196,12 @@ void Paper::fold(const vec2& start, const vec2& end) {
 
     // Reactivate an old fold and reset its progress
     // For now, we restore the fold to refold, maybe find more efficient solution layer
-    // if (activeFold != PAPER_FOLD 
-    //  && glm::length2(nearEdgePointFold - nearEdgePointPaper) < EPSILON 
-    //  && clickedFold->holds.empty()
-    // ) {
-    //     popFold();
-    // }
+    if (activeFold != PAPER_FOLD 
+     && glm::length2(nearEdgePointFold - nearEdgePointPaper) < EPSILON 
+     && clickedFold->holds.empty()
+    ) {
+        popFold();
+    }
     
     // Paper is being folded directly
     if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
@@ -300,6 +300,9 @@ void Paper::pushFold(Fold& newFold) {
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
 
+    // TODO add holds to under folds
+
+
     // DEBUG
     dotData();
 }
@@ -310,8 +313,11 @@ void Paper::popFold() {
     // restore mesh from fold
     Fold& oldFold = folds[activeFold];
     PaperMesh* paperMesh = getPaperMesh();
+
+    // TODO, add checks on these
     paperMesh->cut(*oldFold.underside);
     paperMesh->paste(*oldFold.underside);
+    getBackPaperMesh()->paste(*oldFold.backside);
 
     for (Fold& fold : folds) {
         if (fold.holds.find(activeFold) != fold.holds.end()) {

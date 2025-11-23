@@ -42,6 +42,7 @@ int main() {
 
     Animation* animation = new Animation({game->getMaterial("box"), game->getMaterial("man"), game->getMaterial("knight")});
     Animator* playerAnimator = new Animator(game->getEngine(), playerNode, animation);
+    playerAnimator->setFrameRate(0);
 
     // test add button
     Button* testButton = new Button(game, { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 
@@ -70,11 +71,11 @@ int main() {
     game->addUI(testSlider);
 
     // create test paper
-    // game->setPaper(new Paper(
-    //     game->getMesh("paper0"), 
-    //     game->getMesh("paper1"),
-    //     {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}}
-    // ));
+    game->setPaper(new Paper(
+        game->getMesh("paper0"), 
+        game->getMesh("paper1"),
+        {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}}
+    ));
 
     // audio
     auto& audio = audio::AudioManager::GetInstance();
