@@ -32,5 +32,11 @@ uniform textArray textureArrays[4];
 out vec4 fragColor;
 
 void main() {
-    fragColor = texture(textureArrays[material.albedoArray].array, vec3(uv, material.albedoIndex));
-} 
+    vec4 textureColor = texture(textureArrays[material.albedoArray].array, vec3(uv, material.albedoIndex)); 
+
+    if (textureColor.a <= 0.01) {
+        discard;
+    }
+
+    fragColor = textureColor;
+}

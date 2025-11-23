@@ -3,6 +3,8 @@
 #include "ui/ui.h"
 #include "levels/levels.h"
 #include "audio/audio_manager.h"
+#include "resource/animation.h"
+#include "resource/animator.h"
 #include "weapon/weapon.h"
 #include <earcut.hpp>
 
@@ -33,6 +35,9 @@ int main() {
     Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}, .collider=game->getCollider("quad") });
     Player* player = new Player(3, 3, playerNode, nullptr);
     game->setPlayer(player);
+
+    Animation* animation = new Animation({game->getMaterial("box"), game->getMaterial("man"), game->getMaterial("knight")});
+    Animator* playerAnimator = new Animator(game->getEngine(), playerNode, animation);
 
     // test add button
     Button* testButton = new Button(game, { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 
@@ -88,7 +93,8 @@ int main() {
     audio.PlayTrack(parchment_track);
 
     while (game->getEngine()->isRunning()) {
-        game->update(1.0 / 120);
+        game->update(game->getEngine()->getDeltaTime());
+        playerAnimator->update();
     }
 
     // Shutdown audio system before deleting game
