@@ -23,6 +23,10 @@ int main() {
     std::vector<std::string> meshNames = { "quad", "paper0", "paper1" };
     for (std::string& name : meshNames) game->addMesh(name, new Mesh("models/" + name + ".obj"));
 
+    // load levels
+    SingleSide::generateTemplates(game);
+    game->setSide("empty");
+
     // collider
     game->addCollider("quad", new Collider(game->getScene()->getSolver(), {{0.5f, 0.5f}, {-0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, -0.5f}}));
 

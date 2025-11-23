@@ -12,9 +12,7 @@ class UIElement;
 class Game {
 private:
     Engine* engine;
-    Scene2D* scene;
-    Scene2D* voidScene;
-    StaticCamera2D* camera;
+    SingleSide* currentSide;
 
     std::unordered_map<std::string, Collider*> colliders;
     std::unordered_map<std::string, Image*> images;
@@ -23,7 +21,6 @@ private:
 
     Player* player;
     Floor* floor;
-    std::vector<Enemy*> enemies;
 
     // rendering paper
     Paper* paper;
@@ -48,7 +45,7 @@ public:
     void addCollider(std::string name, Collider* collider) { this->colliders[name] = collider; }
 
     // TODO temporary debug
-    void addEnemy(Enemy* enemy) { this->enemies.push_back(enemy); }
+    void addEnemy(Enemy* enemy) { this->currentSide->addEnemy(enemy); }
     void addUI(UIElement* uiElement) { this->uiElements.push_back(uiElement); }
     
     // getters
@@ -58,11 +55,10 @@ public:
     Collider* getCollider(std::string name) { return colliders[name]; }
 
     Engine*& getEngine() { return engine; }
-    Scene2D*& getScene() { return scene; }
-    Scene2D* getVoidScene() { return voidScene; }
+    Scene2D*& getScene() { return currentSide->getScene(); }
     Paper* getPaper() { return paper; }
 
-    auto& getEnemies() { return enemies; }
+    auto& getEnemies() { return currentSide->getEnemies(); }
 
     // setters
     void setPlayer(Player* player) { this->player = player; }
@@ -70,6 +66,8 @@ public:
         this->paper = paper; 
         this->paper->setGame(this);
     }
+
+    void setSide(std::string str) { this->currentSide = SingleSide::templates[str](); }
 
     void update(float dt);
 };

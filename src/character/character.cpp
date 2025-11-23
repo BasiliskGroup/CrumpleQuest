@@ -3,8 +3,8 @@
 Character::Character(int health, float speed, Node2D* node, Weapon* weapon, std::string team) : health(health), speed(speed), node(node), weapon(weapon), team(team) {}
 
 Character::~Character() {
-    delete weapon;
-    delete node;
+    delete weapon; weapon = nullptr;
+    delete node; node = nullptr;
 }
 
 void Character::onDamage(int damage) {
