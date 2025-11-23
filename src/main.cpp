@@ -13,7 +13,7 @@ int main() {
     Game* game = new Game();
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
@@ -30,7 +30,7 @@ int main() {
     // Weapon* melee = new Weapon(ContactZone(nullptr, ))
 
     // create player
-    Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .scale={1, 1}, .collider=game->getCollider("quad") });
+    Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}, .collider=game->getCollider("quad") });
     Player* player = new Player(3, 3, playerNode, nullptr);
     game->setPlayer(player);
 
@@ -38,6 +38,10 @@ int main() {
     Button* testButton = new Button(game, { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 
         .onDown=[]() { std::cout << "Button Pressed" << std::endl; }
     });
+
+    // add temp background paper
+    Node2D* paperBackground = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("paper"), .scale={16, 9} });
+    paperBackground->setLayer(-0.9);
 
     // spawn enemy on click
     testButton->setOnUp([game]() {

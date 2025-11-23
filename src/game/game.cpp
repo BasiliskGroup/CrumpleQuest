@@ -12,10 +12,11 @@ Game::Game() :
     paperNode(nullptr)
 {
     // basilisk preamble
-    this->engine = new Engine(1200, 900, "Crumple Quest");
+    this->engine = new Engine(1600, 900, "Crumple Quest");
     this->scene = new Scene2D(this->engine);
     this->scene->getSolver()->setGravity(0);
     this->camera = new StaticCamera2D(engine);
+    this->camera->setScale(9.0f);
     this->scene->setCamera(this->camera);
     
     // storing templates
