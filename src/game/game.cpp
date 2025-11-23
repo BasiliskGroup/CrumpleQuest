@@ -12,7 +12,7 @@ Game::Game() :
     paperNode(nullptr)
 {
     // basilisk preamble
-    this->engine = new Engine(800, 800, "Crumple Quest");
+    this->engine = new Engine(1200, 900, "Crumple Quest");
     this->scene = new Scene2D(this->engine);
     this->scene->getSolver()->setGravity(0);
     this->camera = new StaticCamera2D(engine);
@@ -115,6 +115,7 @@ void Game::update(float dt) {
     if (paper) {
         if (paperNode == nullptr) {
             paperNode = new Node2D(scene, { .mesh=meshes["quad"], .material=materials["test"] });
+            paperNode->setLayer(-0.8);
         }
         
         Mesh* paperMesh = paper->getMesh();

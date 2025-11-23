@@ -282,8 +282,10 @@ void Paper::pushFold(Fold& newFold) {
     // all tests passed
     paperCopy->keepOnly(newFold.cleanVerts);
     paperCopy->pruneDups();
+    paperCopy->removeDataOutside();
 
     backCopy->pruneDups();
+    backCopy->removeDataOutside();
 
     // swap meshes with cut
     delete paperMesh;

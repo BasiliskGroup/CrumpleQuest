@@ -139,7 +139,6 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
     // remove unwanted vertices
     region = simplifyCollinear(region);
     pruneDups();
-    removeDataOutside();
 
     return true;
 }
@@ -335,8 +334,7 @@ void DyMesh::printData() {
 }
 
 void DyMesh::removeDataOutside() {
-    // NOTE disable
-    return;
+    ensureCCW(region);
 
     if (data.empty()) return;
 

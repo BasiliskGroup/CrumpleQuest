@@ -57,11 +57,11 @@ int main() {
     game->addUI(testSlider);
 
     // create test paper
-    game->setPaper(new Paper(
-        game->getMesh("paper0"), 
-        game->getMesh("paper1"),
-        {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}}
-    ));
+    // game->setPaper(new Paper(
+    //     game->getMesh("paper0"), 
+    //     game->getMesh("paper1"),
+    //     {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}}
+    // ));
 
     // audio
     auto& audio = audio::AudioManager::GetInstance();
