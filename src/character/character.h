@@ -29,6 +29,7 @@ public:
     float& getSpeed() { return speed; }
     Weapon*& getWeapon() { return weapon; }
     std::string getTeam() { return team; }
+    Node2D* getNode() { return node; }
 
     vec2 getPosition() { return node->getPosition(); }
     vec3 getVelocity() { return node->getVelocity(); }

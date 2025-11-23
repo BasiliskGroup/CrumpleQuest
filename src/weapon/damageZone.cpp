@@ -1,17 +1,15 @@
 #include "weapon/damageZone.h"
 
-DamageZone::DamageZone(Character* owner, Node2D* hitbox, int damage, float life, bool friendlyDamage, bool selfDamage) :
+DamageZone::DamageZone(Character* owner, Node2D* hitbox, Params params) :
     owner(owner),
     hitbox(hitbox),
-    damage(damage),
-    life(life),
-    friendlyDamage(friendlyDamage),
-    selfDamage(selfDamage)
-{
-    // create default functions
-    onHit = [this](Character* hit) {};
-    onExpire = [this]() {};
-}
+    damage(params.damage),
+    life(params.life),
+    friendlyDamage(params.friendlyDamage),
+    selfDamage(params.selfDamage),
+    onExpire(params.onExpire),
+    onHit(params.onHit)
+{}
 
 DamageZone::~DamageZone() {
     delete hitbox;

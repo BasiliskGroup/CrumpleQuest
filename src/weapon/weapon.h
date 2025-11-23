@@ -10,20 +10,21 @@ class Character;
 
 class Weapon {
 private:
-    DamageZone zone;
-    std::string team;
+    Character* owner;
+    std::function<DamageZone()> damageZoneGen;
 
 public:
-    Weapon(DamageZone zone);
+    Weapon(Character* owner, Node2D* hitbox, DamageZone::Params params);
     ~Weapon() = default;
 
     void attack(const vec2& origin, const vec2& direction);
 
     // getters
-    Character* getOwner() { return this->zone.getOwner(); }
+    Character* getOwner() { return owner; }
+    Scene2D* getScene() { return owner->getNode()->getScene(); }
 
     // setters
-    void setOwner(Character* owner) { this->zone.setOwner(owner); }
+    void setOwner(Character* owner) { this->owner = owner; }
 };
 
 #endif
