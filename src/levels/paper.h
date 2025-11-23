@@ -104,7 +104,7 @@ public:
 private:
     void clear();
     PaperMesh* getPaperMesh() { return curSide == 0 ? paperMeshes.first : paperMeshes.second; }
-    PaperMesh* getBackPaperMesh() { return curSide == 1 ? paperMeshes.first : paperMeshes.second; }
+    PaperMesh* getBackPaperMesh() { return curSide == 0 ? paperMeshes.second : paperMeshes.first; }
 
     void pushFold(Fold& newFold);
     void popFold(); // uses activeFold index

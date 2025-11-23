@@ -18,10 +18,9 @@ struct DyMesh : public Edger {
     DyMesh(const std::vector<vec2>& region); // NOTE probably temporary, 
 
     // modifier functions
-    bool cut(const std::vector<vec2>& clipRegion); // delete region
-    bool cut(const DyMesh& other); // delete region
+    bool cut(const std::vector<vec2>& clipRegion, bool useIntersection = false); // delete region
+    bool cut(const DyMesh& other, bool useIntersection = false); // delete region
     bool copy(const DyMesh& other); // copy all uvs from containing shape
-    bool copyIntersection(const DyMesh& other); // copy region and UVs from intersection
     bool paste(const DyMesh& other, int expected = -1); // paste incoming shape intop of us
 
     // collision checks

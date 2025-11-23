@@ -114,6 +114,7 @@ Paper& Paper::operator=(Paper&& other) noexcept {
 
 void Paper::flip() {
     curSide = curSide == 0 ? 1 : 0;
+    dotData();
 }
 
 void Paper::open() {
@@ -241,12 +242,18 @@ void Paper::pushFold(Fold& newFold) {
     PaperMesh* paperCopy = new PaperMesh(*paperMesh);
 
     bool check = paperCopy->cut(*newFold.underside);
-    if (!check) return;
+    if (!check) {
+        delete paperCopy; paperCopy = nullptr;
+        return;
+    }
 
     // TODO find any points that are cut specific and remove them with the insides, remove simplifyCollinear?
 
     check = paperCopy->paste(*newFold.cover);
-    if (!check) return;
+    if (!check) {
+        delete paperCopy; paperCopy = nullptr;
+        return;
+    }
 
     // check for erroneous points
     auto& reg = newFold.underside->region;
@@ -265,22 +272,35 @@ void Paper::pushFold(Fold& newFold) {
     }
 
     // TODO make a copy first
-    getBackPaperMesh()->cut(*newFold.backside);
+    PaperMesh* backMesh = getBackPaperMesh();
+    PaperMesh* backCopy = new PaperMesh(*backMesh);
+    check = backCopy->cut(*newFold.backside);
+    if (!check) {
+        delete paperCopy; paperCopy = nullptr;
+        delete backCopy; backCopy = nullptr;
+        return;
+    }
 
     // all tests passed
-
     paperCopy->removeAll(insides);
     paperCopy->pruneDups();
 
+    backCopy->pruneDups();
+
     // swap meshes with cut
     delete paperMesh;
+    delete backMesh;
     
     if (curSide == 0) {
-        this->paperMeshes.first = paperCopy;
+        this->paperMeshes = { paperCopy, backCopy };
     } else {
-        this->paperMeshes.second = paperCopy;
+        this->paperMeshes = { backCopy, paperCopy };
     }
 
+    paperMeshes.first->regenerateMesh();
+    paperMeshes.second->regenerateMesh();
+
+    // DEBUG
     dotData();
 }
 
@@ -302,6 +322,10 @@ void Paper::popFold() {
     // active fold should be near to the back so this isn't the worst
     folds.erase(folds.begin() + activeFold);
 
+    paperMeshes.first->regenerateMesh();
+    paperMeshes.second->regenerateMesh();
+
+    // DEBUG
     dotData();
 }
 

@@ -68,7 +68,7 @@ DyMesh::DyMesh(const std::vector<vec2>& region) : Edger(region), data() {
     }
 }
 
-bool DyMesh::cut(const std::vector<vec2>& clipRegion) {
+bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
     if (clipRegion.empty()) return false;
 
     std::vector<Tri> newData;
@@ -83,7 +83,7 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion) {
         Paths64 sol;
 
         try {
-            sol = Difference(subj, clip, FillRule::NonZero);
+            sol = useIntersection ? Intersect(subj, clip, FillRule::NonZero) : Difference(subj, clip, FillRule::NonZero);
         } catch (...) {
             continue;
         }
@@ -114,7 +114,7 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion) {
     // Rebuild region - makeRegionFromPaths64 already extracts outer boundary
     Paths64 subjAll = makePaths64FromRegion(region);
     Paths64 clip = makePaths64FromRegion(clipRegion);
-    Paths64 sol = Difference(subjAll, clip, FillRule::NonZero);
+    Paths64 sol = useIntersection ? Intersect(subjAll, clip, FillRule::NonZero) : Difference(subjAll, clip, FillRule::NonZero);
 
     if (sol.size() > 1) {
         std::cout << "Polygon was cut into multiple pieces" << std::endl;
@@ -144,94 +144,33 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion) {
     return true;
 }
 
-bool DyMesh::copyIntersection(const DyMesh& other) {
-    if (region.empty() || other.region.empty())
-        return false;
-
-    Paths64 subj = makePaths64FromRegion(region);
-    Paths64 clip = makePaths64FromRegion(other.region);
-    Paths64 sol;
-
-    try {
-        sol = Intersect(subj, clip, FillRule::NonZero);
-    } catch (...) {
-        std::cout << "  COPY INTERSECTION: Intersect failed!" << std::endl;
-        return false;
-    }
-
-    // makeRegionFromPaths64 already extracts outer boundary
-    std::vector<vec2> newRegion = makeRegionFromPaths64(sol);
-    
-    if (newRegion.size() < 3) {
-        return false;
-    }
-
-    ensureCCW(newRegion);
-    newRegion = newRegion;
-
-    // Triangulate intersection
-    std::vector<uint32_t> indices = earcutIndicesFromRegion(newRegion);
-    if (indices.empty())
-        return false;
-
-    std::vector<Tri> newData;
-    newData.reserve(indices.size() / 3);
-
-    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
-        vec2 p0 = newRegion[indices[i + 0]];
-        vec2 p1 = newRegion[indices[i + 1]];
-        vec2 p2 = newRegion[indices[i + 2]];
-
-        vec2 uv0, uv1, uv2;
-        bool ok0 = other.sampleUV(p0, uv0);
-        bool ok1 = other.sampleUV(p1, uv1);
-        bool ok2 = other.sampleUV(p2, uv2);
-
-        if (!(ok0 && ok1 && ok2)) {
-            continue;
-        }
-
-        std::array<Vert, 3> verts = {
-            Vert(p0, uv0),
-            Vert(p1, uv1),
-            Vert(p2, uv2)
-        };
-
-        newData.emplace_back(verts);
-    }
-
-    if (newData.empty())
-        return false;
-
-    // all test passed
-    region = std::move(newRegion);
-    data = std::move(newData);
-
-    // cleaning
-    region = simplifyCollinear(region);
-    pruneDups();
-    removeDataOutside();
-
-    return true;
-}
-
 // cut overload that accepts another DyMesh
-bool DyMesh::cut(const DyMesh& other) {
-    return cut(other.region);
+bool DyMesh::cut(const DyMesh& other, bool useIntersection) {
+    return cut(other.region, useIntersection);
 }
 
 bool DyMesh::copy(const DyMesh& other) {
-    // For every triangle vertex in this mesh, sample UV from other
-    for (Tri& t : data) {
-        for (int i = 0; i < 3; ++i) {
-            vec2 p = t.verts[i].pos;
-            vec2 uv;
-             if (other.sampleUV(p, uv) == false) return false;
-            t.verts[i].uv = uv;
-        }
+    if (other.region.empty()) return false;
+
+    DyMesh temp = DyMesh(other);
+    std::vector reverse = this->region;
+    std::reverse(reverse.begin(), reverse.end());
+
+    // intersect cut to find overlap
+    if (!temp.cut(reverse, true)) {
+        return false;
     }
+
+    if (temp.region.empty() || temp.data.empty()) {
+        return false;
+    }
+
+    this->data = temp.data;
+    this->region = temp.region;
+
     return true;
 }
+
 
 bool DyMesh::paste(const DyMesh& other, int expected) {
     if (other.region.empty()) return false;
@@ -425,6 +364,9 @@ void DyMesh::removeDataOutside() {
 void DyMesh::flipHorizontal() {
     Edger::flipHorizontal();
     for (Tri& tri : data) {
-        for (Vert& v : tri.verts) v.pos.x *= -1;
+        for (Vert& v : tri.verts) {
+            v.pos.x *= -1;
+        }
+        // tri.flipUVx();
     }
 }

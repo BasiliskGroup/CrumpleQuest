@@ -130,3 +130,24 @@ void Tri::print() const {
     for (const Vert& vert : verts) std::cout << vert.pos.x << " " << vert.pos.y << " " << vert.uv.x << " " << vert.uv.y << " | ";
     std::cout << std::endl;
 }
+
+void Tri::flipUVx() {
+    // Extract current UV.x values
+    float u0 = verts[0].uv.x;
+    float u1 = verts[1].uv.x;
+    float u2 = verts[2].uv.x;
+
+    // Compute min and max range
+    float minU = std::min({u0, u1, u2});
+    float maxU = std::max({u0, u1, u2});
+
+    float range = maxU - minU;
+    if (range < 1e-12f) return; // Avoid degenerate case
+
+    // Flip each UV.x within the triangle's local range
+    for (Vert& v : verts) {
+        float oldU = v.uv.x;
+        float newU = maxU - (oldU - minU);  // reflection inside [minU, maxU]
+        v.uv.x = newU;
+    }
+}

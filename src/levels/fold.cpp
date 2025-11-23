@@ -61,7 +61,7 @@ bool Paper::Fold::initialize(PaperMeshPair meshes, const vec2& creasePos, const 
     meshes.first->reflectVerticesOverLine(undersideVerts, indexBounds.first, indexBounds.second, creasePos, creaseDir);
     
     underside = new DyMesh(undersideVerts);
-    check = underside->copyIntersection(*meshes.first);
+    check = underside->copy(*meshes.first);
     if (!check) { 
         std::cout << "Failed to copy underlayer" << std::endl; 
         return false; 

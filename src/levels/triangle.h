@@ -30,6 +30,7 @@ struct Tri {
 
     inline std::vector<vec2> toPolygon() const { return { verts[0].pos, verts[1].pos, verts[2].pos }; }
 
+    void flipUVx();
 };
 
 #endif

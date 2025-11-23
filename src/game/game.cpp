@@ -74,14 +74,7 @@ void Game::update(float dt) {
 
     // folding
     bool leftIsDown = engine->getMouse()->getLeftDown();
-    vec2 mousePos = { engine->getMouse()->getX(), engine->getMouse()->getY() };
-
-    std::cout << engine->getMouse()->getWorldX(scene->getCamera()) << " " << engine->getMouse()->getWorldX(scene->getCamera()) << std::endl;
-
-    // hard code mouse to world coordinates TODO replace this with world coordinate mouse call
-    mousePos -= vec2{ 400, 400 };
-    mousePos /= 80;
-    mousePos.y *= -1;
+    vec2 mousePos = { engine->getMouse()->getWorldX(scene->getCamera()), engine->getMouse()->getWorldY(scene->getCamera()) };
 
     if (!leftWasDown && leftIsDown) { // we just clicked
         LeftStartDown = mousePos;
@@ -123,10 +116,6 @@ void Game::update(float dt) {
         if (paperNode == nullptr) {
             paperNode = new Node2D(scene, { .mesh=meshes["quad"], .material=materials["test"] });
         }
-
-        // reconstruct meshes TODO bring this back into paper class
-        paper->paperMeshes.first->regenerateMesh();
-        paper->paperMeshes.second->regenerateMesh();
         
         Mesh* paperMesh = paper->getMesh();
         if (paperMesh != nullptr) paperNode->setMesh(paperMesh);
