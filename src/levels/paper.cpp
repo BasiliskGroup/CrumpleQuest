@@ -230,7 +230,7 @@ void Paper::pushFold(Fold& newFold) {
     for (int i = insertIndex - 1; i >= 0; i--) {
         // prevents swapping unfold layers
         Fold& fold = folds[i];
-        if (fold.underside->hasOverlap(*newFold.underside) == false) continue;
+        if (fold.underside->hasOverlap(fold.side == curSide ? *newFold.underside : *newFold.backside) == false) continue;
         fold.holds.insert(insertIndex);
     }
 
@@ -252,22 +252,6 @@ void Paper::pushFold(Fold& newFold) {
         delete paperCopy; paperCopy = nullptr;
         return;
     }
-
-    // check for erroneous points
-    // auto& reg = newFold.underside->region;
-    // auto& cA = newFold.crease[0];
-    // auto& cB = newFold.crease[1];
-
-    // std::vector<vec2> insides;
-    // insides.reserve(reg.size());
-
-    // for (const vec2& v : reg) {
-    //     // skip if equal to either crease point
-    //     if (glm::all(glm::epsilonEqual(v, cA, 1e-6f))) continue;
-    //     if (glm::all(glm::epsilonEqual(v, cB, 1e-6f))) continue;
-
-    //     insides.push_back(v);
-    // }
 
     // TODO make a copy first
     PaperMesh* backMesh = getBackPaperMesh();
@@ -299,9 +283,6 @@ void Paper::pushFold(Fold& newFold) {
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
-
-    // TODO add holds to under folds
-
 
     // DEBUG
     dotData();

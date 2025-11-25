@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(FetchContent)
 
 # ======================================================
-# Basilisk Engine (includes Assimp)
+# Basilisk Engine (includes Assimp + Clipper2 internally)
 # ======================================================
 FetchContent_Declare(
     basilisk
@@ -17,26 +17,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(basilisk)
 
+# NOTE:
+# Basilisk exposes its own clipper2 target via FetchContent.
+# So we do NOT declare or build our own copy.
 # ======================================================
-# Clipper2
-# ======================================================
-FetchContent_Declare(
-    clipper2
-    GIT_REPOSITORY https://github.com/AngusJohnson/Clipper2.git
-    GIT_TAG main   # <- use 'main', not 'master'
-)
-FetchContent_MakeAvailable(clipper2)
-
-# Build Clipper2 as a static library
-file(GLOB CLIPPER2_SOURCES
-    ${clipper2_SOURCE_DIR}/CPP/Clipper2Lib/src/*.cpp
-)
-
-add_library(clipper2 STATIC ${CLIPPER2_SOURCES})
-target_include_directories(clipper2 PUBLIC
-    ${clipper2_SOURCE_DIR}/CPP/Clipper2Lib/include
-)
-target_compile_features(clipper2 PUBLIC cxx_std_20)
 
 # ======================================================
 # Source files and executable
@@ -53,8 +37,13 @@ target_include_directories(game PRIVATE
     ${CMAKE_BINARY_DIR}/_deps/assimp-src/contrib/earcut-hpp
 )
 
-# Link Basilisk + Clipper2
-target_link_libraries(game PRIVATE basilisk clipper2)
+# ======================================================
+# Link Basilisk (automatically brings clipper2)
+# ======================================================
+target_link_libraries(game
+    PRIVATE
+        basilisk        # includes clipper2, glm, assimp, stb, glad, glfw, etc.
+)
 
 # ======================================================
 # AddressSanitizer (Debug)
@@ -75,7 +64,7 @@ endif()
 # ======================================================
 # Resources
 # ======================================================
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/sounds DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/sounds   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

@@ -152,7 +152,7 @@ bool DyMesh::copy(const DyMesh& other) {
     if (other.region.empty()) return false;
 
     DyMesh temp = DyMesh(other);
-    std::vector reverse = this->region;
+    std::vector<vec2> reverse = this->region;
     std::reverse(reverse.begin(), reverse.end());
 
     // intersect cut to find overlap
