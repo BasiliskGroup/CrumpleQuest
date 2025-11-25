@@ -11,10 +11,10 @@ class Character;
 class Weapon {
 private:
     Character* owner;
-    std::function<DamageZone()> damageZoneGen;
+    std::function<DamageZone*()> damageZoneGen;
 
 public:
-    Weapon(Character* owner, Node2D* hitbox, DamageZone::Params params);
+    Weapon(Character* owner, Node2D::Params node, DamageZone::Params params);
     ~Weapon() = default;
 
     void attack(const vec2& origin, const vec2& direction);

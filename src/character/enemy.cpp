@@ -1,8 +1,8 @@
 #include "character/enemy.h"
 
-Enemy::Enemy(int health, float speed, Node2D* node, Weapon* weapon, AI* ai) : Character(health, speed, node, weapon, "Enemy"), ai(ai) {
-
-}
+Enemy::Enemy(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai) 
+    : Character(health, speed, node, side, weapon, "Enemy"), ai(ai) 
+{}
 
 void Enemy::onDamage(int damage) {
     Character::onDamage(damage);

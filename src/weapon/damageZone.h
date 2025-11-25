@@ -4,7 +4,7 @@
 #include "util/includes.h"
 #include "character/character.h"
 
-class DamageZone {
+class DamageZone : public Node2D {
 public:
     struct Params {
         int damage = 0;
@@ -17,7 +17,6 @@ public:
 
 private:
     Character* owner;
-    Node2D* hitbox;
 
     int damage;
     float life;
@@ -29,8 +28,8 @@ private:
     std::function<void(Character*)> onHit;
     
 public:
-    DamageZone(Character* owner, Node2D* hitbox, Params params);
-    ~DamageZone();
+    DamageZone(Character* owner, Node2D::Params node, Params params);
+    ~DamageZone() = default;
 
     void hit(Character* other);
     bool update(float dt);

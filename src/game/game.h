@@ -57,6 +57,7 @@ public:
     Engine*& getEngine() { return engine; }
     Scene2D*& getScene() { return currentSide->getScene(); }
     Paper* getPaper() { return paper; }
+    SingleSide*& getSide() { return currentSide; }
 
     auto& getEnemies() { return currentSide->getEnemies(); }
 

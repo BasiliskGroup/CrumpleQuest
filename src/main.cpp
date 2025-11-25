@@ -37,7 +37,7 @@ int main() {
 
     // create player
     Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}, .collider=game->getCollider("quad") });
-    Player* player = new Player(3, 3, playerNode, nullptr);
+    Player* player = new Player(3, 3, playerNode, game->getSide(), nullptr);
     game->setPlayer(player);
 
     // TEMP wall
@@ -59,7 +59,7 @@ int main() {
     // spawn enemy on click
     testButton->setOnUp([game]() {
         Node2D* enemyNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position={3, 4}, .scale={0.7, 0.7}, .collider=game->getCollider("quad") });
-        game->addEnemy(new Enemy(3, 0.1, enemyNode, nullptr, nullptr));
+        game->addEnemy(new Enemy(3, 0.1, enemyNode, game->getSide(), nullptr, nullptr));
     });
 
     game->addUI(testButton);

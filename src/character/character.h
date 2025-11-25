@@ -3,6 +3,7 @@
 
 #include "util/includes.h"
 
+class SingleSide;
 class Weapon;
 
 class Character {
@@ -14,10 +15,11 @@ protected:
     vec2 moveDir = vec2();
     Weapon* weapon;
     Node2D* node;
+    SingleSide* side;
     std::string team;
 
 public:
-    Character(int maxHealth, float speed, Node2D* node, Weapon* weapon, std::string team);
+    Character(int maxHealth, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team);
     ~Character();
 
     void onDamage(int damage);

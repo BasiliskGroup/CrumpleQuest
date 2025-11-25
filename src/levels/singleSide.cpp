@@ -12,12 +12,14 @@ SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camer
     if (other.scene) scene = new Scene2D(*other.scene);
     if (other.camera) camera = new StaticCamera2D(*other.camera);
     enemies = other.enemies;
+    damageZones = other.damageZones;
 }
 
 SingleSide::SingleSide(SingleSide&& other) noexcept : 
     scene(other.scene),
     camera(other.camera),
-    enemies(std::move(other.enemies))
+    enemies(std::move(other.enemies)),
+    damageZones(std::move(other.damageZones))
 {
     other.scene = nullptr;
     other.camera = nullptr;
@@ -35,6 +37,7 @@ SingleSide& SingleSide::operator=(const SingleSide& other) noexcept {
     if (other.camera) camera = new StaticCamera2D(*other.camera);
 
     enemies = other.enemies;
+    damageZones = other.damageZones;
     return *this;
 }
 
@@ -46,6 +49,7 @@ SingleSide& SingleSide::operator=(SingleSide&& other) noexcept {
     scene = other.scene;
     camera = other.camera;
     enemies = std::move(other.enemies);
+    damageZones = std::move(other.damageZones);
 
     // clear other
     other.scene = nullptr;

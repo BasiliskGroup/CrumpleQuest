@@ -1,8 +1,8 @@
 #include "weapon/damageZone.h"
 
-DamageZone::DamageZone(Character* owner, Node2D* hitbox, Params params) :
+DamageZone::DamageZone(Character* owner, Node2D::Params node, Params params) : 
+    Node2D(owner->getNode()->getScene(), node),
     owner(owner),
-    hitbox(hitbox),
     damage(params.damage),
     life(params.life),
     friendlyDamage(params.friendlyDamage),
@@ -10,10 +10,6 @@ DamageZone::DamageZone(Character* owner, Node2D* hitbox, Params params) :
     onExpire(params.onExpire),
     onHit(params.onHit)
 {}
-
-DamageZone::~DamageZone() {
-    delete hitbox;
-}
 
 bool DamageZone::update(float dt) {
     life -= dt;

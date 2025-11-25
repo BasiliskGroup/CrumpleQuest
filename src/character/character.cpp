@@ -1,12 +1,13 @@
-#include "character/character.h"
+#include "levels/levels.h"
 #include "weapon/weapon.h"
 
 
-Character::Character(int health, float speed, Node2D* node, Weapon* weapon, std::string team) : health(health), speed(speed), node(node), weapon(weapon), team(team) {}
+Character::Character(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team) : health(health), speed(speed), node(node), side(side), weapon(weapon), team(team) {}
 
 Character::~Character() {
     delete weapon; weapon = nullptr;
     delete node; node = nullptr;
+    side = nullptr;
 }
 
 void Character::onDamage(int damage) {

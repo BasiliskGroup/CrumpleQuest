@@ -1,8 +1,8 @@
 #include "weapon/weapon.h"
 
-Weapon::Weapon(Character* owner, Node2D* hitbox, DamageZone::Params params) : owner(owner) {
-    damageZoneGen = [owner, hitbox, params]() {
-        return DamageZone(owner, hitbox, params);
+Weapon::Weapon(Character* owner, Node2D::Params node, DamageZone::Params params) : owner(owner) {
+    damageZoneGen = [owner, node, params]() {
+        return new DamageZone(owner, node, params);
     };
 }
 

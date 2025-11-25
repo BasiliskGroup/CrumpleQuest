@@ -2,9 +2,10 @@
 #define SINGLE_SIDE_H
 
 #include "levels/navmesh.h"
-#include "character/enemy.h"
 
+class Enemy;
 class Game;
+class DamageZone;
 
 class SingleSide {  
 public:
@@ -15,6 +16,7 @@ private:
     Scene2D* scene;
     StaticCamera2D* camera;
     std::vector<Enemy*> enemies;
+    std::vector<DamageZone*> damageZones;
 
 public:
     SingleSide(Game* game);
@@ -33,6 +35,8 @@ public:
 
     void generateNavmesh();
     void update(float dt);
+
+    void addDamageZone(DamageZone* zone) { this->damageZones.push_back(zone); }
 
 private:
     void clear();
