@@ -11,13 +11,13 @@ class Character;
 class Weapon {
 private:
     Character* owner;
-    std::function<DamageZone*()> damageZoneGen;
+    std::function<DamageZone*(const vec2&, const vec2&)> damageZoneGen;
 
 public:
     Weapon(Character* owner, Node2D::Params node, DamageZone::Params params);
     ~Weapon() = default;
 
-    void attack(const vec2& origin, const vec2& direction);
+    void attack(const vec2& pos, const vec2& dir);
 
     // getters
     Character* getOwner() { return owner; }

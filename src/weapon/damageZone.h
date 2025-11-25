@@ -9,6 +9,8 @@ public:
     struct Params {
         int damage = 0;
         float life = 0;
+        float speed = 0;
+        float radius = 1;
         bool friendlyDamage = false;
         bool selfDamage = false;
         std::function<void()> onExpire = [](){};
@@ -20,6 +22,9 @@ private:
 
     int damage;
     float life;
+    vec2 pos;
+    vec2 vel;
+    float radius;
 
     bool friendlyDamage = false;
     bool selfDamage = false;
@@ -28,7 +33,7 @@ private:
     std::function<void(Character*)> onHit;
     
 public:
-    DamageZone(Character* owner, Node2D::Params node, Params params);
+    DamageZone(Character* owner, Node2D::Params node, Params params, const vec2& pos, const vec2& dir);
     ~DamageZone() = default;
 
     void hit(Character* other);

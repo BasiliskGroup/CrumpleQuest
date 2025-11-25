@@ -1,10 +1,14 @@
 #include "weapon/damageZone.h"
+#include "levels/levels.h"
 
-DamageZone::DamageZone(Character* owner, Node2D::Params node, Params params) : 
-    Node2D(owner->getNode()->getScene(), node),
+DamageZone::DamageZone(Character* owner, Node2D::Params node, Params params, const vec2& pos, const vec2& dir) : 
+    Node2D(owner->getSide()->getScene(), node),
     owner(owner),
     damage(params.damage),
     life(params.life),
+    pos(pos),
+    vel(params.speed * dir),
+    radius(params.radius),
     friendlyDamage(params.friendlyDamage),
     selfDamage(params.selfDamage),
     onExpire(params.onExpire),

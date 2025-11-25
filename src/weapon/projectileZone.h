@@ -8,8 +8,7 @@ private:
     int ricochet = 0;
 
 public:
-    ProjectileZone(Character* owner, Node2D::Params node, int damage, float life, int ricochet=0, bool friendlyDamage=false, bool selfDamage=false);
-
+    ProjectileZone(Character* owner, Node2D::Params node, Params params, const vec2& pos, const vec2& dir, int ricochet=0);
     bool update(float dt);
 };
 

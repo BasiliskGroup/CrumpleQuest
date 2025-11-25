@@ -34,6 +34,7 @@ public:
     Weapon*& getWeapon() { return weapon; }
     std::string getTeam() { return team; }
     Node2D* getNode() { return node; }
+    SingleSide* getSide() { return side; }
 
     vec2 getPosition() { return node->getPosition(); }
     vec3 getVelocity() { return node->getVelocity(); }
