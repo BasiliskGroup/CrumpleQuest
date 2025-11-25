@@ -40,6 +40,9 @@ int main() {
     Player* player = new Player(3, 3, playerNode, nullptr);
     game->setPlayer(player);
 
+    // TEMP wall
+    new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position={-3, 0}, .scale={2, 6}, .collider=game->getCollider("quad"), .density=-1 });
+
     Animation* animation = new Animation({game->getMaterial("box"), game->getMaterial("man"), game->getMaterial("knight")});
     Animator* playerAnimator = new Animator(game->getEngine(), playerNode, animation);
     playerAnimator->setFrameRate(0);

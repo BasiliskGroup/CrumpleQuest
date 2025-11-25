@@ -10,6 +10,8 @@ protected:
     int maxHealth;
     int health;
     float speed;
+    float accel = 30;
+    vec2 moveDir = vec2();
     Weapon* weapon;
     Node2D* node;
     std::string team;
