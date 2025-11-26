@@ -1,4 +1,6 @@
 #include "levels/levels.h"
+#include "weapon/meleeZone.h"
+
 
 SingleSide::SingleSide(Game* game) : scene(nullptr), camera(nullptr) {
     scene = new Scene2D(game->getEngine());
@@ -61,7 +63,42 @@ void SingleSide::generateNavmesh() {
     
 }
 
-void SingleSide::update(float dt) {
+void SingleSide::update(const vec2& playerPos, float dt) {
+    // update all damageZones
+    // done before enemy update to give a "summoning sickness" for a single frame
+    for (int i = 0; i < damageZones.size(); i++) {
+        DamageZone* zone = damageZones[i];
+
+        bool good = zone->update(dt);
+        if (good == false) {
+            delete zone; zone = nullptr;
+            damageZones.erase(damageZones.begin() + i--);
+            continue;
+        }
+
+        // check collision
+        for (Enemy* enemy : enemies) {
+            if (glm::length2(enemy->getPosition() - zone->getPosition()) > (enemy->getRadius() + zone->getRadius())) continue;
+            zone->hit(enemy);
+        }
+    }
+
+    // remove all dead enemies
+    for (int i = 0; i < enemies.size(); i++) {
+        Enemy* enemy = enemies[i];
+        if (enemy->isDead() == false) continue;
+
+        enemy->onDeath();
+        enemies.erase(enemies.begin() + i);
+        delete enemy;
+        i--;
+    }
+
+    // update all enemies
+    for (Enemy* enemy : enemies) {
+        enemy->move(playerPos, dt);
+    }
+
     scene->update();
     scene->render();
 }

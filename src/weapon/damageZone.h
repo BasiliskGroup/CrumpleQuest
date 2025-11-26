@@ -22,7 +22,6 @@ private:
 
     int damage;
     float life;
-    vec2 pos;
     vec2 vel;
     float radius;
 
@@ -36,11 +35,12 @@ public:
     DamageZone(Character* owner, Node2D::Params node, Params params, const vec2& pos, const vec2& dir);
     ~DamageZone() = default;
 
-    void hit(Character* other);
-    bool update(float dt);
+    bool virtual hit(Character* other);
+    bool virtual update(float dt);
 
     // getters
     Character* getOwner() { return this->owner; }
+    float getRadius() { return radius; }
 
     // setters
     void setOnHit(std::function<void(Character*)> func) { onHit = func; }

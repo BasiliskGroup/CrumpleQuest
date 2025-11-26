@@ -9,7 +9,7 @@ Game::Game() :
     paper(nullptr),
     paperNode(nullptr)
 {
-    this->engine = new Engine(1600, 900, "Crumple Quest");
+    this->engine = new Engine(800, 450, "Crumple Quest");
 }
 
 Game::~Game() {
@@ -90,10 +90,6 @@ void Game::update(float dt) {
         player->move(dt);
     }
 
-    for (Enemy* enemy : getEnemies()) {
-        enemy->move(player->getPosition(), dt);
-    }
-
     // add paper stuff to the scene
     if (paper) {
         if (paperNode == nullptr) {
@@ -113,6 +109,6 @@ void Game::update(float dt) {
 
     // basilisk update
     engine->update();
-    currentSide->update(-1);
+    currentSide->update(player->getPosition(), dt);
     engine->render();
 }

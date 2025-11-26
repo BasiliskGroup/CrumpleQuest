@@ -34,7 +34,7 @@ public:
     void addEnemy(Enemy* enemy) { this->enemies.push_back(enemy); }
 
     void generateNavmesh();
-    void update(float dt);
+    void update(const vec2& playerPos, float dt);
 
     void addDamageZone(DamageZone* zone) { this->damageZones.push_back(zone); }
 

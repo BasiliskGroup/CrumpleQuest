@@ -2,7 +2,7 @@
 #include "weapon/weapon.h"
 
 
-Character::Character(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team) : health(health), speed(speed), node(node), side(side), weapon(weapon), team(team) {}
+Character::Character(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team) : health(health), speed(speed), radius(glm::length(node->getScale())), node(node), side(side), weapon(weapon), team(team) {}
 
 Character::~Character() {
     delete weapon; weapon = nullptr;
@@ -11,14 +11,20 @@ Character::~Character() {
 }
 
 void Character::onDamage(int damage) {
+    if (itime > 0) return;
     health -= damage;
+    itime = 0.2;
 }
 
 void Character::onDeath() {
-    delete this;
+    
 }
 
 void Character::move(float dt) {
+    // reduce invincibility frames
+    itime = glm::clamp(itime, 0.0f, itime - dt);
+
+    // slow modement if we are not being controlled
     if (glm::length2(moveDir) < EPSILON) {
         node->setVelocity( (float) (1 - 20 * dt) * node->getVelocity());
         return;
@@ -27,7 +33,7 @@ void Character::move(float dt) {
     moveDir = glm::normalize(moveDir);
 
     vec3 current = node->getVelocity();
-    vec3 accelVec = vec3(moveDir.x, moveDir.y, 0) * (float)this->accel * dt;
+    vec3 accelVec = vec3(moveDir.x, moveDir.y, 0) * (float) this->accel * dt;
 
     // Compute the hypothetical new velocity
     vec3 trial = current + accelVec;
