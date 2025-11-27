@@ -71,6 +71,28 @@ DyMesh::DyMesh(const std::vector<vec2>& region) : Edger(region), data() {
 bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
     if (clipRegion.empty()) return false;
 
+    // Rebuild region - makeRegionFromPaths64 already extracts outer boundary
+    Paths64 subjAll = makePaths64FromRegion(region);
+    Paths64 clip = makePaths64FromRegion(clipRegion);
+    Paths64 sol = useIntersection ? Intersect(subjAll, clip, FillRule::NonZero) : Difference(subjAll, clip, FillRule::NonZero);
+
+    if (sol.size() > 1) {
+        std::cout << "Polygon was cut into multiple pieces" << std::endl;
+        return false;
+    }
+    
+    std::vector<vec2> newRegion = makeRegionFromPaths64(sol);
+
+    // we have completely deleted the region
+    if (newRegion.size() < 3) {
+        region.clear();
+        data.clear();
+        return true;
+    }
+
+    ensureCCW(newRegion);
+
+    // rebuild data using new region
     std::vector<Tri> newData;
     newData.reserve(data.size());
 
@@ -110,27 +132,6 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
             }
         }
     }
-
-    // Rebuild region - makeRegionFromPaths64 already extracts outer boundary
-    Paths64 subjAll = makePaths64FromRegion(region);
-    Paths64 clip = makePaths64FromRegion(clipRegion);
-    Paths64 sol = useIntersection ? Intersect(subjAll, clip, FillRule::NonZero) : Difference(subjAll, clip, FillRule::NonZero);
-
-    if (sol.size() > 1) {
-        std::cout << "Polygon was cut into multiple pieces" << std::endl;
-        return false;
-    }
-    
-    std::vector<vec2> newRegion = makeRegionFromPaths64(sol);
-
-    // we have completely deleted the region
-    if (newRegion.size() < 3) {
-        region.clear();
-        data.clear();
-        return true;
-    }
-
-    ensureCCW(newRegion);
 
     // all tests passed
     region = std::move(newRegion);

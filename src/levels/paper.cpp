@@ -268,6 +268,10 @@ void Paper::pushFold(Fold& newFold) {
     paperCopy->pruneDups();
     paperCopy->removeDataOutside();
 
+    std::vector<vec2> cleanFlipped;
+    for (const auto& v : newFold.cleanVerts) cleanFlipped.push_back({ -v.x, v.y });
+
+    backCopy->keepOnly(cleanFlipped);
     backCopy->pruneDups();
     backCopy->removeDataOutside();
 
