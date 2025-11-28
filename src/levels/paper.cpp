@@ -289,6 +289,8 @@ void Paper::pushFold(Fold& newFold) {
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
+    sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
+    sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
 
     // DEBUG
@@ -318,6 +320,8 @@ void Paper::popFold() {
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
+    sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
+    sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
 
     // DEBUG
@@ -336,7 +340,7 @@ void Paper::regenerateWalls(int side) {
 
     for (int i = 0; i < region.size(); i++) {
         int j = (i + 1) % region.size();
-        auto data = connectSquare(wallScale * region[i], wallScale * region[j]);
+        auto data = connectSquare(region[i], region[j]);
         selectedSide->addWall(new Node2D(selectedSide->getScene(), { 
             .mesh = game->getMesh("quad"), 
             .material = game->getMaterial("knight"), 

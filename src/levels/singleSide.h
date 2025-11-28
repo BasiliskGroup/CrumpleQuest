@@ -19,12 +19,13 @@ private:
     StaticCamera2D* camera;
     std::vector<Enemy*> enemies;
     std::vector<DamageZone*> damageZones;
+    Node2D* background;
 
     // point to nodes in scene so no need to delete
     std::vector<Node2D*> walls; 
 
 public:
-    SingleSide(Game* game);
+    SingleSide(Game* game, std::string mesh, std::string material);
     SingleSide(const SingleSide& other) noexcept;
     SingleSide(SingleSide&& other) noexcept;
     ~SingleSide();
@@ -36,6 +37,7 @@ public:
     Scene2D* getScene() { return scene; }
     auto& getEnemies() { return enemies; }
     Collider* getCollider(std::string name) { return colliders[name]; }
+    Node2D* getBackground() { return background; }
 
     void addEnemy(Enemy* enemy) { this->enemies.push_back(enemy); }
     void addWall(Node2D* wall) { this->walls.push_back(wall); }

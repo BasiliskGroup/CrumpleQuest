@@ -2,7 +2,7 @@
 #include "weapon/meleeZone.h"
 
 
-SingleSide::SingleSide(Game* game) : scene(nullptr), camera(nullptr) {
+SingleSide::SingleSide(Game* game, std::string mesh, std::string material) : scene(nullptr), camera(nullptr), background(nullptr) {
     scene = new Scene2D(game->getEngine());
     this->camera = new StaticCamera2D(game->getEngine());
     this->camera->setScale(9.0f);
@@ -10,14 +10,39 @@ SingleSide::SingleSide(Game* game) : scene(nullptr), camera(nullptr) {
     this->scene->getSolver()->setGravity(0);
 
     loadResources();
+
+    // create background node
+    background = new Node2D(scene, { 
+        .mesh=game->getMesh(mesh), 
+        .material=game->getMaterial(material), 
+        .scale={ 1, 1 } 
+    });
+    background->setLayer(-0.7);
 }
 
-SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camera(nullptr) {
+SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camera(nullptr), background(nullptr) {
     if (other.scene) scene = new Scene2D(*other.scene);
     if (other.camera) camera = new StaticCamera2D(*other.camera);
     enemies = other.enemies;
     damageZones = other.damageZones;
-
+    
+    // find background - iterate both trees in parallel
+    if (other.background) {
+        auto thisIt = scene->getRoot()->begin();
+        auto otherIt = other.scene->getRoot()->begin();
+        auto thisEnd = scene->getRoot()->end();
+        auto otherEnd = other.scene->getRoot()->end();
+        
+        while (otherIt != otherEnd && thisIt != thisEnd) {
+            if (*otherIt == other.background) {
+                background = *thisIt;
+                break;
+            }
+            ++otherIt;
+            ++thisIt;
+        }
+    }
+    
     loadResources();
 }
 
@@ -25,10 +50,12 @@ SingleSide::SingleSide(SingleSide&& other) noexcept :
     scene(other.scene),
     camera(other.camera),
     enemies(std::move(other.enemies)),
-    damageZones(std::move(other.damageZones))
+    damageZones(std::move(other.damageZones)), 
+    background(std::move(other.background))
 {
     other.scene = nullptr;
     other.camera = nullptr;
+    other.background = nullptr;
 
     loadResources();
 }

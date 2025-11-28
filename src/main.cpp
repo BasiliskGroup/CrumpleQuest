@@ -52,12 +52,9 @@ int main() {
     // Testing
     // ------------------------------------------
 
-    // TEMP wall
-    new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position={-3, 0}, .scale={0.1, 6}, .collider=game->getCollider("quad"), .density=-1 });
-
     Animation* animation = new Animation({game->getMaterial("box"), game->getMaterial("man"), game->getMaterial("knight")});
     Animator* playerAnimator = new Animator(game->getEngine(), playerNode, animation);
-    playerAnimator->setFrameRate(0);
+    playerAnimator->setFrameRate(1);
 
     // test add button
     Button* testButton = new Button(game, { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 

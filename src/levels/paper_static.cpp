@@ -10,7 +10,14 @@ void Paper::generateTemplates(Game* game) {
     // ---------------------
 
     templates["empty"] = [game]() {
-        return new Paper(game->getMesh("paper0"), game->getMesh("paper1"), {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}}, {"empty", "empty"});
+        return new Paper(game->getMesh("paper0"), game->getMesh("paper1"), 
+        {
+            vec2{ 6.0,  4.5}, 
+            vec2{-6.0,  4.5}, 
+            vec2{-6.0, -4.5}, 
+            vec2{ 6.0, -4.5}
+        }, 
+        {"empty0", "empty1"});
     };
 
     // ---------------------

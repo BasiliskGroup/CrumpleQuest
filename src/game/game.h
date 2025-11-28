@@ -23,7 +23,6 @@ private:
     // rendering paper
     SingleSide* currentSide;
     Paper* paper;
-    Node2D* paperNode;
 
     // track inputs
     bool leftWasDown = false;

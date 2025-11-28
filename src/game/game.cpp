@@ -6,8 +6,7 @@ Game::Game() :
     floor(nullptr),
     engine(nullptr),
     currentSide(nullptr),
-    paper(nullptr),
-    paperNode(nullptr)
+    paper(nullptr)
 {
     this->engine = new Engine(800, 450, "Crumple Quest");
 }
@@ -89,23 +88,6 @@ void Game::update(float dt) {
     // entity update
     if (player != nullptr) {
         player->move(dt);
-    }
-
-    // add paper stuff to the scene
-    if (paper) {
-        if (paperNode == nullptr) {
-            paperNode = new Node2D(getScene(), { .mesh=meshes["quad"], .material=materials["test"] });
-            paperNode->setLayer(-0.8);
-        }
-        
-        Mesh* paperMesh = paper->getMesh();
-        if (paperMesh != nullptr) paperNode->setMesh(paperMesh);
-
-    } else {
-        if (paperNode) {
-            delete paperNode;
-            paperNode = nullptr;
-        }
     }
 
     // basilisk update
