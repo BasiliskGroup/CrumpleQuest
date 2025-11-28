@@ -38,8 +38,6 @@ int main() {
     Paper::generateTemplates(game);
     game->setPaper("empty");
 
-    // collider
-    game->addCollider("quad", new Collider(game->getScene()->getSolver(), {{0.5f, 0.5f}, {-0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, -0.5f}}));
     game->getPaper()->regenerateWalls();
 
     // create player

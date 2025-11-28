@@ -343,7 +343,7 @@ void Paper::regenerateWalls(int side) {
             .position = vec2{data.first.x, data.first.y}, 
             .rotation = data.first.z, 
             .scale = data.second,
-            .collider = game->getCollider("quad"),
+            .collider = selectedSide->getCollider("quad"),
             .density = -1
         }));
     }

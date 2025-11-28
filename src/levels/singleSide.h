@@ -12,6 +12,8 @@ public:
     static std::unordered_map<std::string, std::function<SingleSide*()>> templates;
     static void generateTemplates(Game* game);
 
+    std::unordered_map<std::string, Collider*> colliders;
+
 private:
     Scene2D* scene;
     StaticCamera2D* camera;
@@ -33,14 +35,17 @@ public:
     // getters
     Scene2D* getScene() { return scene; }
     auto& getEnemies() { return enemies; }
+    Collider* getCollider(std::string name) { return colliders[name]; }
 
     void addEnemy(Enemy* enemy) { this->enemies.push_back(enemy); }
     void addWall(Node2D* wall) { this->walls.push_back(wall); }
     void addDamageZone(DamageZone* zone) { this->damageZones.push_back(zone); }
+    void addCollider(std::string name, Collider* collider) { this->colliders[name] = collider; }
 
     void generateNavmesh();
     void update(const vec2& playerPos, float dt);
     void clearWalls();
+    void loadResources();
 
 private:
     void clear();

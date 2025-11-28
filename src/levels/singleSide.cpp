@@ -8,6 +8,8 @@ SingleSide::SingleSide(Game* game) : scene(nullptr), camera(nullptr) {
     this->camera->setScale(9.0f);
     this->scene->setCamera(this->camera);
     this->scene->getSolver()->setGravity(0);
+
+    loadResources();
 }
 
 SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camera(nullptr) {
@@ -15,6 +17,8 @@ SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camer
     if (other.camera) camera = new StaticCamera2D(*other.camera);
     enemies = other.enemies;
     damageZones = other.damageZones;
+
+    loadResources();
 }
 
 SingleSide::SingleSide(SingleSide&& other) noexcept : 
@@ -25,6 +29,8 @@ SingleSide::SingleSide(SingleSide&& other) noexcept :
 {
     other.scene = nullptr;
     other.camera = nullptr;
+
+    loadResources();
 }
 
 SingleSide::~SingleSide() {
@@ -119,4 +125,8 @@ void SingleSide::clearWalls() {
         delete wall;
     }
     walls.clear();
+}
+
+void SingleSide::loadResources() {
+    addCollider("quad", new Collider(scene->getSolver(), {{0.5f, 0.5f}, {-0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, -0.5f}}));
 }

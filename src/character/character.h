@@ -11,7 +11,7 @@ protected:
     int maxHealth;
     int health;
     float speed;
-    float accel = 30;
+    float accel = 5;
     float itime = 0;
     float radius = 0.5;
     vec2 moveDir = vec2();

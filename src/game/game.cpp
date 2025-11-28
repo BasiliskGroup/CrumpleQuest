@@ -52,6 +52,7 @@ void Game::update(float dt) {
     auto keys = this->engine->getKeyboard();
     if (keys->getPressed(GLFW_KEY_F) && kWasDown == false) {
         paper->flip();
+        this->currentSide = paper->getSingleSide();
     }
     kWasDown = keys->getPressed(GLFW_KEY_F);
 

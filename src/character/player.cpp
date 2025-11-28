@@ -3,8 +3,10 @@
 
 
 Player::Player(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon) 
-    : Character(health, speed, node, side, weapon, "Ally") 
-{}
+    : Character(health, speed, node, side, weapon, "Ally")
+{
+    this->accel = 30;
+}
 
 void Player::onDamage(int damage) {
     Character::onDamage(damage);
