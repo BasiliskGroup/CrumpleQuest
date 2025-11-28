@@ -112,3 +112,9 @@ void Game::update(float dt) {
     currentSide->update(player->getPosition(), dt);
     engine->render();
 }
+
+void Game::setPaper(std::string str) { 
+    this->paper = Paper::templates[str]();
+    this->currentSide = this->paper->getSingleSide();
+    this->paper->setGame(this);
+}

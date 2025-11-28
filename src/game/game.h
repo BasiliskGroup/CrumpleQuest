@@ -63,11 +63,7 @@ public:
 
     // setters
     void setPlayer(Player* player) { this->player = player; }
-    void setPaper(std::string str) { 
-        this->paper = Paper::templates[str]();
-        this->currentSide = this->paper->getSingleSide();
-        this->paper->setGame(this);
-    }
+    void setPaper(std::string str);
 
     void update(float dt);
 };

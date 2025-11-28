@@ -16,6 +16,7 @@ public:
     static void generateTemplates(Game* game);
     static Paper* getRandomTemplate(RoomTypes type);
     static void flattenVertices(const std::vector<Vert>& vertices, std::vector<float>& data); // TODO move to generic helper
+    static constexpr float wallScale = 3;
 
 private:
     struct PaperMesh : public DyMesh {
@@ -99,6 +100,8 @@ public:
 
     void activateFold(const vec2& start);
     void deactivateFold();
+    void regenerateWalls();
+    void regenerateWalls(int side);
 
     void setGame(Game* game) { this->game = game; }
 
@@ -109,8 +112,6 @@ private:
 
     void pushFold(Fold& newFold);
     void popFold(); // uses activeFold index
-    void regenerateWalls();
-    void regenerateWalls(int side);
 
     // DEBUG
     void dotData();

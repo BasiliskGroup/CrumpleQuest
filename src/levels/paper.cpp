@@ -336,15 +336,15 @@ void Paper::regenerateWalls(int side) {
 
     for (int i = 0; i < region.size(); i++) {
         int j = (i + 1) % region.size();
-        auto data = connectSquare(region[i], region[j]);
+        auto data = connectSquare(wallScale * region[i], wallScale * region[j]);
         selectedSide->addWall(new Node2D(selectedSide->getScene(), { 
-            .mesh=game->getMesh("quad"), 
-            .material=game->getMaterial("knight"), 
-            .position={data.first.x, data.first.y}, 
-            .rotation=data.first.z, 
-            .scale=data.second,
-            .collider=game->getCollider("quad"),
-            .density=-1
+            .mesh = game->getMesh("quad"), 
+            .material = game->getMaterial("knight"), 
+            .position = vec2{data.first.x, data.first.y}, 
+            .rotation = data.first.z, 
+            .scale = data.second,
+            .collider = game->getCollider("quad"),
+            .density = -1
         }));
     }
 }

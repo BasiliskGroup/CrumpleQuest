@@ -14,6 +14,10 @@
 int main() {
     Game* game = new Game();
 
+    // ------------------------------------------
+    // Load resources
+    // ------------------------------------------
+
     // image and material
     std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand" };
     for (std::string& name : imageNames) {
@@ -25,6 +29,10 @@ int main() {
     std::vector<std::string> meshNames = { "quad", "paper0", "paper1" };
     for (std::string& name : meshNames) game->addMesh(name, new Mesh("models/" + name + ".obj"));
 
+    // ------------------------------------------
+    // Load game start
+    // ------------------------------------------
+
     // load levels
     SingleSide::generateTemplates(game);
     Paper::generateTemplates(game);
@@ -32,6 +40,7 @@ int main() {
 
     // collider
     game->addCollider("quad", new Collider(game->getScene()->getSolver(), {{0.5f, 0.5f}, {-0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, -0.5f}}));
+    game->getPaper()->regenerateWalls();
 
     // create player
     Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}, .collider=game->getCollider("quad") });
@@ -40,6 +49,10 @@ int main() {
 
     // create weapons
     player->setWeapon(new MeleeWeapon(player, { .mesh=game->getMesh("quad"), .material=game->getMaterial("sword"), .scale={0.75, 0.75}}, { .damage=1, .life=0.2f, .radius=0.5 }, 30.0f));
+
+    // ------------------------------------------
+    // Testing
+    // ------------------------------------------
 
     // TEMP wall
     new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position={-3, 0}, .scale={0.1, 6}, .collider=game->getCollider("quad"), .density=-1 });
