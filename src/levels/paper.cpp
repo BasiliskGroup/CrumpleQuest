@@ -1,4 +1,6 @@
 #include "levels/levels.h"
+#include "util/maths.h"
+
 
 Paper::Paper() : 
     curSide(0), 
@@ -8,15 +10,18 @@ Paper::Paper() :
     paperMeshes(nullptr, nullptr) 
 {}
 
-Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region) : 
+Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames) : 
     curSide(0), 
     isOpen(false),
     activeFold(NULL_FOLD),
     sides(nullptr, nullptr), 
     paperMeshes(nullptr, nullptr) 
 {
-    paperMeshes.first = new PaperMesh(region, mesh0);
+    paperMeshes.first  = new PaperMesh(region, mesh0);
     paperMeshes.second = new PaperMesh(region, mesh1);
+
+    sides.first  = SingleSide::templates[sideNames.first]();
+    sides.second = SingleSide::templates[sideNames.second]();
 }
 
 Paper::Paper(const Paper& other)
@@ -24,8 +29,8 @@ Paper::Paper(const Paper& other)
       isOpen(other.isOpen),
       folds(other.folds),
       activeFold(other.activeFold),
-      sides({ nullptr, nullptr }),
-      paperMeshes({ nullptr, nullptr })
+      sides(nullptr, nullptr),
+      paperMeshes(nullptr, nullptr)
 {
     try {
         // Deep copy sides
@@ -133,9 +138,6 @@ void Paper::clear() {
     isOpen = true;
 
     // Temporary
-    for (uint i = 0; i < regionNodes.size(); i++) {
-        delete regionNodes[i];
-    }
     regionNodes.clear();
 }
 
@@ -287,6 +289,7 @@ void Paper::pushFold(Fold& newFold) {
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
+    regenerateWalls();
 
     // DEBUG
     dotData();
@@ -315,9 +318,35 @@ void Paper::popFold() {
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
+    regenerateWalls();
 
     // DEBUG
     dotData();
+}
+
+void Paper::regenerateWalls() {
+    regenerateWalls(0);
+    regenerateWalls(1);
+}
+
+void Paper::regenerateWalls(int side) {
+    std::vector<vec2>& region = (side == 0) ? paperMeshes.first->region : paperMeshes.second->region;
+    SingleSide* selectedSide = (side == 0) ? sides.first : sides.second;
+    selectedSide->clearWalls();
+
+    for (int i = 0; i < region.size(); i++) {
+        int j = (i + 1) % region.size();
+        auto data = connectSquare(region[i], region[j]);
+        selectedSide->addWall(new Node2D(selectedSide->getScene(), { 
+            .mesh=game->getMesh("quad"), 
+            .material=game->getMaterial("knight"), 
+            .position={data.first.x, data.first.y}, 
+            .rotation=data.first.z, 
+            .scale=data.second,
+            .collider=game->getCollider("quad"),
+            .density=-1
+        }));
+    }
 }
 
 void Paper::dotData() {

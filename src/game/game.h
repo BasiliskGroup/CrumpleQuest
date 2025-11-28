@@ -12,7 +12,6 @@ class UIElement;
 class Game {
 private:
     Engine* engine;
-    SingleSide* currentSide;
 
     std::unordered_map<std::string, Collider*> colliders;
     std::unordered_map<std::string, Image*> images;
@@ -23,6 +22,7 @@ private:
     Floor* floor;
 
     // rendering paper
+    SingleSide* currentSide;
     Paper* paper;
     Node2D* paperNode;
 
@@ -55,7 +55,7 @@ public:
     Collider* getCollider(std::string name) { return colliders[name]; }
 
     Engine*& getEngine() { return engine; }
-    Scene2D*& getScene() { return currentSide->getScene(); }
+    Scene2D* getScene() { return currentSide->getScene(); }
     Paper* getPaper() { return paper; }
     SingleSide*& getSide() { return currentSide; }
 
@@ -63,12 +63,11 @@ public:
 
     // setters
     void setPlayer(Player* player) { this->player = player; }
-    void setPaper(Paper* paper) { 
-        this->paper = paper; 
+    void setPaper(std::string str) { 
+        this->paper = Paper::templates[str]();
+        this->currentSide = this->paper->getSingleSide();
         this->paper->setGame(this);
     }
-
-    void setSide(std::string str) { this->currentSide = SingleSide::templates[str](); }
 
     void update(float dt);
 };

@@ -35,13 +35,13 @@ Game::~Game() {
     meshes.clear();
 
     delete paper; paper = nullptr;
+    currentSide = nullptr;
 
     // scene2D will handle deletion
     uiElements.clear();
 
     // basilisk closing, must be last
     delete engine; engine = nullptr;
-    delete currentSide; currentSide = nullptr;
 }
 
 void Game::update(float dt) {

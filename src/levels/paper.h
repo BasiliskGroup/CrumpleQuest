@@ -11,8 +11,11 @@ class Game;
 
 class Paper {
 public:
-    static std::unordered_map<std::string, Paper> templates;
+    static std::unordered_map<std::string, std::function<Paper*()>> templates;
     static std::unordered_map<RoomTypes, std::vector<std::string>> papers;
+    static void generateTemplates(Game* game);
+    static Paper* getRandomTemplate(RoomTypes type);
+    static void flattenVertices(const std::vector<Vert>& vertices, std::vector<float>& data); // TODO move to generic helper
 
 private:
     struct PaperMesh : public DyMesh {
@@ -68,7 +71,7 @@ public: // DEBUG
     PaperMeshPair paperMeshes;
     short curSide;
 
-    // TODO temporary
+    // game back ref
     Game* game = nullptr;
     std::vector<Node2D*> regionNodes;
 
@@ -77,7 +80,7 @@ public: // DEBUG
 
 public:
     Paper();
-    Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region);
+    Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames);
     
     // Rule of 5
     Paper(const Paper& other);
@@ -88,7 +91,7 @@ public:
 
     // getters
     Mesh* getMesh();
-    SingleSide* getSingleSide() { return curSide ? sides.second : sides.first; }
+    SingleSide* getSingleSide() { return curSide == 0 ? sides.first : sides.second; }
 
     void flip();
     void open();
@@ -97,12 +100,7 @@ public:
     void activateFold(const vec2& start);
     void deactivateFold();
 
-    // TODO temporary
     void setGame(Game* game) { this->game = game; }
-
-    static void generateTemplates(Game* game);
-    static const Paper& getRandomTemplate(RoomTypes type);
-    static void flattenVertices(const std::vector<Vert>& vertices, std::vector<float>& data);
 
 private:
     void clear();
@@ -111,6 +109,8 @@ private:
 
     void pushFold(Fold& newFold);
     void popFold(); // uses activeFold index
+    void regenerateWalls();
+    void regenerateWalls(int side);
 
     // DEBUG
     void dotData();

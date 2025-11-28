@@ -18,6 +18,9 @@ private:
     std::vector<Enemy*> enemies;
     std::vector<DamageZone*> damageZones;
 
+    // point to nodes in scene so no need to delete
+    std::vector<Node2D*> walls; 
+
 public:
     SingleSide(Game* game);
     SingleSide(const SingleSide& other) noexcept;
@@ -28,15 +31,16 @@ public:
     SingleSide& operator=(SingleSide&& other) noexcept;
 
     // getters
-    Scene2D*& getScene() { return scene; }
+    Scene2D* getScene() { return scene; }
     auto& getEnemies() { return enemies; }
 
     void addEnemy(Enemy* enemy) { this->enemies.push_back(enemy); }
+    void addWall(Node2D* wall) { this->walls.push_back(wall); }
+    void addDamageZone(DamageZone* zone) { this->damageZones.push_back(zone); }
 
     void generateNavmesh();
     void update(const vec2& playerPos, float dt);
-
-    void addDamageZone(DamageZone* zone) { this->damageZones.push_back(zone); }
+    void clearWalls();
 
 private:
     void clear();

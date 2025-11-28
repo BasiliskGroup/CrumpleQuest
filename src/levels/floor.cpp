@@ -21,7 +21,7 @@ void Floor::loadRooms() {
     for (uint x = 0; x < FLOOR_WIDTH; x++) {
         for (uint y = 0; y < FLOOR_WIDTH; y++) {
             if (playMap[x][y] == NULL_ROOM) continue;
-            roomMap[x][y] = new Paper(Paper::getRandomTemplate(playMap[x][y]));
+            roomMap[x][y] = Paper::getRandomTemplate(playMap[x][y]);
         }
     }
 }

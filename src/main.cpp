@@ -27,7 +27,8 @@ int main() {
 
     // load levels
     SingleSide::generateTemplates(game);
-    game->setSide("empty");
+    Paper::generateTemplates(game);
+    game->setPaper("empty");
 
     // collider
     game->addCollider("quad", new Collider(game->getScene()->getSolver(), {{0.5f, 0.5f}, {-0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, -0.5f}}));
@@ -41,7 +42,7 @@ int main() {
     player->setWeapon(new MeleeWeapon(player, { .mesh=game->getMesh("quad"), .material=game->getMaterial("sword"), .scale={0.75, 0.75}}, { .damage=1, .life=0.2f, .radius=0.5 }, 30.0f));
 
     // TEMP wall
-    new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position={-3, 0}, .scale={2, 6}, .collider=game->getCollider("quad"), .density=-1 });
+    new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position={-3, 0}, .scale={0.1, 6}, .collider=game->getCollider("quad"), .density=-1 });
 
     Animation* animation = new Animation({game->getMaterial("box"), game->getMaterial("man"), game->getMaterial("knight")});
     Animator* playerAnimator = new Animator(game->getEngine(), playerNode, animation);
@@ -72,13 +73,6 @@ int main() {
         }
     });
     game->addUI(testSlider);
-
-    // create test paper
-    game->setPaper(new Paper(
-        game->getMesh("paper0"), 
-        game->getMesh("paper1"),
-        {{2.0, 1.5}, {-2.0, 1.5}, {-2.0, -1.5}, {2.0, -1.5}}
-    ));
 
     // audio
     auto& audio = audio::AudioManager::GetInstance();

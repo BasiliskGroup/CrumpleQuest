@@ -108,7 +108,15 @@ void SingleSide::clear() {
         delete enemy;
     }
     enemies.clear();
+    walls.clear(); // will get cleaned by the scene
 
     delete scene; scene = nullptr;
     delete camera; camera = nullptr;
+}
+
+void SingleSide::clearWalls() {
+    for (auto& wall : walls) {
+        delete wall;
+    }
+    walls.clear();
 }
