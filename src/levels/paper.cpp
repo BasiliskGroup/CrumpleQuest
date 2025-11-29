@@ -171,6 +171,11 @@ void Paper::deactivateFold() {
 
 void Paper::fold(const vec2& start, const vec2& end) {
     if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) return;
+
+    if (activeFold != PAPER_FOLD) {
+        popFold();
+        activeFold = PAPER_FOLD; // Reset to paper fold so we recreate from scratch
+    }
     
     // get starting geometry
     PaperMesh* paperMesh = getPaperMesh();
@@ -195,15 +200,6 @@ void Paper::fold(const vec2& start, const vec2& end) {
     // variable to modify "start" position of fold, drop and replace
     vec2 foldDir = end - nearEdgePointPaper;
     vec2 creasePos = 0.5f * (end + nearEdgePointPaper);
-
-    // Reactivate an old fold and reset its progress
-    // For now, we restore the fold to refold, maybe find more efficient solution layer
-    if (activeFold != PAPER_FOLD 
-     && glm::length2(nearEdgePointFold - nearEdgePointPaper) < EPSILON 
-     && clickedFold->holds.empty()
-    ) {
-        popFold();
-    }
     
     // Paper is being folded directly
     if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
@@ -219,8 +215,6 @@ void Paper::fold(const vec2& start, const vec2& end) {
         if (!check) return;
 
         pushFold(fold);
-    } else {
-        std::cout << "unfold" << std::endl;
     }
 }
 
@@ -266,14 +260,17 @@ void Paper::pushFold(Fold& newFold) {
     }
 
     // all tests passed
-    paperCopy->keepOnly(newFold.cleanVerts); // TODO maybe use this as correct loop
+    // paperCopy->keepOnly(newFold.cleanVerts); // TODO maybe use this as correct loop
+    paperCopy->region = newFold.cleanVerts;
     paperCopy->pruneDups();
     // paperCopy->removeDataOutside();
 
     std::vector<vec2> cleanFlipped;
     for (const auto& v : newFold.cleanVerts) cleanFlipped.push_back({ -v.x, v.y }); // TODO invert and use as region? 
+    std::reverse(cleanFlipped.begin(), cleanFlipped.end());
 
-    backCopy->keepOnly(cleanFlipped);
+    // backCopy->keepOnly(cleanFlipped);
+    backCopy->region = cleanFlipped;
     backCopy->pruneDups();
     // backCopy->removeDataOutside();
 
@@ -294,6 +291,9 @@ void Paper::pushFold(Fold& newFold) {
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
     sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
+
+    // update active fold to be what we just made so we can hold onto it
+    activeFold = folds.size() - 1;
 
     // DEBUG
     dotData();
