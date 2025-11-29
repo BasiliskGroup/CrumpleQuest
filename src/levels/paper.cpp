@@ -266,16 +266,16 @@ void Paper::pushFold(Fold& newFold) {
     }
 
     // all tests passed
-    paperCopy->keepOnly(newFold.cleanVerts);
+    paperCopy->keepOnly(newFold.cleanVerts); // TODO maybe use this as correct loop
     paperCopy->pruneDups();
-    paperCopy->removeDataOutside();
+    // paperCopy->removeDataOutside();
 
     std::vector<vec2> cleanFlipped;
-    for (const auto& v : newFold.cleanVerts) cleanFlipped.push_back({ -v.x, v.y });
+    for (const auto& v : newFold.cleanVerts) cleanFlipped.push_back({ -v.x, v.y }); // TODO invert and use as region? 
 
     backCopy->keepOnly(cleanFlipped);
     backCopy->pruneDups();
-    backCopy->removeDataOutside();
+    // backCopy->removeDataOutside();
 
     // swap meshes with cut
     delete paperMesh;
@@ -289,6 +289,8 @@ void Paper::pushFold(Fold& newFold) {
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
+    paperMeshes.first->mergeAdjacentRegions();
+    paperMeshes.second->mergeAdjacentRegions();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
     sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
@@ -320,6 +322,8 @@ void Paper::popFold() {
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
+    paperMeshes.first->mergeAdjacentRegions();
+    paperMeshes.second->mergeAdjacentRegions();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
     sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
@@ -354,24 +358,47 @@ void Paper::regenerateWalls(int side) {
 }
 
 void Paper::dotData() {
+    // Clear existing debug nodes
     for (uint i = 0; i < regionNodes.size(); i++) {
         delete regionNodes[i];
     }
     regionNodes.clear();
 
-    auto& printRegion = getPaperMesh()->region; // folds.back().underside->region;
-    for (int i = 0; i < printRegion.size(); i++) {
-        auto& r = printRegion[i];
-        Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position=r, .scale={0.1 + 0.025 * i, 0.1 + 0.025 * i} });
+    PaperMesh* paperMesh = getPaperMesh();
+    
+    // Render outer boundary
+    std::vector<vec2>& outerRegion = paperMesh->region;
+    for (int i = 0; i < outerRegion.size(); i++) {
+        auto& r = outerRegion[i];
+        Node2D* n = new Node2D(game->getScene(), { 
+            .mesh = game->getMesh("quad"), 
+            .material = game->getMaterial("man"), 
+            .position = r, 
+            .scale = {0.1 + 0.025 * i, 0.1 + 0.025 * i} 
+        });
         n->setLayer(0.9);
         regionNodes.push_back(n);
     }
 
-    for (const Tri& d : getPaperMesh()->data) {
-        for (const Vert& v : d.verts) {
-            Node2D* n = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position=v.pos, .scale={0.05, 0.05} });
-            n->setLayer(0.9);
-            regionNodes.push_back(n);
+    // Render each UV region's boundary as walls/edges
+    for (size_t regionIdx = 0; regionIdx < paperMesh->regions.size(); regionIdx++) {
+        const UVRegion& uvRegion = paperMesh->regions[regionIdx];
+        const std::vector<vec2>& regionVerts = uvRegion.positions;
+        
+        // Create walls for this region's boundary
+        for (int i = 0; i < regionVerts.size(); i++) {
+            int j = (i + 1) % regionVerts.size();
+            auto data = connectSquare(regionVerts[i], regionVerts[j]);
+            
+            Node2D* wall = new Node2D(game->getScene(), { 
+                .mesh = game->getMesh("quad"), 
+                .material = game->getMaterial("lightGrey"),  // Or use a different material per region
+                .position = vec2{data.first.x, data.first.y}, 
+                .rotation = data.first.z, 
+                .scale = data.second
+            });
+            wall->setLayer(0.85);
+            regionNodes.push_back(wall);
         }
     }
 }
