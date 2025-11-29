@@ -1,80 +1,75 @@
 #include "levels/dymesh.h"
 
-// helper functions TODO move to own file
-std::vector<uint32_t> earcutIndicesFromRegion(const std::vector<vec2>& region) {
-    // earcut expects vector< vector< Point > > where each point is an array of two numbers.
-    std::vector<std::vector<std::array<double, 2>>> polygon;
-    polygon.emplace_back();
-    polygon[0].reserve(region.size());
-    for (const vec2& v : region) polygon[0].push_back({ { static_cast<double>(v.x), static_cast<double>(v.y) } });
-
-    return mapbox::earcut<uint32_t>(polygon);
-}
-
-bool sampleUVFromTriList(const std::vector<Tri>& tris, const vec2& pos, vec2& uv) {
-    const float eps = 1e-6f;
-    float minDistance = std::numeric_limits<float>::max();
-    vec2 closestUV;
-    bool found = false;
-
-    for (const Tri& t : tris) {
-        float dist = t.distance(pos);
-        if (dist < minDistance) {
-            minDistance = dist;
-            closestUV = t.sampleUV(pos);
-            found = true;
-        }
-    }
-
-    if (found && minDistance <= eps) {
-        uv = closestUV;
-        return true;
-    }
-
-    return false;
-}
-
-DyMesh::DyMesh(const std::vector<vec2>& region, const std::vector<Tri>& data) : Edger(region), data(data) {
+DyMesh::DyMesh(const std::vector<vec2>& region, const std::vector<UVRegion>& regions) 
+    : Edger(region), regions(regions) {
     ensureCCW(this->region);
 }
 
-DyMesh::DyMesh(const std::vector<vec2>& region, Mesh* mesh) : Edger(region), data() {
+DyMesh::DyMesh(const std::vector<vec2>& region, Mesh* mesh) : Edger(region), regions() {
+    ensureCCW(this->region);
+    
     std::vector<float>& verts = mesh->getVertices();
-    data.reserve(verts.size() / 15);
-
+    
+    // Group vertices into triangles, then merge into regions
+    // For now, create one UVRegion per triangle (could be optimized later)
     uint i = 0;
     while (i < verts.size()) {
-        std::array<Vert, 3> tri;
+        std::vector<vec2> positions;
+        std::vector<vec2> uvs;
+        
         for (uint j = 0; j < 3; j++) {
-            tri[j] = Vert({verts[i + 0], verts[i + 1]}, {verts[i + 3], verts[i + 4]});
+            positions.push_back({verts[i + 0], verts[i + 1]});
+            uvs.push_back({verts[i + 3], verts[i + 4]});
             i += 5;
         }
-        data.push_back(tri);
+        
+        regions.emplace_back(positions, uvs);
     }
 }
 
-DyMesh::DyMesh(const std::vector<vec2>& region) : Edger(region), data() {
+DyMesh::DyMesh(const std::vector<vec2>& region) : Edger(region), regions() {
     ensureCCW(this->region);
-
-    // triangulate region with earcut
-    std::vector<uint32_t> indices = earcutIndicesFromRegion(region);
-    // data.reserve(indices.size() / 3);
-    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
-        Vert v0(region[indices[i + 0]], {0, 0});
-        Vert v1(region[indices[i + 1]], {0, 1});
-        Vert v2(region[indices[i + 2]], {1, 1});
-        std::array<Vert, 3> verts = { v0, v1, v2 };
-        data.emplace_back(verts);
+    
+    if (region.size() < 3) return;
+    
+    // Create a single region with simple UV mapping
+    std::vector<vec2> uvs;
+    uvs.reserve(region.size());
+    
+    // Calculate bounding box for UV mapping
+    vec2 minPos = region[0];
+    vec2 maxPos = region[0];
+    for (const vec2& p : region) {
+        minPos.x = std::min(minPos.x, p.x);
+        minPos.y = std::min(minPos.y, p.y);
+        maxPos.x = std::max(maxPos.x, p.x);
+        maxPos.y = std::max(maxPos.y, p.y);
     }
+    
+    vec2 size = maxPos - minPos;
+    float maxDim = std::max(size.x, size.y);
+    if (maxDim < 1e-6f) maxDim = 1.0f;
+    
+    // Map positions to [0,1] UV space
+    for (const vec2& p : region) {
+        vec2 uv = (p - minPos) / maxDim;
+        uvs.push_back(uv);
+    }
+    
+    regions.emplace_back(region, uvs);
 }
 
 bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
     if (clipRegion.empty()) return false;
 
-    // Rebuild region - makeRegionFromPaths64 already extracts outer boundary
+    // Take snapshot of current state for UV sampling
+    DyMesh snapshot = *this;
+
+    // Update outer region boundary
     Paths64 subjAll = makePaths64FromRegion(region);
     Paths64 clip = makePaths64FromRegion(clipRegion);
-    Paths64 sol = useIntersection ? Intersect(subjAll, clip, FillRule::NonZero) : Difference(subjAll, clip, FillRule::NonZero);
+    Paths64 sol = useIntersection ? Intersect(subjAll, clip, FillRule::NonZero) 
+                                  : Difference(subjAll, clip, FillRule::NonZero);
 
     if (sol.size() > 1) {
         std::cout << "Polygon was cut into multiple pieces" << std::endl;
@@ -83,68 +78,69 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
     
     std::vector<vec2> newRegion = makeRegionFromPaths64(sol);
 
-    // we have completely deleted the region
     if (newRegion.size() < 3) {
         region.clear();
-        data.clear();
+        regions.clear();
         return true;
     }
 
     ensureCCW(newRegion);
 
-    // rebuild data using new region
-    std::vector<Tri> newData;
-    newData.reserve(data.size());
-
-    // TODO check if indivdual triangles were cut correctly
-    // count remaining vertices? 
-    for (const Tri& tri : data) {
-        std::vector<vec2> triPoly = tri.toPolygon();
-        Paths64 subj = makePaths64FromRegion(triPoly);
-        Paths64 clip = makePaths64FromRegion(clipRegion);
-        Paths64 sol;
+    // Process each UV region
+    std::vector<UVRegion> newRegions;
+    
+    for (const UVRegion& uvReg : snapshot.regions) {
+        Paths64 subj = makePaths64FromRegion(uvReg.positions);
+        Paths64 clipPaths = makePaths64FromRegion(clipRegion);
+        Paths64 regionSol;
 
         try {
-            sol = useIntersection ? Intersect(subj, clip, FillRule::NonZero) : Difference(subj, clip, FillRule::NonZero);
+            regionSol = useIntersection ? Intersect(subj, clipPaths, FillRule::NonZero)
+                                       : Difference(subj, clipPaths, FillRule::NonZero);
         } catch (...) {
             continue;
         }
 
-        if (sol.empty()) continue;
+        if (regionSol.empty()) continue;
 
-        // Each path in solution = one clipped polygon piece
-        for (auto& p : sol) {
-            std::vector<vec2> clipped = makeRegionFromPaths64({p});
-            if (clipped.size() < 3) continue;
-
-            ensureCCW(clipped);
-            auto indices = earcutIndicesFromRegion(clipped);
-
-            for (size_t i = 0; i + 2 < indices.size(); i += 3) {
-                vec2 p0 = clipped[indices[i]];
-                vec2 p1 = clipped[indices[i+1]];
-                vec2 p2 = clipped[indices[i+2]];
-
-                Vert v0(p0, tri.sampleUV(p0));
-                Vert v1(p1, tri.sampleUV(p1));
-                Vert v2(p2, tri.sampleUV(p2));
-                newData.emplace_back(std::array<Vert,3>{v0, v1, v2});
+        // Each path is a clipped piece
+        for (const Path64& path : regionSol) {
+            std::vector<vec2> clippedPositions;
+            clippedPositions.reserve(path.size());
+            
+            for (const Point64& pt : path) {
+                clippedPositions.emplace_back(
+                    static_cast<float>(pt.x / CLIPPER_SCALE),
+                    static_cast<float>(pt.y / CLIPPER_SCALE)
+                );
             }
+            
+            clippedPositions = simplifyCollinear(clippedPositions);
+            if (clippedPositions.size() < 3) continue;
+            
+            ensureCCW(clippedPositions);
+
+            // Sample UVs from original region for each new vertex
+            std::vector<vec2> clippedUVs;
+            clippedUVs.reserve(clippedPositions.size());
+            
+            for (const vec2& p : clippedPositions) {
+                clippedUVs.push_back(uvReg.sampleUV(p));
+            }
+
+            newRegions.emplace_back(clippedPositions, clippedUVs);
         }
     }
 
-    // all tests passed
     region = std::move(newRegion);
-    data = std::move(newData);
-
-    // remove unwanted vertices
+    regions = std::move(newRegions);
+    
     region = simplifyCollinear(region);
     pruneDups();
 
     return true;
 }
 
-// cut overload that accepts another DyMesh
 bool DyMesh::cut(const DyMesh& other, bool useIntersection) {
     return cut(other.region, useIntersection);
 }
@@ -152,36 +148,37 @@ bool DyMesh::cut(const DyMesh& other, bool useIntersection) {
 bool DyMesh::copy(const DyMesh& other) {
     if (other.region.empty()) return false;
 
-    DyMesh temp = DyMesh(other);
+    // Create snapshot
+    DyMesh temp = other;
+    
+    // Reverse our region for intersection
     std::vector<vec2> reverse = this->region;
     std::reverse(reverse.begin(), reverse.end());
 
-    // intersect cut to find overlap
+    // Find overlap
     if (!temp.cut(reverse, true)) {
         return false;
     }
 
-    if (temp.region.empty() || temp.data.empty()) {
+    if (temp.region.empty() || temp.regions.empty()) {
         return false;
     }
 
-    this->data = temp.data;
+    this->regions = temp.regions;
     this->region = temp.region;
 
     return true;
 }
 
-
 bool DyMesh::paste(const DyMesh& other, int expected) {
     if (other.region.empty()) return false;
 
-    // Deep copy incoming triangles
-    // no float inprecision here
-    for (const Tri& t : other.data) {
-        data.push_back(t);
+    // Deep copy incoming regions
+    for (const UVRegion& uvReg : other.regions) {
+        regions.push_back(uvReg);
     }
 
-    // Update region to union - makeRegionFromPaths64 already extracts outer boundary
+    // Update outer boundary to union
     Paths64 a = makePaths64FromRegion(this->region);
     Paths64 b = makePaths64FromRegion(other.region);
 
@@ -199,10 +196,9 @@ bool DyMesh::paste(const DyMesh& other, int expected) {
         if (expected > 0) {
             std::cout << "paste region is 0" << std::endl;
             return false;
-        } 
-
+        }
         region.clear();
-        data.clear();
+        regions.clear();
         return true;
     }
 
@@ -221,81 +217,107 @@ bool DyMesh::paste(const DyMesh& other, int expected) {
 }
 
 DyMesh* DyMesh::mirror(const vec2& pos, const vec2& dir) {
-    // Normalize the direction
     vec2 nDir = glm::normalize(dir);
 
-    // Helper to mirror a point across a line
     auto mirrorPoint = [&](const vec2& p) -> vec2 {
         vec2 rel = p - pos;
-        float proj = glm::dot(rel, nDir);        // use float
-        vec2 alongLine = proj * nDir;            // safe now
+        float proj = glm::dot(rel, nDir);
+        vec2 alongLine = proj * nDir;
         vec2 perp = rel - alongLine;
-        return pos + alongLine - perp;           // mirror perpendicular component
+        return pos + alongLine - perp;
     };
 
-    // Mirror the region
+    // Mirror outer region
     std::vector<vec2> mirroredRegion(region.size());
     for (size_t i = 0; i < region.size(); ++i) {
         mirroredRegion[i] = mirrorPoint(region[i]);
     }
-
-    // Ensure CCW winding
     ensureCCW(mirroredRegion);
 
-    // Mirror the triangles
-    std::vector<Tri> mirroredData(data.size());
-    for (size_t i = 0; i < data.size(); ++i) {
-        const Tri& t = data[i];
-        std::array<Vert, 3> mirroredVerts;
-        for (int j = 0; j < 3; ++j) {
-            const Vert& v = t.verts[j];
-            vec2 mirroredPos = mirrorPoint(v.pos);
-            vec2 mirroredUV = v.uv; // Usually UVs are kept relative, mirror if needed
-            mirroredVerts[j] = Vert(mirroredPos, mirroredUV);
+    // Mirror UV regions
+    std::vector<UVRegion> mirroredRegions;
+    mirroredRegions.reserve(regions.size());
+    
+    for (const UVRegion& uvReg : regions) {
+        std::vector<vec2> mirroredPositions;
+        mirroredPositions.reserve(uvReg.positions.size());
+        
+        for (const vec2& p : uvReg.positions) {
+            mirroredPositions.push_back(mirrorPoint(p));
         }
-        // Reverse winding to maintain CCW
-        std::swap(mirroredVerts[1], mirroredVerts[2]);
-        mirroredData[i] = Tri(mirroredVerts);
+        
+        ensureCCW(mirroredPositions);
+        
+        // Keep UVs as-is (or flip if needed)
+        mirroredRegions.emplace_back(mirroredPositions, uvReg.uvs);
     }
 
-    // Construct and return new DyMesh
-    DyMesh* mirroredMesh = new DyMesh(mirroredRegion, mirroredData);
-    return mirroredMesh;
+    return new DyMesh(mirroredRegion, mirroredRegions);
 }
 
 bool DyMesh::sampleUV(const vec2& pos, vec2& uv) const {
-    return sampleUVFromTriList(data, pos, uv);
+    const float eps = 1e-6f;
+    float minDistance = std::numeric_limits<float>::max();
+    vec2 closestUV;
+    bool found = false;
+
+    for (const UVRegion& uvReg : regions) {
+        float dist = uvReg.distance(pos);
+        if (dist < minDistance) {
+            minDistance = dist;
+            closestUV = uvReg.sampleUV(pos);
+            found = true;
+        }
+    }
+
+    if (found && minDistance <= eps) {
+        uv = closestUV;
+        return true;
+    }
+
+    return false;
 }
 
 void DyMesh::toData(std::vector<float>& exp) {
     exp.clear();
-    exp.reserve(this->data.size() * 3 * 5);
+    
+    // Estimate capacity (assume ~2 triangles per region on average)
+    exp.reserve(regions.size() * 2 * 3 * 5);
 
-    for (uint i = 0; i < this->data.size(); i++) {
-        for (const Vert& vert : this->data[i].verts) {
-            exp.push_back(vert.pos.x);
-            exp.push_back(-vert.pos.y);
-            exp.push_back(0.0);
-            exp.push_back(vert.uv.x);
-            exp.push_back(-vert.uv.y);
+    for (const UVRegion& uvReg : regions) {
+        if (uvReg.positions.size() < 3) continue;
+
+        // Triangulate region
+        std::vector<std::vector<std::array<double, 2>>> polygon;
+        polygon.emplace_back();
+        polygon[0].reserve(uvReg.positions.size());
+        
+        for (const vec2& v : uvReg.positions) {
+            polygon[0].push_back({{static_cast<double>(v.x), static_cast<double>(v.y)}});
+        }
+
+        std::vector<uint32_t> indices = mapbox::earcut<uint32_t>(polygon);
+
+        // Generate triangles
+        for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+            for (int j = 0; j < 3; j++) {
+                uint32_t idx = indices[i + j];
+                const vec2& pos = uvReg.positions[idx];
+                const vec2& uv = uvReg.uvs[idx];
+
+                exp.push_back(pos.x);
+                exp.push_back(-pos.y);
+                exp.push_back(0.0f);
+                exp.push_back(uv.x);
+                exp.push_back(-uv.y);
+            }
         }
     }
 }
 
-int DyMesh::getTrindex(const vec2& pos) const {
-    int trindex = -1;
-    for (int i = 0; i < data.size(); i++) {
-        if (data[i].distance(pos) < 1e-6f) {
-            trindex = i;
-            break;
-        }
-    }
-    return trindex;
-}   
-
 bool DyMesh::contains(const vec2& pos) const {
-    for (const Tri& tri : data) {
-        if (tri.distance(pos) < 1e-6f) return true;
+    for (const UVRegion& uvReg : regions) {
+        if (uvReg.contains(pos)) return true;
     }
     return false;
 }
@@ -314,13 +336,11 @@ bool DyMesh::hasOverlap(const DyMesh& other) const {
         return false;
     }
 
-    // No intersection polygons at all
     if (sol.empty())
         return false;
 
-    // Ensure overlap has a positive area (ignore touch-only intersections)
     for (const Path64& p : sol) {
-        if (Area(p) > 0)      // Clipper area of path
+        if (Area(p) > 0)
             return true;
     }
 
@@ -329,43 +349,162 @@ bool DyMesh::hasOverlap(const DyMesh& other) const {
 
 void DyMesh::printData() {
     std::cout << "===== PRINT DATA ====" << std::endl;
-    for (const Tri& tri : data) {
-        tri.print();
+    std::cout << "Regions: " << regions.size() << std::endl;
+    for (size_t i = 0; i < regions.size(); ++i) {
+        std::cout << "Region " << i << ": " << regions[i].positions.size() << " vertices" << std::endl;
+        for (size_t j = 0; j < regions[i].positions.size(); ++j) {
+            const vec2& p = regions[i].positions[j];
+            const vec2& uv = regions[i].uvs[j];
+            std::cout << "  v" << j << ": pos(" << p.x << ", " << p.y 
+                     << ") uv(" << uv.x << ", " << uv.y << ")" << std::endl;
+        }
     }
 }
 
 void DyMesh::removeDataOutside() {
     ensureCCW(region);
-    return;
-
-    if (data.empty()) return;
-
-    int i = static_cast<int>(data.size()) - 1;
-
-    while (i >= 0) {
-
-        bool remove = false;
-        for (const Vert& v : data[i].verts) {
-            if (isPointOutside(v.pos)) {
-                remove = true;
-                break;
-            }
-        }
-
-        if (remove) {
-            data.erase(data.begin() + i);
-            std::cout << "cleaning" << std::endl;
-        }
-
-        i--;
-    }
+    // Could implement region filtering here if needed
 }
 
 void DyMesh::flipHorizontal() {
     Edger::flipHorizontal();
-    for (Tri& tri : data) {
-        for (Vert& v : tri.verts) {
-            v.pos.x *= -1;
+    for (UVRegion& uvReg : regions) {
+        uvReg.flipHorizontal();
+    }
+}
+
+bool DyMesh::hasSharedEdge(const UVRegion& r1, const UVRegion& r2, std::vector<vec2>& sharedEdge) const {
+    const float eps = 1e-5f;
+    sharedEdge.clear();
+
+    // Check each edge of r1 against each edge of r2
+    for (size_t i = 0; i < r1.positions.size(); ++i) {
+        const vec2& a1 = r1.positions[i];
+        const vec2& b1 = r1.positions[(i + 1) % r1.positions.size()];
+
+        for (size_t j = 0; j < r2.positions.size(); ++j) {
+            const vec2& a2 = r2.positions[j];
+            const vec2& b2 = r2.positions[(j + 1) % r2.positions.size()];
+
+            // Check if edges overlap (same edge but opposite direction)
+            bool match1 = (glm::length(a1 - b2) < eps && glm::length(b1 - a2) < eps);
+            bool match2 = (glm::length(a1 - a2) < eps && glm::length(b1 - b2) < eps);
+
+            if (match1 || match2) {
+                sharedEdge.push_back(a1);
+                sharedEdge.push_back(b1);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool DyMesh::hasCompatibleUVs(const UVRegion& r1, const UVRegion& r2, const std::vector<vec2>& sharedEdge) const {
+    const float eps = 1e-5f;
+
+    if (sharedEdge.size() != 2) return false;
+
+    // Find indices in r1 for the shared edge vertices
+    int r1_idx1 = -1, r1_idx2 = -1;
+    for (size_t i = 0; i < r1.positions.size(); ++i) {
+        if (glm::length(r1.positions[i] - sharedEdge[0]) < eps) r1_idx1 = i;
+        if (glm::length(r1.positions[i] - sharedEdge[1]) < eps) r1_idx2 = i;
+    }
+
+    // Find indices in r2 for the shared edge vertices
+    int r2_idx1 = -1, r2_idx2 = -1;
+    for (size_t i = 0; i < r2.positions.size(); ++i) {
+        if (glm::length(r2.positions[i] - sharedEdge[0]) < eps) r2_idx1 = i;
+        if (glm::length(r2.positions[i] - sharedEdge[1]) < eps) r2_idx2 = i;
+    }
+
+    if (r1_idx1 == -1 || r1_idx2 == -1 || r2_idx1 == -1 || r2_idx2 == -1) {
+        return false;
+    }
+
+    // Check if UVs match at shared vertices
+    bool uv1Match = glm::length(r1.uvs[r1_idx1] - r2.uvs[r2_idx1]) < eps;
+    bool uv2Match = glm::length(r1.uvs[r1_idx2] - r2.uvs[r2_idx2]) < eps;
+
+    return uv1Match && uv2Match;
+}
+
+bool DyMesh::canMergeRegions(const UVRegion& r1, const UVRegion& r2, std::vector<vec2>& sharedEdge) const {
+    if (!hasSharedEdge(r1, r2, sharedEdge)) return false;
+    if (!hasCompatibleUVs(r1, r2, sharedEdge)) return false;
+    return true;
+}
+
+UVRegion DyMesh::mergeTwo(const UVRegion& r1, const UVRegion& r2) const {
+    // Use Clipper2 to union the two regions
+    Paths64 paths1 = makePaths64FromRegion(r1.positions);
+    Paths64 paths2 = makePaths64FromRegion(r2.positions);
+    
+    Paths64 unionResult;
+    try {
+        unionResult = Union(paths1, paths2, FillRule::NonZero);
+    } catch (...) {
+        // If union fails, return r1 unchanged
+        return r1;
+    }
+
+    if (unionResult.empty() || unionResult.size() > 1) {
+        // Union resulted in no region or multiple regions - shouldn't happen for adjacent regions
+        return r1;
+    }
+
+    // Convert back to vec2
+    std::vector<vec2> mergedPositions = makeRegionFromPaths64(unionResult);
+    ensureCCW(mergedPositions);
+
+    // Sample UVs from original regions for each vertex of merged region
+    std::vector<vec2> mergedUVs;
+    mergedUVs.reserve(mergedPositions.size());
+
+    for (const vec2& pos : mergedPositions) {
+        // Try to sample from r1 first, then r2
+        if (r1.contains(pos, 1e-5f)) {
+            mergedUVs.push_back(r1.sampleUV(pos));
+        } else if (r2.contains(pos, 1e-5f)) {
+            mergedUVs.push_back(r2.sampleUV(pos));
+        } else {
+            // Fallback: pick closer region
+            float dist1 = r1.distance(pos);
+            float dist2 = r2.distance(pos);
+            mergedUVs.push_back(dist1 < dist2 ? r1.sampleUV(pos) : r2.sampleUV(pos));
+        }
+    }
+
+    return UVRegion(mergedPositions, mergedUVs);
+}
+
+void DyMesh::mergeAdjacentRegions() {
+    if (regions.size() < 2) return;
+
+    bool merged = true;
+    while (merged) {
+        merged = false;
+
+        for (size_t i = 0; i < regions.size() && !merged; ++i) {
+            for (size_t j = i + 1; j < regions.size() && !merged; ++j) {
+                std::vector<vec2> sharedEdge;
+                
+                if (canMergeRegions(regions[i], regions[j], sharedEdge)) {
+                    // Merge j into i
+                    UVRegion mergedRegion = mergeTwo(regions[i], regions[j]);
+                    
+                    // Replace region i with merged result
+                    regions[i] = mergedRegion;
+                    
+                    // Remove region j
+                    regions.erase(regions.begin() + j);
+                    
+                    merged = true;
+                    std::cout << "Merged regions " << i << " and " << j << std::endl;
+                }
+            }
         }
     }
 }
