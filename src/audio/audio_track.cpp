@@ -22,9 +22,9 @@ AudioTrack::~AudioTrack() {
 }
 
 void AudioTrack::AddLayer(const std::string& name, const std::string& filepath, 
-                         const std::string& group_name, bool looping) {
+                         AudioGroup* group, bool looping) {
   Layer layer;
-  layer.sound.reset(system_->CreateSound(filepath, group_name));
+  layer.sound = system_->CreateSound(filepath, group);
   layer.sound->SetLooping(looping);
   layer.current_volume = 0.0f;  // Start silent
   layer.sound->SetVolume(0.0f);
