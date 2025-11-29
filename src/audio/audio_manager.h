@@ -330,7 +330,7 @@ private:
     unique_ptr<AudioSystem> audio_system_;   ///< Core audio system
     unordered_map<TrackHandle, unique_ptr<AudioTrack>> tracks_;  ///< Track storage
     unordered_map<GroupHandle, unique_ptr<AudioGroup>> groups_;  ///< Group storage
-    unordered_map<SoundHandle, shared_ptr<Sound>> sounds_;       ///< Sound storage
+    unordered_map<SoundHandle, unique_ptr<Sound>> sounds_;       ///< Sound storage
     unordered_map<string, GroupHandle> group_names_;             ///< Name-to-handle mapping for groups
     ///@}
 

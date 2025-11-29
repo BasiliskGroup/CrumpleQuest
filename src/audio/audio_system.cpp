@@ -12,8 +12,6 @@ AudioSystem::AudioSystem() : master_volume_(1.0f) {
 }
 
 AudioSystem::~AudioSystem() {
-  groups_.clear();  // Destroy all groups first, while engine is still valid
-  
   // Stop the engine to flush all remaining sounds
   ma_engine_stop(&engine_);
   
@@ -21,23 +19,12 @@ AudioSystem::~AudioSystem() {
   ma_engine_uninit(&engine_);
 }
 
-Sound* AudioSystem::CreateSound(const std::string& filepath, const std::string& group_name) {
-  AudioGroup* group = nullptr;
-  if (!group_name.empty()) {
-    auto it = groups_.find(group_name);
-    if (it != groups_.end()) {
-      group = it->second.get();
-    }
-  }
-  auto sound = Sound::Create(&engine_, filepath, group);
-  return sound.release();
+std::unique_ptr<Sound> AudioSystem::CreateSound(const std::string& filepath, AudioGroup* group) {
+  return Sound::Create(&engine_, filepath, group);
 }
 
-AudioGroup* AudioSystem::CreateGroup(const std::string& name) {
-  auto group = AudioGroup::Create(&engine_);
-  AudioGroup* group_ptr = group.get();
-  groups_[name] = std::move(group);
-  return group_ptr;
+std::unique_ptr<AudioGroup> AudioSystem::CreateGroup(const std::string& name) {
+  return AudioGroup::Create(&engine_);
 }
 
 void AudioSystem::SetMasterVolume(float volume) {
