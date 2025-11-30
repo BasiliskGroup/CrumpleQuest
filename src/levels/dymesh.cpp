@@ -481,19 +481,64 @@ UVRegion DyMesh::mergeTwo(const UVRegion& r1, const UVRegion& r2) const {
 }
 
 void DyMesh::mergeAdjacentRegions() {
-    if (regions.size() < 2) return;
+    if (regions.size() < 2) {
+        std::cout << "mergeAdjacentRegions: Too few regions (" << regions.size() << "), skipping" << std::endl;
+        return;
+    }
+
+    std::cout << "\n===== Starting mergeAdjacentRegions =====" << std::endl;
+    std::cout << "Initial region count: " << regions.size() << std::endl;
 
     bool merged = true;
+    int iteration = 0;
+    
     while (merged) {
         merged = false;
+        iteration++;
+        std::cout << "\n--- Iteration " << iteration << " ---" << std::endl;
 
         for (size_t i = 0; i < regions.size() && !merged; ++i) {
             for (size_t j = i + 1; j < regions.size() && !merged; ++j) {
+                std::cout << "Checking regions " << i << " (size=" << regions[i].positions.size() 
+                         << ") and " << j << " (size=" << regions[j].positions.size() << ")" << std::endl;
+                
                 std::vector<vec2> sharedEdge;
                 
+                bool hasShared = hasSharedEdge(regions[i], regions[j], sharedEdge);
+                bool hasCompatUVs = false;
+                
+                if (hasShared) {
+                    hasCompatUVs = hasCompatibleUVs(regions[i], regions[j], sharedEdge);
+                }
+                
                 if (canMergeRegions(regions[i], regions[j], sharedEdge)) {
+                    std::cout << "  -> CAN MERGE! Shared edge has " << sharedEdge.size() << " points" << std::endl;
+                    if (sharedEdge.size() == 2) {
+                        std::cout << "     Edge: (" << sharedEdge[0].x << "," << sharedEdge[0].y 
+                                 << ") to (" << sharedEdge[1].x << "," << sharedEdge[1].y << ")" << std::endl;
+                    }
+                    
+                    std::cout << "  -> BEFORE MERGE:" << std::endl;
+                    std::cout << "     Region " << i << " vertices:" << std::endl;
+                    for (size_t k = 0; k < regions[i].positions.size(); ++k) {
+                        std::cout << "       [" << k << "] (" << regions[i].positions[k].x 
+                                 << ", " << regions[i].positions[k].y << ")" << std::endl;
+                    }
+                    std::cout << "     Region " << j << " vertices:" << std::endl;
+                    for (size_t k = 0; k < regions[j].positions.size(); ++k) {
+                        std::cout << "       [" << k << "] (" << regions[j].positions[k].x 
+                                 << ", " << regions[j].positions[k].y << ")" << std::endl;
+                    }
+                    
                     // Merge j into i
                     UVRegion mergedRegion = mergeTwo(regions[i], regions[j]);
+                    
+                    std::cout << "  -> AFTER MERGE:" << std::endl;
+                    std::cout << "     Merged region has " << mergedRegion.positions.size() << " vertices:" << std::endl;
+                    for (size_t k = 0; k < mergedRegion.positions.size(); ++k) {
+                        std::cout << "       [" << k << "] (" << mergedRegion.positions[k].x 
+                                 << ", " << mergedRegion.positions[k].y << ")" << std::endl;
+                    }
                     
                     // Replace region i with merged result
                     regions[i] = mergedRegion;
@@ -502,8 +547,27 @@ void DyMesh::mergeAdjacentRegions() {
                     regions.erase(regions.begin() + j);
                     
                     merged = true;
-                    std::cout << "Merged regions " << i << " and " << j << std::endl;
+                    std::cout << "  -> Successfully merged! New region count: " << regions.size() << std::endl;
+                } else {
+                    std::cout << "  -> Cannot merge (hasSharedEdge=" << hasShared 
+                             << ", hasCompatibleUVs=" << (hasShared ? (hasCompatUVs ? "true" : "false") : "N/A") << ")" << std::endl;
                 }
+            }
+        }
+    }
+    
+    std::cout << "\n===== Finished mergeAdjacentRegions =====" << std::endl;
+    std::cout << "Final region count: " << regions.size() << std::endl;
+    
+    if (regions.size() > 1) {
+        std::cout << "\nWARNING: Multiple regions remain after merge!" << std::endl;
+        for (size_t i = 0; i < regions.size(); ++i) {
+            std::cout << "  Remaining region " << i << ":" << std::endl;
+            std::cout << "    Vertices (" << regions[i].positions.size() << "):" << std::endl;
+            for (size_t j = 0; j < regions[i].positions.size(); ++j) {
+                std::cout << "      [" << j << "] pos(" << regions[i].positions[j].x 
+                         << ", " << regions[i].positions[j].y << ") uv(" 
+                         << regions[i].uvs[j].x << ", " << regions[i].uvs[j].y << ")" << std::endl;
             }
         }
     }
