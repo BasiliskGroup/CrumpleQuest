@@ -36,13 +36,14 @@ struct DyMesh : public Edger {
 
     // Cleaning
     void removeDataOutside();
-    void mergeAdjacentRegions();
+    void mergeAllRegions();
 
 private:
     bool canMergeRegions(const UVRegion& r1, const UVRegion& r2, std::vector<vec2>& sharedEdge) const;
     bool hasSharedEdge(const UVRegion& r1, const UVRegion& r2, std::vector<vec2>& sharedEdge) const;
     bool hasCompatibleUVs(const UVRegion& r1, const UVRegion& r2, const std::vector<vec2>& sharedEdge) const;
     UVRegion mergeTwo(const UVRegion& r1, const UVRegion& r2) const;
+    void cleanupDegenerateRegions();
 };
 
 #endif

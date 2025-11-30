@@ -286,8 +286,8 @@ void Paper::pushFold(Fold& newFold) {
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
-    paperMeshes.first->mergeAdjacentRegions();
-    paperMeshes.second->mergeAdjacentRegions();
+    paperMeshes.first->mergeAllRegions();
+    paperMeshes.second->mergeAllRegions();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
     sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
@@ -322,8 +322,8 @@ void Paper::popFold() {
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
-    paperMeshes.first->mergeAdjacentRegions();
-    paperMeshes.second->mergeAdjacentRegions();
+    paperMeshes.first->mergeAllRegions();
+    paperMeshes.second->mergeAllRegions();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
     sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
