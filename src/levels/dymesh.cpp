@@ -437,6 +437,77 @@ bool DyMesh::canMergeRegions(const UVRegion& r1, const UVRegion& r2, std::vector
     return true;
 }
 
+void DyMesh::cleanupDegenerateRegions() {
+    const float eps = 1e-5f;
+    
+    std::cout << "\n--- Cleaning up degenerate regions ---" << std::endl;
+    std::cout << "Initial region count: " << regions.size() << std::endl;
+    
+    for (size_t i = 0; i < regions.size(); ) {
+        std::cout << "Checking region " << i << " (" << regions[i].positions.size() << " vertices)..." << std::endl;
+        
+        // Remove duplicate vertices
+        std::vector<vec2> cleanedPos;
+        std::vector<vec2> cleanedUV;
+        
+        for (size_t j = 0; j < regions[i].positions.size(); ++j) {
+            bool isDup = false;
+            for (size_t k = 0; k < cleanedPos.size(); ++k) {
+                if (glm::length(regions[i].positions[j] - cleanedPos[k]) < eps) {
+                    std::cout << "  Removing duplicate at (" << regions[i].positions[j].x 
+                             << ", " << regions[i].positions[j].y << ")" << std::endl;
+                    isDup = true;
+                    break;
+                }
+            }
+            if (!isDup) {
+                cleanedPos.push_back(regions[i].positions[j]);
+                cleanedUV.push_back(regions[i].uvs[j]);
+            }
+        }
+        
+        // Check if region is degenerate after cleanup
+        if (cleanedPos.size() < 3) {
+            std::cout << "  Region " << i << " is degenerate (only " << cleanedPos.size() 
+                     << " unique vertices), removing" << std::endl;
+            regions.erase(regions.begin() + i);
+            continue;
+        }
+        
+        // Calculate area
+        float area = 0.0f;
+        for (size_t j = 0; j < cleanedPos.size(); ++j) {
+            const vec2& p1 = cleanedPos[j];
+            const vec2& p2 = cleanedPos[(j + 1) % cleanedPos.size()];
+            area += (p1.x * p2.y - p2.x * p1.y);
+        }
+        area = std::abs(area) * 0.5f;
+        
+        // Only remove truly tiny artifacts (< 0.1 square units)
+        // This is about 1% of a 10x10 square, truly microscopic
+        const float minArea = 0.1f;
+        if (area < minArea) {
+            std::cout << "  Region " << i << " has area " << area << " (microscopic artifact), removing" << std::endl;
+            regions.erase(regions.begin() + i);
+            continue;
+        }
+        
+        // Update region if we removed duplicates
+        if (cleanedPos.size() != regions[i].positions.size()) {
+            std::cout << "  Region " << i << " cleaned: " << regions[i].positions.size() 
+                     << " -> " << cleanedPos.size() << " vertices" << std::endl;
+            regions[i].positions = cleanedPos;
+            regions[i].uvs = cleanedUV;
+        } else {
+            std::cout << "  Region " << i << " is valid (area=" << area << ")" << std::endl;
+        }
+        
+        ++i;
+    }
+    
+    std::cout << "Final region count after cleanup: " << regions.size() << std::endl;
+}
+
 UVRegion DyMesh::mergeTwo(const UVRegion& r1, const UVRegion& r2) const {
     // Use Clipper2 to union the two regions
     Paths64 paths1 = makePaths64FromRegion(r1.positions);
@@ -480,95 +551,125 @@ UVRegion DyMesh::mergeTwo(const UVRegion& r1, const UVRegion& r2) const {
     return UVRegion(mergedPositions, mergedUVs);
 }
 
-void DyMesh::mergeAdjacentRegions() {
+void DyMesh::mergeAllRegions() {
+    std::cout << "\n===== Starting mergeAllRegions =====" << std::endl;
+    std::cout << "Initial region count: " << regions.size() << std::endl;
+    
     if (regions.size() < 2) {
-        std::cout << "mergeAdjacentRegions: Too few regions (" << regions.size() << "), skipping" << std::endl;
+        std::cout << "mergeAllRegions: Too few regions, skipping" << std::endl;
         return;
     }
-
-    std::cout << "\n===== Starting mergeAdjacentRegions =====" << std::endl;
-    std::cout << "Initial region count: " << regions.size() << std::endl;
-
-    bool merged = true;
+    
+    // First cleanup pass
+    cleanupDegenerateRegions();
+    
+    if (regions.size() < 2) {
+        std::cout << "mergeAllRegions: Too few regions after cleanup, done" << std::endl;
+        return;
+    }
+    
+    bool anyMerged = true;
     int iteration = 0;
     
-    while (merged) {
-        merged = false;
+    while (anyMerged && regions.size() > 1) {
+        anyMerged = false;
         iteration++;
-        std::cout << "\n--- Iteration " << iteration << " ---" << std::endl;
-
-        for (size_t i = 0; i < regions.size() && !merged; ++i) {
-            for (size_t j = i + 1; j < regions.size() && !merged; ++j) {
-                std::cout << "Checking regions " << i << " (size=" << regions[i].positions.size() 
-                         << ") and " << j << " (size=" << regions[j].positions.size() << ")" << std::endl;
-                
+        std::cout << "\n--- Merge Iteration " << iteration << " ---" << std::endl;
+        std::cout << "Current region count: " << regions.size() << std::endl;
+        
+        // Try to merge each pair of regions
+        for (size_t i = 0; i < regions.size(); ++i) {
+            for (size_t j = i + 1; j < regions.size(); ++j) {
                 std::vector<vec2> sharedEdge;
                 
+                // Check if regions share an edge
                 bool hasShared = hasSharedEdge(regions[i], regions[j], sharedEdge);
-                bool hasCompatUVs = false;
                 
                 if (hasShared) {
-                    hasCompatUVs = hasCompatibleUVs(regions[i], regions[j], sharedEdge);
-                }
-                
-                if (canMergeRegions(regions[i], regions[j], sharedEdge)) {
-                    std::cout << "  -> CAN MERGE! Shared edge has " << sharedEdge.size() << " points" << std::endl;
-                    if (sharedEdge.size() == 2) {
-                        std::cout << "     Edge: (" << sharedEdge[0].x << "," << sharedEdge[0].y 
-                                 << ") to (" << sharedEdge[1].x << "," << sharedEdge[1].y << ")" << std::endl;
+                    // Check if UVs are compatible on the shared edge
+                    if (!hasCompatibleUVs(regions[i], regions[j], sharedEdge)) {
+                        std::cout << "  Regions " << i << " and " << j << " share edge but have incompatible UVs" << std::endl;
+                        
+                        // Print UV details for debugging
+                        std::cout << "    Region " << i << " edge UVs: ";
+                        for (const vec2& pt : sharedEdge) {
+                            for (size_t k = 0; k < regions[i].positions.size(); ++k) {
+                                if (glm::length(regions[i].positions[k] - pt) < 1e-5f) {
+                                    std::cout << "(" << regions[i].uvs[k].x << "," << regions[i].uvs[k].y << ") ";
+                                    break;
+                                }
+                            }
+                        }
+                        std::cout << std::endl;
+                        
+                        std::cout << "    Region " << j << " edge UVs: ";
+                        for (const vec2& pt : sharedEdge) {
+                            for (size_t k = 0; k < regions[j].positions.size(); ++k) {
+                                if (glm::length(regions[j].positions[k] - pt) < 1e-5f) {
+                                    std::cout << "(" << regions[j].uvs[k].x << "," << regions[j].uvs[k].y << ") ";
+                                    break;
+                                }
+                            }
+                        }
+                        std::cout << std::endl;
+                        
+                        continue;
                     }
                     
-                    std::cout << "  -> BEFORE MERGE:" << std::endl;
-                    std::cout << "     Region " << i << " vertices:" << std::endl;
-                    for (size_t k = 0; k < regions[i].positions.size(); ++k) {
-                        std::cout << "       [" << k << "] (" << regions[i].positions[k].x 
-                                 << ", " << regions[i].positions[k].y << ")" << std::endl;
-                    }
-                    std::cout << "     Region " << j << " vertices:" << std::endl;
-                    for (size_t k = 0; k < regions[j].positions.size(); ++k) {
-                        std::cout << "       [" << k << "] (" << regions[j].positions[k].x 
-                                 << ", " << regions[j].positions[k].y << ")" << std::endl;
-                    }
+                    std::cout << "  Merging regions " << i << " (size=" << regions[i].positions.size() 
+                             << ") and " << j << " (size=" << regions[j].positions.size() << ")" << std::endl;
                     
-                    // Merge j into i
-                    UVRegion mergedRegion = mergeTwo(regions[i], regions[j]);
-                    
-                    std::cout << "  -> AFTER MERGE:" << std::endl;
-                    std::cout << "     Merged region has " << mergedRegion.positions.size() << " vertices:" << std::endl;
-                    for (size_t k = 0; k < mergedRegion.positions.size(); ++k) {
-                        std::cout << "       [" << k << "] (" << mergedRegion.positions[k].x 
-                                 << ", " << mergedRegion.positions[k].y << ")" << std::endl;
-                    }
+                    // Merge the regions
+                    UVRegion merged = mergeTwo(regions[i], regions[j]);
                     
                     // Replace region i with merged result
-                    regions[i] = mergedRegion;
+                    regions[i] = merged;
                     
                     // Remove region j
                     regions.erase(regions.begin() + j);
                     
-                    merged = true;
-                    std::cout << "  -> Successfully merged! New region count: " << regions.size() << std::endl;
-                } else {
-                    std::cout << "  -> Cannot merge (hasSharedEdge=" << hasShared 
-                             << ", hasCompatibleUVs=" << (hasShared ? (hasCompatUVs ? "true" : "false") : "N/A") << ")" << std::endl;
+                    anyMerged = true;
+                    std::cout << "  Successfully merged! New region count: " << regions.size() << std::endl;
+                    
+                    // Restart the search since indices changed
+                    break;
                 }
             }
+            
+            if (anyMerged) break;
         }
     }
     
-    std::cout << "\n===== Finished mergeAdjacentRegions =====" << std::endl;
+    // Final cleanup
+    cleanupDegenerateRegions();
+    
+    std::cout << "\n===== Finished mergeAllRegions =====" << std::endl;
     std::cout << "Final region count: " << regions.size() << std::endl;
     
     if (regions.size() > 1) {
-        std::cout << "\nWARNING: Multiple regions remain after merge!" << std::endl;
+        std::cout << "\nNOTE: " << regions.size() << " separate regions remain." << std::endl;
+        std::cout << "Analyzing remaining regions:" << std::endl;
+        
         for (size_t i = 0; i < regions.size(); ++i) {
-            std::cout << "  Remaining region " << i << ":" << std::endl;
-            std::cout << "    Vertices (" << regions[i].positions.size() << "):" << std::endl;
+            float area = 0.0f;
             for (size_t j = 0; j < regions[i].positions.size(); ++j) {
-                std::cout << "      [" << j << "] pos(" << regions[i].positions[j].x 
-                         << ", " << regions[i].positions[j].y << ") uv(" 
-                         << regions[i].uvs[j].x << ", " << regions[i].uvs[j].y << ")" << std::endl;
+                const vec2& p1 = regions[i].positions[j];
+                const vec2& p2 = regions[i].positions[(j + 1) % regions[i].positions.size()];
+                area += (p1.x * p2.y - p2.x * p1.y);
             }
+            area = std::abs(area) * 0.5f;
+            
+            std::cout << "  Region " << i << ": " << regions[i].positions.size() 
+                     << " vertices, area=" << area << std::endl;
+            std::cout << "    Positions: ";
+            for (const vec2& p : regions[i].positions) {
+                std::cout << "(" << p.x << "," << p.y << ") ";
+            }
+            std::cout << std::endl;
         }
+        
+        std::cout << "\nPossible reasons:" << std::endl;
+        std::cout << "  - Regions have incompatible UVs (texture seams)" << std::endl;
+        std::cout << "  - Regions don't share edges (separated/interior regions)" << std::endl;
     }
 }
