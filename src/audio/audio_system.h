@@ -49,24 +49,24 @@ class AudioSystem {
    * @brief Creates a new Sound object
    * 
    * Loads an audio file and creates a Sound object. The caller takes ownership
-   * of the returned pointer.
+   * of the returned unique_ptr.
    * 
    * @param filepath Path to the audio file
-   * @param group_name Optional name of the group to add the sound to
-   * @return Sound* Pointer to the newly created Sound (caller owns)
+   * @param group Optional pointer to the group to add the sound to
+   * @return std::unique_ptr<Sound> Unique pointer to the newly created Sound (caller owns)
    */
-  Sound* CreateSound(const std::string& filepath, const std::string& group_name = "");
+  std::unique_ptr<Sound> CreateSound(const std::string& filepath, AudioGroup* group = nullptr);
 
   /**
    * @brief Creates a new AudioGroup object
    * 
-   * Creates an audio group for collective control of sounds. The AudioSystem
-   * retains ownership of the group.
+   * Creates an audio group for collective control of sounds. The caller takes
+   * ownership of the returned unique_ptr.
    * 
    * @param name Name for the group
-   * @return AudioGroup* Pointer to the newly created AudioGroup (AudioSystem owns)
+   * @return std::unique_ptr<AudioGroup> Unique pointer to the newly created AudioGroup (caller owns)
    */
-  AudioGroup* CreateGroup(const std::string& name);
+  std::unique_ptr<AudioGroup> CreateGroup(const std::string& name);
 
   /**
    * @brief Sets the master volume for all audio
@@ -84,7 +84,6 @@ class AudioSystem {
 
  private:
   ma_engine engine_;                                      ///< miniaudio engine instance
-  std::unordered_map<std::string, std::unique_ptr<AudioGroup>> groups_; ///< Collection of audio groups
   float master_volume_;                                   ///< Master volume level
 };
 

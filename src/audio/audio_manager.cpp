@@ -176,7 +176,19 @@ void AudioManager::AddLayer(TrackHandle track, const string& layerName,
     auto track_it = tracks_.find(track);
     if (track_it == tracks_.end() || !track_it->second) return;
     
-    track_it->second->AddLayer(layerName, filepath, group, true);
+    // Look up the group by name if provided
+    AudioGroup* group_ptr = nullptr;
+    if (!group.empty()) {
+        auto group_it = group_names_.find(group);
+        if (group_it != group_names_.end()) {
+            auto groups_it = groups_.find(group_it->second);
+            if (groups_it != groups_.end() && groups_it->second) {
+                group_ptr = groups_it->second.get();
+            }
+        }
+    }
+    
+    track_it->second->AddLayer(layerName, filepath, group_ptr, true);
 }
 
 void AudioManager::RemoveLayer(TrackHandle track, const string& layerName) {
@@ -212,11 +224,11 @@ GroupHandle AudioManager::CreateGroup(const string& name) {
     GroupHandle handle = NextGroupHandle();
     
     // Create the group in the audio system
-    auto* group_ptr = audio_system_->CreateGroup(name);
-    if (!group_ptr) return 0;
+    auto group = audio_system_->CreateGroup(name);
+    if (!group) return 0;
     
     // Store the group
-    groups_[handle].reset(group_ptr);
+    groups_[handle] = std::move(group);
     
     // Store name mapping if provided
     if (!name.empty()) {
@@ -267,11 +279,11 @@ SoundHandle AudioManager::LoadSound(const string& filepath) {
     SoundHandle handle = NextSoundHandle();
     
     // Create the sound
-    Sound* sound_ptr = audio_system_->CreateSound(filepath);
+    auto sound_ptr = audio_system_->CreateSound(filepath);
     if (!sound_ptr) return 0;
     
     // Store the sound
-    sounds_[handle] = shared_ptr<Sound>(sound_ptr);
+    sounds_[handle] = std::move(sound_ptr);
     
     return handle;
 }
