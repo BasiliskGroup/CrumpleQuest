@@ -244,53 +244,83 @@ void Paper::pushFold(Fold& newFold) {
     folds.push_back(newFold);
 
     // modify the mesh to accommodate new fold
-    // copy mesh so we can quit fold is shit goes wrong
     PaperMesh* paperMesh = getPaperMesh();
-
-    // Check if cover is contained by the original paper region using Clipper2
-    // If the union of cover and paper equals the paper, cover is contained
-    Paths64 paperPath = makePaths64FromRegion(paperMesh->region);
-    Paths64 coverPath = makePaths64FromRegion(newFold.cover->region);
-    
-    double paperArea = std::abs(Area(paperPath));
-    
-    Paths64 unionResult;
-    try {
-        unionResult = Union(paperPath, coverPath, FillRule::NonZero);
-    } catch (...) {
-        folds.pop_back();
-        return;
-    }
-    
-    double unionArea = std::abs(Area(unionResult));
-    
-    // If union area is larger than paper area, cover extends outside
-    if (unionArea > paperArea + EPSILON) {
-        folds.pop_back();
-        return;
-    }
     PaperMesh* paperCopy = new PaperMesh(*paperMesh);
 
     bool check = paperCopy->cut(*newFold.underside);
     if (!check) {
         delete paperCopy; paperCopy = nullptr;
+        folds.pop_back();
         return;
     }
 
     check = paperCopy->paste(*newFold.cover);
     if (!check) {
         delete paperCopy; paperCopy = nullptr;
+        folds.pop_back();
         return;
     }
 
-    // TODO make a copy first
+    // Handle back side
     PaperMesh* backMesh = getBackPaperMesh();
     PaperMesh* backCopy = new PaperMesh(*backMesh);
     check = backCopy->cut(*newFold.backside);
     if (!check) {
         delete paperCopy; paperCopy = nullptr;
         delete backCopy; backCopy = nullptr;
+        folds.pop_back();
         return;
+    }
+
+    // Calculate overhang: reflect cutVerts over crease to get fold landing positions
+    std::vector<vec2> foldedCutVerts;
+    for (const vec2& v : newFold.cutVerts) {
+        foldedCutVerts.push_back(reflectPointOverLine(newFold.creasePos, newFold.creaseDir, v));
+    }
+    ensureCCW(foldedCutVerts);
+
+    // Find overhang: part of folded region outside paper boundary
+    Paths64 foldedPath = makePaths64FromRegion(foldedCutVerts);
+    Paths64 paperPath = makePaths64FromRegion(paperMesh->region);
+    Paths64 overhangPath;
+    
+    try {
+        overhangPath = Difference(foldedPath, paperPath, FillRule::NonZero);
+    } catch (...) {
+        // No overhang or error - continue without overhang
+        overhangPath.clear();
+    }
+
+    // If there's an overhang, add it to the back side with front paper UVs
+    if (!overhangPath.empty()) {
+        std::vector<vec2> overhangPositions = makeRegionFromPaths64(overhangPath);
+        
+        if (overhangPositions.size() >= 3) {
+            ensureCCW(overhangPositions);
+            
+            // Reflect overhang positions back to get source positions on original paper
+            std::vector<vec2> overhangSourcePositions;
+            for (const vec2& v : overhangPositions) {
+                overhangSourcePositions.push_back(reflectPointOverLine(newFold.creasePos, newFold.creaseDir, v));
+            }
+            ensureCCW(overhangSourcePositions);
+            
+            // Create mesh at source positions with front paper UVs
+            DyMesh* overhangSource = new DyMesh(overhangSourcePositions);
+            if (overhangSource->copy(*paperMesh)) {
+                // Mirror over crease to get to overhang's front-side position (with UVs)
+                DyMesh* overhangMirrored = overhangSource->mirror(newFold.creasePos, newFold.creaseDir);
+                
+                // Flip to back-side coordinates
+                overhangMirrored->flipHorizontal();
+                
+                // Paste onto back paper
+                backCopy->paste(*overhangMirrored);
+                
+                delete overhangMirrored;
+            }
+            delete overhangSource;
+        }
     }
 
     // all tests passed
