@@ -235,6 +235,29 @@ void Paper::pushFold(Fold& newFold) {
     // modify the mesh to accommodate new fold
     // copy mesh so we can quit fold is shit goes wrong
     PaperMesh* paperMesh = getPaperMesh();
+
+    // Check if cover is contained by the original paper region using Clipper2
+    // If the union of cover and paper equals the paper, cover is contained
+    Paths64 paperPath = makePaths64FromRegion(paperMesh->region);
+    Paths64 coverPath = makePaths64FromRegion(newFold.cover->region);
+    
+    double paperArea = std::abs(Area(paperPath));
+    
+    Paths64 unionResult;
+    try {
+        unionResult = Union(paperPath, coverPath, FillRule::NonZero);
+    } catch (...) {
+        folds.pop_back();
+        return;
+    }
+    
+    double unionArea = std::abs(Area(unionResult));
+    
+    // If union area is larger than paper area, cover extends outside
+    if (unionArea > paperArea + EPSILON) {
+        folds.pop_back();
+        return;
+    }
     PaperMesh* paperCopy = new PaperMesh(*paperMesh);
 
     bool check = paperCopy->cut(*newFold.underside);

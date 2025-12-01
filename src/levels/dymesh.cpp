@@ -515,6 +515,55 @@ void DyMesh::cleanupDegenerateRegions() {
     std::cout << "Final region count after cleanup: " << regions.size() << std::endl;
 }
 
+void DyMesh::removeContainedRegions() {
+    std::cout << "\n--- Removing contained regions ---" << std::endl;
+    std::cout << "Initial region count: " << regions.size() << std::endl;
+    
+    if (regions.size() < 2) return;
+    
+    const double eps = 1e-6;
+    
+    for (size_t i = 0; i < regions.size(); ) {
+        bool wasRemoved = false;
+        
+        Paths64 pathI = makePaths64FromRegion(regions[i].positions);
+        double areaI = std::abs(Area(pathI));
+        
+        for (size_t j = 0; j < regions.size(); ++j) {
+            if (i == j) continue;
+            
+            Paths64 pathJ = makePaths64FromRegion(regions[j].positions);
+            double areaJ = std::abs(Area(pathJ));
+            
+            // Compute union of regions i and j
+            Paths64 unionResult;
+            try {
+                unionResult = Union(pathI, pathJ, FillRule::NonZero);
+            } catch (...) {
+                continue;
+            }
+            
+            double unionArea = std::abs(Area(unionResult));
+            
+            // If union area equals area of j, then region i is contained within region j
+            if (std::abs(unionArea - areaJ) < eps) {
+                std::cout << "  Region " << i << " (area=" << areaI / (CLIPPER_SCALE * CLIPPER_SCALE) 
+                         << ") is contained by region " << j << " (area=" << areaJ / (CLIPPER_SCALE * CLIPPER_SCALE) 
+                         << "), removing region " << i << std::endl;
+                regions.erase(regions.begin() + i);
+                wasRemoved = true;
+                break;
+            }
+        }
+        
+        if (!wasRemoved) {
+            ++i;
+        }
+    }
+    
+    std::cout << "Region count after removing contained: " << regions.size() << std::endl;
+}
+
 UVRegion DyMesh::mergeTwo(const UVRegion& r1, const UVRegion& r2) const {
     // Use Clipper2 to union the two regions
     Paths64 paths1 = makePaths64FromRegion(r1.positions);
@@ -556,6 +605,14 @@ void DyMesh::mergeAllRegions() {
     
     if (regions.size() < 2) {
         std::cout << "mergeAllRegions: Too few regions after cleanup, done" << std::endl;
+        return;
+    }
+    
+    // Remove regions that are completely contained by other regions
+    removeContainedRegions();
+    
+    if (regions.size() < 2) {
+        std::cout << "mergeAllRegions: Too few regions after removing contained, done" << std::endl;
         return;
     }
     
