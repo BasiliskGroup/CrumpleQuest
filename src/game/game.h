@@ -40,6 +40,8 @@ private:
 
     // audio
     audio::AudioManager& audioManager;
+    audio::GroupHandle musicGroup;
+    audio::GroupHandle sfxGroup;
 
     // menu manager
     MenuManager* menuManager;
@@ -69,6 +71,8 @@ public:
     Mesh* getMesh(std::string name)         { return meshes[name]; }
     Collider* getCollider(std::string name) { return currentSide->colliders[name]; }
     audio::AudioManager& getAudio()         { return audioManager; }
+    audio::GroupHandle getMusicGroup()      { return musicGroup; }
+    audio::GroupHandle getSFXGroup()        { return sfxGroup; }
     MenuManager* getMenus()                 { return menuManager; }
 
     Engine*& getEngine() { return engine; }

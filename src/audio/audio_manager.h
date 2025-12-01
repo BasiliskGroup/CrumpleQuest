@@ -227,6 +227,14 @@ public:
     void SetGroupVolume(GroupHandle group, float volume);
     
     /**
+     * @brief Get the current volume for an audio group
+     * 
+     * @param group Handle to the group
+     * @return float Current volume level (0.0 to 1.0)
+     */
+    float GetGroupVolume(GroupHandle group) const;
+    
+    /**
      * @brief Fade a group's volume to a target value over time
      * 
      * @param group Handle to the group

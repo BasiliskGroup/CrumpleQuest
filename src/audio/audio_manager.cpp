@@ -250,6 +250,15 @@ void AudioManager::SetGroupVolume(GroupHandle group, float volume) {
     }
 }
 
+float AudioManager::GetGroupVolume(GroupHandle group) const {
+    lock_guard<mutex> lock(resource_mutex_);
+    auto it = groups_.find(group);
+    if (it != groups_.end() && it->second) {
+        return it->second->GetVolume();
+    }
+    return 0.0f;
+}
+
 void AudioManager::FadeGroup(GroupHandle group, float targetVolume, 
                             std::chrono::milliseconds duration) {
     lock_guard<mutex> lock(resource_mutex_);

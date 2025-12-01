@@ -34,22 +34,10 @@ int main() {
     // Load game start
     // ------------------------------------------
 
-    // audio system setup
-    if (!game->getAudio().Initialize()) {
-        std::cerr << "Failed to initialize audio system\n";
-        return 1;
-    }
-    
-    game->getAudio().SetMasterVolume(1.0f);
-    
-    auto music_group = game->getAudio().CreateGroup("music");
-    
-    game->getAudio().SetGroupVolume(music_group, 0.7f);
-    
+    // Setup background music
     auto parchment_track = game->getAudio().CreateTrack();
     game->getAudio().AddLayer(parchment_track, "parchment", "sounds/parchment.wav", "music");
     game->getAudio().SetLayerVolume(parchment_track, "parchment", 1.0f);
-    
     game->getAudio().PlayTrack(parchment_track);
 
     // load levels

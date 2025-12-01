@@ -178,11 +178,11 @@ Menu* MenuManager::createSettingsMenu() {
         {sliderMaxX, sliderStartY}, 
         {.pegMaterial = game->getMaterial("box")}
     );
+    masterSlider->setProportion(game->getAudio().GetMasterVolume());
     masterSlider->getBar()->setLayer(0.54f);
     masterSlider->getPeg()->setLayer(0.56f);
     masterSlider->setCallback([this](float proportion) {
-        // TODO: Set master volume
-        std::cout << "Master volume: " << proportion << std::endl;
+        this->game->getAudio().SetMasterVolume(proportion);
     });
     settingsMenu->addElement(masterSlider);
     
@@ -201,11 +201,11 @@ Menu* MenuManager::createSettingsMenu() {
         {sliderMaxX, sliderStartY - sliderSpacing},
         {.pegMaterial = game->getMaterial("box")}
     );
+    musicSlider->setProportion(game->getAudio().GetGroupVolume(game->getMusicGroup()));
     musicSlider->getBar()->setLayer(0.54f);
     musicSlider->getPeg()->setLayer(0.56f);
     musicSlider->setCallback([this](float proportion) {
-        // TODO: Set music volume
-        std::cout << "Music volume: " << proportion << std::endl;
+        this->game->getAudio().SetGroupVolume(this->game->getMusicGroup(), proportion);
     });
     settingsMenu->addElement(musicSlider);
     
@@ -224,11 +224,11 @@ Menu* MenuManager::createSettingsMenu() {
         {sliderMaxX, sliderStartY - sliderSpacing * 2},
         {.pegMaterial = game->getMaterial("box")}
     );
+    sfxSlider->setProportion(game->getAudio().GetGroupVolume(game->getSFXGroup()));
     sfxSlider->getBar()->setLayer(0.54f);
     sfxSlider->getPeg()->setLayer(0.56f);
     sfxSlider->setCallback([this](float proportion) {
-        // TODO: Set SFX volume
-        std::cout << "SFX volume: " << proportion << std::endl;
+        this->game->getAudio().SetGroupVolume(this->game->getSFXGroup(), proportion);
     });
     settingsMenu->addElement(sfxSlider);
 

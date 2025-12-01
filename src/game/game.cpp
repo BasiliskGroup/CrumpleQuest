@@ -3,6 +3,7 @@
 #include "resource/animation.h"
 #include "resource/animator.h"
 #include "weapon/weapon.h"
+#include <iostream>
 
 Game::Game() : 
     player(nullptr), 
@@ -14,9 +15,25 @@ Game::Game() :
     menuManager(nullptr),
     playerAnimator(nullptr),
     menuScene(nullptr),
-    menuCamera(nullptr)
+    menuCamera(nullptr),
+    musicGroup(0),
+    sfxGroup(0)
 {
     this->engine = new Engine(800, 450, "Crumple Quest");
+    
+    // Initialize audio system
+    if (!audioManager.Initialize()) {
+        std::cerr << "Failed to initialize audio system\n";
+    }
+    
+    // Create audio groups
+    musicGroup = audioManager.CreateGroup("music");
+    sfxGroup = audioManager.CreateGroup("sfx");
+    
+    // Set initial volumes
+    audioManager.SetMasterVolume(1.0f);
+    audioManager.SetGroupVolume(musicGroup, 0.7f);
+    audioManager.SetGroupVolume(sfxGroup, 1.0f);
     
     // Create menu scene
     menuScene = new Scene2D(engine);
