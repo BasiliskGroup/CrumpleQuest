@@ -193,7 +193,6 @@ bool DyMesh::paste(const DyMesh& other, int expected) {
     try {
         unionSol = Union(a, b, FillRule::NonZero);
     } catch (...) {
-        std::cout << "paste union failed" << std::endl;
         return false;
     }
 
@@ -201,7 +200,6 @@ bool DyMesh::paste(const DyMesh& other, int expected) {
 
     if (newRegion.size() < 3) {
         if (expected > 0) {
-            std::cout << "paste region is 0" << std::endl;
             return false;
         }
         region.clear();
@@ -212,7 +210,6 @@ bool DyMesh::paste(const DyMesh& other, int expected) {
     ensureCCW(newRegion);
 
     if (expected != -1 && newRegion.size() != expected) {
-        std::cout << "paste incorrect vertex count " << newRegion.size() << " " << expected << std::endl;
         return false;
     }
 
@@ -448,11 +445,7 @@ bool DyMesh::canMergeRegions(const UVRegion& r1, const UVRegion& r2, std::vector
 void DyMesh::cleanupDegenerateRegions() {
     const float eps = 1e-5f;
     
-    std::cout << "\n--- Cleaning up degenerate regions ---" << std::endl;
-    std::cout << "Initial region count: " << regions.size() << std::endl;
-    
     for (size_t i = 0; i < regions.size(); ) {
-        std::cout << "Checking region " << i << " (" << regions[i].positions.size() << " vertices)..." << std::endl;
         
         // Remove duplicate vertices
         std::vector<vec2> cleanedPos;
@@ -461,8 +454,6 @@ void DyMesh::cleanupDegenerateRegions() {
             bool isDup = false;
             for (size_t k = 0; k < cleanedPos.size(); ++k) {
                 if (glm::length(regions[i].positions[j] - cleanedPos[k]) < eps) {
-                    std::cout << "  Removing duplicate at (" << regions[i].positions[j].x 
-                             << ", " << regions[i].positions[j].y << ")" << std::endl;
                     isDup = true;
                     break;
                 }
@@ -474,8 +465,6 @@ void DyMesh::cleanupDegenerateRegions() {
         
         // Check if region is degenerate after cleanup
         if (cleanedPos.size() < 3) {
-            std::cout << "  Region " << i << " is degenerate (only " << cleanedPos.size() 
-                     << " unique vertices), removing" << std::endl;
             regions.erase(regions.begin() + i);
             continue;
         }
@@ -493,30 +482,20 @@ void DyMesh::cleanupDegenerateRegions() {
         // This preserves small but legitimate triangles from fold operations
         const float minArea = 0.01f;
         if (area < minArea) {
-            std::cout << "  Region " << i << " has area " << area << " (microscopic artifact), removing" << std::endl;
             regions.erase(regions.begin() + i);
             continue;
         }
         
         // Update region if we removed duplicates (basis stays the same)
         if (cleanedPos.size() != regions[i].positions.size()) {
-            std::cout << "  Region " << i << " cleaned: " << regions[i].positions.size() 
-                     << " -> " << cleanedPos.size() << " vertices" << std::endl;
             regions[i].positions = cleanedPos;
-        } else {
-            std::cout << "  Region " << i << " is valid (area=" << area << ")" << std::endl;
         }
         
         ++i;
     }
-    
-    std::cout << "Final region count after cleanup: " << regions.size() << std::endl;
 }
 
 void DyMesh::removeContainedRegions() {
-    std::cout << "\n--- Removing contained regions ---" << std::endl;
-    std::cout << "Initial region count: " << regions.size() << std::endl;
-    
     if (regions.size() < 2) return;
     
     const double eps = 1e-6;
@@ -545,9 +524,6 @@ void DyMesh::removeContainedRegions() {
             
             // If union area equals area of j, then region i is contained within region j
             if (std::abs(unionArea - areaJ) < eps) {
-                std::cout << "  Region " << i << " (area=" << areaI / (CLIPPER_SCALE * CLIPPER_SCALE) 
-                         << ") is contained by region " << j << " (area=" << areaJ / (CLIPPER_SCALE * CLIPPER_SCALE) 
-                         << "), removing region " << i << std::endl;
                 regions.erase(regions.begin() + i);
                 wasRemoved = true;
                 break;
@@ -559,7 +535,6 @@ void DyMesh::removeContainedRegions() {
         }
     }
     
-    std::cout << "Region count after removing contained: " << regions.size() << std::endl;
 }
 
 UVRegion DyMesh::mergeTwo(const UVRegion& r1, const UVRegion& r2) const {
@@ -590,11 +565,7 @@ UVRegion DyMesh::mergeTwo(const UVRegion& r1, const UVRegion& r2) const {
 }
 
 void DyMesh::mergeAllRegions() {
-    std::cout << "\n===== Starting mergeAllRegions =====" << std::endl;
-    std::cout << "Initial region count: " << regions.size() << std::endl;
-    
     if (regions.size() < 2) {
-        std::cout << "mergeAllRegions: Too few regions, skipping" << std::endl;
         return;
     }
     
@@ -602,7 +573,6 @@ void DyMesh::mergeAllRegions() {
     cleanupDegenerateRegions();
     
     if (regions.size() < 2) {
-        std::cout << "mergeAllRegions: Too few regions after cleanup, done" << std::endl;
         return;
     }
     
@@ -610,18 +580,13 @@ void DyMesh::mergeAllRegions() {
     removeContainedRegions();
     
     if (regions.size() < 2) {
-        std::cout << "mergeAllRegions: Too few regions after removing contained, done" << std::endl;
         return;
     }
     
     bool anyMerged = true;
-    int iteration = 0;
     
     while (anyMerged && regions.size() > 1) {
         anyMerged = false;
-        iteration++;
-        std::cout << "\n--- Merge Iteration " << iteration << " ---" << std::endl;
-        std::cout << "Current region count: " << regions.size() << std::endl;
         
         // Try to merge each pair of regions
         for (size_t i = 0; i < regions.size(); ++i) {
@@ -634,28 +599,8 @@ void DyMesh::mergeAllRegions() {
                 if (hasShared) {
                     // Check if UVs are compatible on the shared edge
                     if (!hasCompatibleUVs(regions[i], regions[j], sharedEdge)) {
-                        std::cout << "  Regions " << i << " and " << j << " share edge but have incompatible UVs" << std::endl;
-                        
-                        // Print UV details for debugging
-                        std::cout << "    Region " << i << " edge UVs: ";
-                        for (const vec2& pt : sharedEdge) {
-                            vec2 uv = regions[i].sampleUV(pt);
-                            std::cout << "(" << uv.x << "," << uv.y << ") ";
-                        }
-                        std::cout << std::endl;
-                        
-                        std::cout << "    Region " << j << " edge UVs: ";
-                        for (const vec2& pt : sharedEdge) {
-                            vec2 uv = regions[j].sampleUV(pt);
-                            std::cout << "(" << uv.x << "," << uv.y << ") ";
-                        }
-                        std::cout << std::endl;
-                        
                         continue;
                     }
-                    
-                    std::cout << "  Merging regions " << i << " (size=" << regions[i].positions.size() 
-                             << ") and " << j << " (size=" << regions[j].positions.size() << ")" << std::endl;
                     
                     // Merge the regions
                     UVRegion merged = mergeTwo(regions[i], regions[j]);
@@ -667,7 +612,6 @@ void DyMesh::mergeAllRegions() {
                     regions.erase(regions.begin() + j);
                     
                     anyMerged = true;
-                    std::cout << "  Successfully merged! New region count: " << regions.size() << std::endl;
                     
                     // Restart the search since indices changed
                     break;
@@ -681,13 +625,7 @@ void DyMesh::mergeAllRegions() {
     // Final cleanup
     cleanupDegenerateRegions();
     
-    std::cout << "\n===== Finished mergeAllRegions =====" << std::endl;
-    std::cout << "Final region count: " << regions.size() << std::endl;
-    
     if (regions.size() > 1) {
-        std::cout << "\nNOTE: " << regions.size() << " separate regions remain." << std::endl;
-        std::cout << "Analyzing remaining regions:" << std::endl;
-        
         for (size_t i = 0; i < regions.size(); ++i) {
             float area = 0.0f;
             for (size_t j = 0; j < regions[i].positions.size(); ++j) {
@@ -696,18 +634,6 @@ void DyMesh::mergeAllRegions() {
                 area += (p1.x * p2.y - p2.x * p1.y);
             }
             area = std::abs(area) * 0.5f;
-            
-            std::cout << "  Region " << i << ": " << regions[i].positions.size() 
-                     << " vertices, area=" << area << std::endl;
-            std::cout << "    Positions: ";
-            for (const vec2& p : regions[i].positions) {
-                std::cout << "(" << p.x << "," << p.y << ") ";
-            }
-            std::cout << std::endl;
         }
-        
-        std::cout << "\nPossible reasons:" << std::endl;
-        std::cout << "  - Regions have incompatible UVs (texture seams)" << std::endl;
-        std::cout << "  - Regions don't share edges (separated/interior regions)" << std::endl;
     }
 }

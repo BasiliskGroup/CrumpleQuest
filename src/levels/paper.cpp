@@ -306,27 +306,14 @@ void Paper::pushFold(Fold& newFold) {
     }
     ensureCCW(foldedCutVerts);
 
-    std::cout << "\n=== OVERHANG DEBUG ===" << std::endl;
-    std::cout << "cutVerts size: " << newFold.cutVerts.size() << std::endl;
-    std::cout << "foldedCutVerts size: " << foldedCutVerts.size() << std::endl;
-    std::cout << "paperMesh->region size: " << paperMesh->region.size() << std::endl;
-
     // Find overhang: part of folded region outside paper boundary
     Paths64 foldedPath = makePaths64FromRegion(foldedCutVerts);
     Paths64 paperPath = makePaths64FromRegion(paperMesh->region);
     Paths64 overhangPath;
     
-    std::cout << "foldedPath size: " << foldedPath.size() << std::endl;
-    std::cout << "paperPath size: " << paperPath.size() << std::endl;
-    
     try {
         overhangPath = Difference(foldedPath, paperPath, FillRule::NonZero);
-        std::cout << "overhangPath size after Difference: " << overhangPath.size() << std::endl;
-        if (!overhangPath.empty()) {
-            std::cout << "overhangPath[0] points: " << overhangPath[0].size() << std::endl;
-        }
     } catch (...) {
-        std::cout << "Difference threw exception!" << std::endl;
         overhangPath.clear();
     }
 
@@ -336,8 +323,6 @@ void Paper::pushFold(Fold& newFold) {
     
     // Process ALL overhang paths, not just the largest one
     if (!overhangPath.empty()) {
-        std::cout << "Processing " << overhangPath.size() << " overhang path(s)" << std::endl;
-        
         for (size_t pathIdx = 0; pathIdx < overhangPath.size(); ++pathIdx) {
             const Path64& path = overhangPath[pathIdx];
             
@@ -352,10 +337,7 @@ void Paper::pushFold(Fold& newFold) {
             }
             overhangPositions = simplifyCollinear(overhangPositions);
             
-            std::cout << "  Overhang path " << pathIdx << " size: " << overhangPositions.size() << std::endl;
-            
             if (overhangPositions.size() < 3) {
-                std::cout << "    Skipping (too few vertices)" << std::endl;
                 continue;
             }
             
@@ -363,7 +345,6 @@ void Paper::pushFold(Fold& newFold) {
             
             // Save overhang in front-side coordinates
             overhangFrontRegions.push_back(overhangPositions);
-            std::cout << "    overhangFrontRegion[" << pathIdx << "] saved with " << overhangPositions.size() << " vertices" << std::endl;
             
             // Reflect overhang positions back to get source positions on original paper
             std::vector<vec2> overhangSourcePositions;
@@ -380,14 +361,12 @@ void Paper::pushFold(Fold& newFold) {
             bool copySuccess = overhangSource->copy(*paperMesh);
             if (!copySuccess && backMeshForCopy) {
                 // Try the back mesh - the overhang might have come from the other side
-                std::cout << "    overhangSource->copy from front FAILED, trying back mesh..." << std::endl;
                 delete overhangSource;
                 overhangSource = new DyMesh(overhangSourcePositions);
                 copySuccess = overhangSource->copy(*backMeshForCopy);
             }
             
             if (copySuccess) {
-                std::cout << "    overhangSource->copy succeeded" << std::endl;
                 
                 // Mirror over crease to get to overhang's front-side position (with UVs)
                 DyMesh* overhangMirrored = overhangSource->mirror(newFold.creasePos, newFold.creaseDir);
@@ -403,28 +382,21 @@ void Paper::pushFold(Fold& newFold) {
                 }
                 std::reverse(overhangBackRegion.begin(), overhangBackRegion.end());
                 overhangBackRegions.push_back(overhangBackRegion);
-                std::cout << "    overhangBackRegion[" << pathIdx << "] saved with " << overhangBackRegion.size() << " vertices" << std::endl;
                 
                 // Paste onto back paper
                 backCopy->paste(*overhangMirrored);
                 
                 delete overhangMirrored;
             } else {
-                std::cout << "    overhangSource->copy FAILED (both front and back)" << std::endl;
             }
             delete overhangSource;
         }
     } else {
-        std::cout << "No overhang detected (overhangPath empty)" << std::endl;
     }
 
     // Set front side region - union with ALL overhang regions
     std::vector<vec2> frontRegion = newFold.cleanVerts;
     ensureCCW(frontRegion);
-    
-    std::cout << "\n--- Front region processing ---" << std::endl;
-    std::cout << "frontRegion (cleanVerts) size: " << frontRegion.size() << std::endl;
-    std::cout << "overhangFrontRegions count: " << overhangFrontRegions.size() << std::endl;
     
     if (!overhangFrontRegions.empty()) {
         // Snap overhang vertices to frontRegion vertices to fix precision issues
@@ -454,11 +426,9 @@ void Paper::pushFold(Fold& newFold) {
             if (firstOverhang) {
                 allOverhangsPath = overhangFrontPath;
                 firstOverhang = false;
-                std::cout << "  Starting with overhang " << i << std::endl;
             } else {
                 try {
                     allOverhangsPath = Union(allOverhangsPath, overhangFrontPath, FillRule::NonZero);
-                    std::cout << "  Added overhang " << i << ", total paths: " << allOverhangsPath.size() << std::endl;
                 } catch (...) {
                     std::cout << "  Failed to union overhang " << i << std::endl;
                 }
@@ -469,44 +439,31 @@ void Paper::pushFold(Fold& newFold) {
         Paths64 frontPath = makePaths64FromRegion(frontRegion);
         Paths64 combinedPath;
         
-        std::cout << "  Attempting final front union (frontRegion + all overhangs)..." << std::endl;
-        
         try {
             combinedPath = Union(frontPath, allOverhangsPath, FillRule::NonZero);
-            std::cout << "    Front union result paths: " << combinedPath.size() << std::endl;
         } catch (...) {
-            std::cout << "    Front union threw exception" << std::endl;
             combinedPath = frontPath;
         }
         
         std::vector<vec2> combinedRegion = makeRegionFromPaths64(combinedPath);
-        std::cout << "Final combinedRegion size: " << combinedRegion.size() << std::endl;
         
         if (combinedRegion.size() >= 3) {
             combinedRegion = simplifyCollinear(combinedRegion);
             ensureCCW(combinedRegion);
             paperCopy->region = combinedRegion;
-            std::cout << "Front region set to combined (" << combinedRegion.size() << " verts)" << std::endl;
         } else {
             paperCopy->region = frontRegion;
-            std::cout << "Combined too small, using frontRegion" << std::endl;
         }
     } else {
         paperCopy->region = frontRegion;
-        std::cout << "No overhang for front, using frontRegion" << std::endl;
     }
     paperCopy->pruneDups();
-    std::cout << "Final front region size: " << paperCopy->region.size() << std::endl;
 
     // Set back side region - start with cleanFlipped
     std::vector<vec2> cleanFlipped;
     for (const auto& v : newFold.cleanVerts) cleanFlipped.push_back({ -v.x, v.y });
     std::reverse(cleanFlipped.begin(), cleanFlipped.end());
     ensureCCW(cleanFlipped);
-
-    std::cout << "\n--- Back region processing ---" << std::endl;
-    std::cout << "cleanFlipped size: " << cleanFlipped.size() << std::endl;
-    std::cout << "overhangBackRegions count: " << overhangBackRegions.size() << std::endl;
 
     // Union ALL overhang regions with the back region
     if (!overhangBackRegions.empty()) {
@@ -537,11 +494,9 @@ void Paper::pushFold(Fold& newFold) {
             if (firstOverhang) {
                 allOverhangsPath = overhangBackPath;
                 firstOverhang = false;
-                std::cout << "  Starting with overhang " << i << std::endl;
             } else {
                 try {
                     allOverhangsPath = Union(allOverhangsPath, overhangBackPath, FillRule::NonZero);
-                    std::cout << "  Added overhang " << i << ", total paths: " << allOverhangsPath.size() << std::endl;
                 } catch (...) {
                     std::cout << "  Failed to union overhang " << i << std::endl;
                 }
@@ -552,34 +507,26 @@ void Paper::pushFold(Fold& newFold) {
         Paths64 cleanFlippedPath = makePaths64FromRegion(cleanFlipped);
         Paths64 combinedPath;
         
-        std::cout << "  Attempting final back union (cleanFlipped + all overhangs)..." << std::endl;
-        
         try {
             combinedPath = Union(cleanFlippedPath, allOverhangsPath, FillRule::NonZero);
-            std::cout << "    Back union result paths: " << combinedPath.size() << std::endl;
         } catch (...) {
             std::cout << "    Back union threw exception" << std::endl;
             combinedPath = cleanFlippedPath;
         }
         
         std::vector<vec2> combinedRegion = makeRegionFromPaths64(combinedPath);
-        std::cout << "Final combinedRegion size: " << combinedRegion.size() << std::endl;
         
         if (combinedRegion.size() >= 3) {
             combinedRegion = simplifyCollinear(combinedRegion);
             ensureCCW(combinedRegion);
             backCopy->region = combinedRegion;
-            std::cout << "Back region set to combined (" << combinedRegion.size() << " verts)" << std::endl;
         } else {
             backCopy->region = cleanFlipped;
             std::cout << "Combined too small, using cleanFlipped" << std::endl;
         }
     } else {
         backCopy->region = cleanFlipped;
-        std::cout << "No overhang for back, using cleanFlipped" << std::endl;
     }
-    std::cout << "Final back region size: " << backCopy->region.size() << std::endl;
-    std::cout << "=== END OVERHANG DEBUG ===\n" << std::endl;
     
     backCopy->pruneDups();
 
@@ -764,7 +711,7 @@ void Paper::previewFold(const vec2& start, const vec2& end) {
             
             Node2D* edge = new Node2D(game->getScene(), {
                 .mesh = game->getMesh("quad"),
-                .material = game->getMaterial(check ? "green" : "red"),
+                .material = game->getMaterial("green"),
                 .position = vec2{edgeData.first.x, edgeData.first.y},
                 .rotation = edgeData.first.z,
                 .scale = edgeData.second
