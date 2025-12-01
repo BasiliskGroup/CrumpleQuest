@@ -113,6 +113,17 @@ public:
     void dotData();
 
 private:
+    // Shared fold validation and geometry calculation
+    struct FoldGeometry {
+        vec2 foldDir;
+        vec2 creasePos;
+        vec2 edgeIntersectPaper;
+        vec2 nearEdgePointPaper;
+        bool isValid;
+    };
+    FoldGeometry validateFoldGeometry(const vec2& start, const vec2& end);
+
+private:
     void clear();
     PaperMesh* getPaperMesh() { return curSide == 0 ? paperMeshes.first : paperMeshes.second; }
     PaperMesh* getBackPaperMesh() { return curSide == 0 ? paperMeshes.second : paperMeshes.first; }

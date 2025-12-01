@@ -25,7 +25,10 @@ bool Paper::Fold::initialize(PaperMeshPair meshes, const vec2& inCreasePos, cons
     this->creaseDir = inCreaseDir;
 
     // get new fold geometry by intersecting crease with paper
-    auto indexBounds = meshes.first->getVertexRangeBelowThreshold(foldDir, midDot, searchStart);
+    std::pair<int, int> indexBounds;
+    if (!meshes.first->getVertexRangeBelowThreshold(foldDir, midDot, searchStart, indexBounds)) {
+        return false;
+    }
 
     // determine crease intersection with paper
     vec2 foldStart, foldEnd;
