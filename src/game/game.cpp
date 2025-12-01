@@ -1,5 +1,8 @@
 #include "levels/levels.h"
 #include "ui/ui.h"
+#include "resource/animation.h"
+#include "resource/animator.h"
+#include "weapon/weapon.h"
 
 Game::Game() : 
     player(nullptr), 
@@ -8,9 +11,19 @@ Game::Game() :
     currentSide(nullptr),
     paper(nullptr),
     audioManager(audio::AudioManager::GetInstance()),
-    menuManager(nullptr)
+    menuManager(nullptr),
+    playerAnimator(nullptr),
+    menuScene(nullptr),
+    menuCamera(nullptr)
 {
     this->engine = new Engine(800, 450, "Crumple Quest");
+    
+    // Create menu scene
+    menuScene = new Scene2D(engine);
+    menuCamera = new StaticCamera2D(engine);
+    menuCamera->setScale(9.0f);
+    menuScene->setCamera(menuCamera);
+    menuScene->getSolver()->setGravity(0);
 }
 
 Game::~Game() {
@@ -44,6 +57,10 @@ Game::~Game() {
     delete paper; paper = nullptr;
     currentSide = nullptr;
 
+    // Clean up menu scene
+    delete menuCamera; menuCamera = nullptr;
+    delete menuScene; menuScene = nullptr;
+
     // scene2D will handle deletion
     uiElements.clear();
 
@@ -55,18 +72,39 @@ void Game::update(float dt) {
     // always unhide mouse 
     this->engine->getMouse()->setVisible();
 
+    // get mouse state
+    bool leftIsDown = engine->getMouse()->getLeftDown();
+    vec2 mousePos = { 0, 0 };
+    
+    // Use menu camera for mouse position when in menus, otherwise use game camera
+    if (menuManager && menuManager->hasActiveMenu()) {
+        mousePos = { 
+            engine->getMouse()->getWorldX(menuCamera), 
+            engine->getMouse()->getWorldY(menuCamera) 
+        };
+    } else if (currentSide && currentSide->getScene() && currentSide->getScene()->getCamera()) {
+        mousePos = { 
+            engine->getMouse()->getWorldX(getScene()->getCamera()), 
+            engine->getMouse()->getWorldY(getScene()->getCamera()) 
+        };
+    }
+
+    // update menu events
+    if (menuManager) {
+        menuManager->handleEvent(mousePos, leftIsDown);
+    }
+
     // keyboard
     auto keys = this->engine->getKeyboard();
     if (keys->getPressed(GLFW_KEY_F) && kWasDown == false) {
-        paper->flip();
-        this->currentSide = paper->getSingleSide();
+        if (paper) {
+            paper->flip();
+            this->currentSide = paper->getSingleSide();
+        }
     }
     kWasDown = keys->getPressed(GLFW_KEY_F);
 
     // folding
-    bool leftIsDown = engine->getMouse()->getLeftDown();
-    vec2 mousePos = { engine->getMouse()->getWorldX(getScene()->getCamera()), engine->getMouse()->getWorldY(getScene()->getCamera()) };
-
     if (!leftWasDown && leftIsDown) { // we just clicked
         LeftStartDown = mousePos;
         
@@ -98,9 +136,34 @@ void Game::update(float dt) {
         player->move(dt);
     }
 
+    // animator updates
+    if (playerAnimator) {
+        playerAnimator->update();
+    }
+
     // basilisk update
     engine->update();
-    currentSide->update(player->getPosition(), dt);
+    
+    // Update and render scenes
+    if (currentSide) {
+        // Always update game scene if it exists (unless menus are active)
+        if (!menuManager || !menuManager->hasActiveMenu()) {
+            if (player != nullptr) {
+                currentSide->update(player->getPosition(), dt);
+            } else {
+                currentSide->update({0, 0}, dt);
+            }
+        }
+        // Game scene is paused if menus are active, but still rendered
+        currentSide->getScene()->render();
+    }
+    
+    if (menuManager && menuManager->hasActiveMenu()) {
+        // Menu scene renders on top
+        menuScene->update();
+        menuScene->render();
+    }
+    
     engine->render();
 }
 
@@ -112,4 +175,53 @@ void Game::setPaper(std::string str) {
 
 void Game::initMenus() {
     menuManager = new MenuManager(this);
+}
+
+// Spawn in player, enemies, etc
+void Game::startGame() {
+    // Create the game paper and switch to it
+    setPaper("empty");
+    paper->regenerateWalls();
+
+    // create player
+    Node2D* playerNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("knight"), .scale={1, 1}, .collider=getCollider("quad") });
+    Player* player = new Player(3, 3, playerNode, getSide(), nullptr);
+    setPlayer(player);
+
+    // create weapons
+    player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("sword"), .scale={0.75, 0.75}}, { .damage=1, .life=0.2f, .radius=0.5 }, 30.0f));
+
+    // ------------------------------------------
+    // Testing
+    // ------------------------------------------
+
+    Animation* animation = new Animation({getMaterial("box"), getMaterial("man"), getMaterial("knight")});
+    playerAnimator = new Animator(getEngine(), playerNode, animation);
+    playerAnimator->setFrameRate(1);
+
+    // test add button
+    Button* testButton = new Button(getScene(), this, { .mesh=getMesh("quad"), .material=getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 
+        .onDown=[]() { std::cout << "Button Pressed" << std::endl; }
+    });
+
+    // add temp background paper
+    Node2D* paperBackground = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("paper"), .scale={16, 9} });
+    paperBackground->setLayer(-0.9);
+
+    // spawn enemy on click
+    testButton->setOnUp([this]() {
+        Node2D* enemyNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("man"), .position={3, 4}, .scale={0.7, 0.7}, .collider=getCollider("quad") });
+        addEnemy(new Enemy(3, 0.1, enemyNode, getSide(), nullptr, nullptr));
+    });
+
+    addUI(testButton);
+
+    // slider
+    Slider* testSlider = new Slider(getScene(), this, { -4, 4 }, { 0, 4 }, { .pegMaterial=getMaterial("box") });
+    testSlider->setCallback([this](float proportion) {
+        for (Enemy* enemy : getEnemies()) {
+            enemy->setSpeed(5 * proportion);
+        }
+    });
+    addUI(testSlider);
 }

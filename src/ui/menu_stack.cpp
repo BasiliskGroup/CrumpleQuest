@@ -9,34 +9,18 @@ MenuStack::~MenuStack() {
 }
 
 void MenuStack::push(Menu* menu) {
-    // Hide the current top menu if it exists
-    if (!stack.empty()) {
-        stack.back()->hide();
-    }
-    
-    // Add new menu and show it
     stack.push_back(menu);
-    menu->show();
 }
 
 void MenuStack::pop() {
     if (stack.empty()) return;
     
-    // Hide and remove top menu
-    stack.back()->hide();
+    // caller handles deletion
     stack.pop_back();
-    
-    // Show the new top menu if it exists
-    if (!stack.empty()) {
-        stack.back()->show();
-    }
 }
 
 void MenuStack::clear() {
-    // Hide all menus
-    for (auto* menu : stack) {
-        menu->hide();
-    }
+    // caller handles deletion
     stack.clear();
 }
 

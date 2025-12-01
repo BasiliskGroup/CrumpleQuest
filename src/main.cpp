@@ -37,9 +37,8 @@ int main() {
     // audio system setup
     if (!game->getAudio().Initialize()) {
         std::cerr << "Failed to initialize audio system\n";
-        // return 1;
+        return 1;
     }
-    std::cout << "Audio system initialized successfully\n";
     
     game->getAudio().SetMasterVolume(1.0f);
     
@@ -56,60 +55,13 @@ int main() {
     // load levels
     SingleSide::generateTemplates(game);
     Paper::generateTemplates(game);
-    game->setPaper("empty");
 
-    game->getPaper()->regenerateWalls();
-
-    // initialize menus (after scene is ready)
+    // initialize menus (menu scene is ready)
     game->initMenus();
-    
-    game->getMenus()->showMainMenu();
-
-    // create player
-    Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}, .collider=game->getCollider("quad") });
-    Player* player = new Player(3, 3, playerNode, game->getSide(), nullptr);
-    game->setPlayer(player);
-
-    // create weapons
-    player->setWeapon(new MeleeWeapon(player, { .mesh=game->getMesh("quad"), .material=game->getMaterial("sword"), .scale={0.75, 0.75}}, { .damage=1, .life=0.2f, .radius=0.5 }, 30.0f));
-
-    // ------------------------------------------
-    // Testing
-    // ------------------------------------------
-
-    Animation* animation = new Animation({game->getMaterial("box"), game->getMaterial("man"), game->getMaterial("knight")});
-    Animator* playerAnimator = new Animator(game->getEngine(), playerNode, animation);
-    playerAnimator->setFrameRate(1);
-
-    // test add button
-    Button* testButton = new Button(game, { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 
-        .onDown=[]() { std::cout << "Button Pressed" << std::endl; }
-    });
-
-    // add temp background paper
-    Node2D* paperBackground = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("paper"), .scale={16, 9} });
-    paperBackground->setLayer(-0.9);
-
-    // spawn enemy on click
-    testButton->setOnUp([game]() {
-        Node2D* enemyNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position={3, 4}, .scale={0.7, 0.7}, .collider=game->getCollider("quad") });
-        game->addEnemy(new Enemy(3, 0.1, enemyNode, game->getSide(), nullptr, nullptr));
-    });
-
-    game->addUI(testButton);
-
-    // slider
-    Slider* testSlider = new Slider(game, { -4, 4 }, { 0, 4 }, { .pegMaterial=game->getMaterial("box") });
-    testSlider->setCallback([game](float proportion) {
-        for (Enemy* enemy : game->getEnemies()) {
-            enemy->setSpeed(5 * proportion);
-        }
-    });
-    game->addUI(testSlider);
+    game->getMenus()->pushMainMenu();
 
     while (game->getEngine()->isRunning()) {
         game->update(game->getEngine()->getDeltaTime());
-        playerAnimator->update();
     }
     
     delete game;

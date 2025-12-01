@@ -21,6 +21,7 @@ public:
     // Get current menu
     Menu* top() const;
     bool empty() const { return stack.empty(); }
+    bool hasActiveMenu() const { return !stack.empty(); }
     
     // Event handling - only passes to top menu
     void handleEvent(const vec2& mousePos, bool mouseDown);

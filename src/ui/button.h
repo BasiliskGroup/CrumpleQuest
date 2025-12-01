@@ -23,7 +23,7 @@ private:
     Game* game;
 
 public:
-    Button(Game* game, Node2D::Params params, Button::Params callbacks);
+    Button(Scene2D* scene, Game* game, Node2D::Params params, Button::Params callbacks);
     ~Button() = default;
     
     // Rule of 5

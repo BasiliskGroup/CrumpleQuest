@@ -4,30 +4,31 @@
 #include "game/game.h"
 #include <iostream>
 
-MenuManager::MenuManager(Game* game) : game(game), mainMenu(nullptr), settingsMenu(nullptr) {
+MenuManager::MenuManager(Game* game) : game(game) {
     menuStack = new MenuStack();
-    
-    // Create all menus
-    createMainMenu();
-    createSettingsMenu();
 }
 
 MenuManager::~MenuManager() {
-    delete mainMenu;
-    delete settingsMenu;
     delete menuStack;
 }
 
-void MenuManager::showMainMenu() {
+void MenuManager::pushMainMenu() {
+    Menu* mainMenu = createMainMenu();
     menuStack->push(mainMenu);
 }
 
-void MenuManager::showSettingsMenu() {
+void MenuManager::pushSettingsMenu() {
+    Menu* settingsMenu = createSettingsMenu();
     menuStack->push(settingsMenu);
 }
 
 void MenuManager::popMenu() {
+    if (!menuStack || !menuStack->top()) {
+        return;
+    }
+    Menu* menu = menuStack->top();
     menuStack->pop();
+    delete menu;  // Delete the menu when hiding it
 }
 
 void MenuManager::handleEvent(const vec2& mousePos, bool mouseDown) {
@@ -35,20 +36,36 @@ void MenuManager::handleEvent(const vec2& mousePos, bool mouseDown) {
 }
 
 void MenuManager::update(float dt) {
+    // Delete any menus marked for deletion
+    for (Menu* menu : pendingDelete) {
+        delete menu;
+    }
+    pendingDelete.clear();
+    
     menuStack->update(dt);
 }
 
-void MenuManager::createMainMenu() {
-    mainMenu = new Menu(game);
+Menu* MenuManager::createMainMenu() {
+    Menu* mainMenu = new Menu(game);
+    
+    // Main menu at layer 0.1-0.3
+    // Create background
+    Node2D* background = new Node2D(game->getMenuScene(), {
+        .mesh = game->getMesh("quad"),
+        .material = game->getMaterial("paper"),
+        .scale = {16, 9}
+    });
+    background->setLayer(0.1f);
+    mainMenu->addNode(background);
     
     // Create title
-    Node2D* title = new Node2D(game->getScene(), {
+    Node2D* title = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("paper"), // Replace with your title material
+        .material = game->getMaterial("paper"),
         .position = {0, 3},
         .scale = {6, 2}
     });
-    title->setLayer(0.95);
+    title->setLayer(0.2f);
     mainMenu->addNode(title);
 
     // Button layout
@@ -58,7 +75,7 @@ void MenuManager::createMainMenu() {
     float buttonHeight = 1.0f;
 
     // Settings button (left)
-    Button* settingsButton = new Button(game, 
+    Button* settingsButton = new Button(game->getMenuScene(), game, 
         {
             .mesh = game->getMesh("quad"),
             .material = game->getMaterial("box"),
@@ -67,15 +84,15 @@ void MenuManager::createMainMenu() {
         },
         {
             .onUp = [this]() { 
-                std::cout << "Settings clicked" << std::endl;
-                this->showSettingsMenu();
+                this->pushSettingsMenu();
             }
         }
     );
-    mainMenu->addInteractive(settingsButton);
+    settingsButton->setLayer(0.3f);
+    mainMenu->addNode(settingsButton);
 
     // Start button (center)
-    Button* startButton = new Button(game,
+    Button* startButton = new Button(game->getMenuScene(), game,
         {
             .mesh = game->getMesh("quad"),
             .material = game->getMaterial("lightGrey"),
@@ -83,16 +100,20 @@ void MenuManager::createMainMenu() {
             .scale = {buttonWidth, buttonHeight}
         },
         {
-            .onUp = [this]() { 
-                std::cout << "Start clicked" << std::endl;
-                // TODO: Start the game
+            .onUp = [this]() {
+                // Mark menu for deletion after this callback completes
+                Menu* menu = this->menuStack->top();
+                this->menuStack->clear();
+                this->pendingDelete.push_back(menu);
+                this->game->startGame();
             }
         }
     );
-    mainMenu->addInteractive(startButton);
+    startButton->setLayer(0.3f);
+    mainMenu->addNode(startButton);
 
     // Quit button (right)
-    Button* quitButton = new Button(game,
+    Button* quitButton = new Button(game->getMenuScene(), game,
         {
             .mesh = game->getMesh("quad"),
             .material = game->getMaterial("man"),
@@ -101,29 +122,41 @@ void MenuManager::createMainMenu() {
         },
         {
             .onUp = [this]() { 
-                std::cout << "Quit clicked" << std::endl;
                 // TODO: Quit the game
             }
         }
     );
-    mainMenu->addInteractive(quitButton);
+    quitButton->setLayer(0.3f);
+    mainMenu->addNode(quitButton);
+    
+    return mainMenu;
 }
 
-void MenuManager::createSettingsMenu() {
-    settingsMenu = new Menu(game);
+Menu* MenuManager::createSettingsMenu() {
+    Menu* settingsMenu = new Menu(game);
+    
+    // Settings menu at layer 0.4-0.6 (above main menu)
+    // Create background
+    Node2D* background = new Node2D(game->getMenuScene(), {
+        .mesh = game->getMesh("quad"),
+        .material = game->getMaterial("box"),  // Different material to see it
+        .scale = {16, 9}
+    });
+    background->setLayer(0.4f);
+    settingsMenu->addNode(background);
     
     // Create title
-    Node2D* title = new Node2D(game->getScene(), {
+    Node2D* title = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("paper"),
+        .material = game->getMaterial("lightGrey"),  // Different material
         .position = {0, 3},
         .scale = {4, 1.5}
     });
-    title->setLayer(0.95);
+    title->setLayer(0.5f);
     settingsMenu->addNode(title);
 
     // Back button
-    Button* backButton = new Button(game,
+    Button* backButton = new Button(game->getMenuScene(), game,
         {
             .mesh = game->getMesh("quad"),
             .material = game->getMaterial("box"),
@@ -132,12 +165,14 @@ void MenuManager::createSettingsMenu() {
         },
         {
             .onUp = [this]() { 
-                std::cout << "Back clicked" << std::endl;
                 this->popMenu();
             }
         }
     );
-    settingsMenu->addInteractive(backButton);
+    backButton->setLayer(0.6f);
+    settingsMenu->addNode(backButton);
     
     // TODO: Add sliders and other settings controls here
+    
+    return settingsMenu;
 }

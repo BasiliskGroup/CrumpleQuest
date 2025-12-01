@@ -35,7 +35,7 @@ private:
     Game* game;
 
 public:
-    Slider(Game* game, const vec2& start, const vec2& end, Params params);
+    Slider(Scene2D* scene, Game* game, const vec2& start, const vec2& end, Params params);
     ~Slider();
     
     // Rule of 5

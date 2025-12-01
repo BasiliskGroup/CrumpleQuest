@@ -1,6 +1,6 @@
 #include "ui/ui.h"
 
-Slider::Slider(Game* game, const vec2& start, const vec2& end, Params params) :
+Slider::Slider(Scene2D* scene, Game* game, const vec2& start, const vec2& end, Params params) :
     game(game),
     start(start),
     end(end)
@@ -16,7 +16,7 @@ Slider::Slider(Game* game, const vec2& start, const vec2& end, Params params) :
     float width = end.x - start.x;
 
     // peg
-    peg = new Button(game, { 
+    peg = new Button(scene, game, { 
         .mesh = params.pegMesh ? params.pegMesh : game->getMesh("quad"), 
         .material = params.pegMaterial ? params.pegMaterial : deflt,
         .scale = params.pegDim
@@ -29,7 +29,7 @@ Slider::Slider(Game* game, const vec2& start, const vec2& end, Params params) :
     setProportion(params.startProportion);
 
     // slider bar
-    bar = new Node2D(game->getScene(), { 
+    bar = new Node2D(scene, { 
         .mesh = game->getMesh("quad"),
         .material = params.barMaterial ? params.barMaterial : deflt,
         .position = mid,

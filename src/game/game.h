@@ -7,9 +7,11 @@
 #include "levels/paper.h"
 #include "audio/audio_manager.h"
 #include "ui/menu_manager.h"
+#include "resource/animator.h"
 
 class Floor;
 class UIElement;
+class Animator;
 
 class Game {
 private:
@@ -26,6 +28,10 @@ private:
     SingleSide* currentSide;
     Paper* paper;
 
+    // menu scene (separate from game scene)
+    Scene2D* menuScene;
+    StaticCamera2D* menuCamera;
+
     // track inputs
     bool leftWasDown = false;
     vec2 LeftStartDown = vec2();
@@ -37,6 +43,9 @@ private:
 
     // menu manager
     MenuManager* menuManager;
+
+    // player animator
+    Animator* playerAnimator;
 
     // TODO maybe nove these to ui scenes
     std::vector<UIElement*> uiElements;
@@ -64,6 +73,7 @@ public:
 
     Engine*& getEngine() { return engine; }
     Scene2D* getScene() { return currentSide->getScene(); }
+    Scene2D* getMenuScene() { return menuScene; }
     Paper* getPaper() { return paper; }
     SingleSide*& getSide() { return currentSide; }
 
@@ -75,6 +85,9 @@ public:
 
     // initialization
     void initMenus();
+
+    // game flow
+    void startGame();
 
     void update(float dt);
 };
