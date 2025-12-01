@@ -3,14 +3,31 @@
 #include "ui/button.h"
 #include "ui/slider.h"
 #include "game/game.h"
+#include "audio/random_sound_container.h"
 #include <iostream>
 
 MenuManager::MenuManager(Game* game) : game(game) {
     menuStack = new MenuStack();
+    
+    // Create random sound container for touch sounds with pitch variation
+    audio::RandomSoundContainerConfig config;
+    config.avoidRepeat = true;
+    config.pitchMin = 0.8f;  // Slight pitch variation for more natural sound
+    config.pitchMax = 1.2f;
+    config.group = game->getSFXGroup();
+    
+    touchSoundContainer = std::make_unique<audio::RandomSoundContainer>("MenuTouchSounds", config);
+    touchSoundContainer->LoadFromFolder("sounds/sfx/paper/touch_sounds");
 }
 
 MenuManager::~MenuManager() {
     delete menuStack;
+}
+
+void MenuManager::playMenuTouchSound() {
+    if (touchSoundContainer) {
+        touchSoundContainer->Play();
+    }
 }
 
 void MenuManager::pushMainMenu() {
@@ -50,14 +67,19 @@ Menu* MenuManager::createMainMenu() {
     Menu* mainMenu = new Menu(game);
     
     // Main menu at layer 0.1-0.3
-    // Create background
-    Node2D* background = new Node2D(game->getMenuScene(), {
+    // Create background (clickable to play paper touch sound)
+    Button* background = new Button(game->getMenuScene(), game, {
         .mesh = game->getMesh("quad"),
         .material = game->getMaterial("paper"),
         .scale = {16, 9}
+    },
+    {
+        .onDown = [this]() {
+            playMenuTouchSound();
+        }
     });
     background->setLayer(0.1f);
-    mainMenu->addNode(background);
+    mainMenu->addElement(background);
     
     // Create title
     Node2D* title = new Node2D(game->getMenuScene(), {
@@ -84,7 +106,7 @@ Menu* MenuManager::createMainMenu() {
             .scale = {buttonWidth, buttonHeight}
         },
         {
-            .onUp = [this]() { 
+            .onUp = [this]() {
                 this->pushSettingsMenu();
             }
         }
@@ -122,7 +144,7 @@ Menu* MenuManager::createMainMenu() {
             .scale = {buttonWidth, buttonHeight}
         },
         {
-            .onUp = [this]() { 
+            .onUp = [this]() {
                 glfwSetWindowShouldClose(this->game->getEngine()->getWindow()->getWindow(), GLFW_TRUE);
             }
         }
@@ -136,14 +158,19 @@ Menu* MenuManager::createMainMenu() {
 Menu* MenuManager::createSettingsMenu() {
     Menu* settingsMenu = new Menu(game);
     
-    // Create background
-    Node2D* background = new Node2D(game->getMenuScene(), {
+    // Create background (clickable to play paper touch sound)
+    Button* background = new Button(game->getMenuScene(), game, {
         .mesh = game->getMesh("quad"),
         .material = game->getMaterial("box"),
         .scale = {16, 9}
+    },
+    {
+        .onDown = [this]() {
+            this->playMenuTouchSound();
+        }
     });
     background->setLayer(0.4f);
-    settingsMenu->addNode(background);
+    settingsMenu->addElement(background);
     
     // Create title
     Node2D* title = new Node2D(game->getMenuScene(), {
@@ -241,7 +268,7 @@ Menu* MenuManager::createSettingsMenu() {
             .scale = {2, 1}
         },
         {
-            .onUp = [this]() { 
+            .onUp = [this]() {
                 this->popMenu();
             }
         }
