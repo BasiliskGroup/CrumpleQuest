@@ -2,7 +2,9 @@
 #include "audio/audio_manager.h"
 #include <iostream>
 #include <random>
-#include <windows.h>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace audio {
 
@@ -32,30 +34,29 @@ void RandomSoundContainer::AddSound(const std::string& filepath) {
 
 void RandomSoundContainer::LoadFromFolder(const std::string& folderPath) {
     AudioManager& audio = AudioManager::GetInstance();
-    
-    WIN32_FIND_DATAA findData;
-    std::string searchPath = folderPath + "/*.wav";
-    HANDLE hFind = FindFirstFileA(searchPath.c_str(), &findData);
-    
-    if (hFind == INVALID_HANDLE_VALUE) {
-        std::cout << "RandomSoundContainer '" << name_ << "': No .wav files found in folder: " << folderPath << std::endl;
+
+    fs::path dir(folderPath);
+    if (!fs::exists(dir) || !fs::is_directory(dir)) {
+        std::cout << "RandomSoundContainer '" << name_
+                  << "': Folder does not exist: " << folderPath << std::endl;
         return;
     }
-    
+
     int count = 0;
-    do {
-        if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-            std::string filename = findData.cFileName;
-            if (filename.size() >= 4 && filename.substr(filename.size() - 4) == ".wav") {
-                std::string fullPath = folderPath + "/" + filename;
-                AddSound(fullPath);
-                count++;
-            }
+    for (const auto& entry : fs::directory_iterator(dir)) {
+        if (!entry.is_regular_file())
+            continue;
+
+        auto path = entry.path();
+        if (path.extension() == ".wav") {
+            AddSound(path.string());
+            count++;
         }
-    } while (FindNextFileA(hFind, &findData) != 0);
-    
-    FindClose(hFind);
-    std::cout << "RandomSoundContainer '" << name_ << "': Loaded " << count << " sounds from folder: " << folderPath << std::endl;
+    }
+
+    std::cout << "RandomSoundContainer '" << name_
+              << "': Loaded " << count
+              << " sounds from folder: " << folderPath << std::endl;
 }
 
 void RandomSoundContainer::Play() {
