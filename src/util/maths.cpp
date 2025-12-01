@@ -118,7 +118,7 @@ std::pair<glm::vec3, glm::vec2> connectSquare(const glm::vec2& a, const glm::vec
     glm::vec2 mid = (a + b) * 0.5f;
     float angle = std::atan2(delta.y, delta.x);
     glm::vec3 pos(mid.x, mid.y, angle);
-    glm::vec2 scale(len, 0.025f);
+    glm::vec2 scale(len, 0.1f);
 
     return {pos, scale};
 }
