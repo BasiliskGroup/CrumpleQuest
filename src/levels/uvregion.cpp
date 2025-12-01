@@ -1,11 +1,7 @@
 #include "levels/uvregion.h"
-#include <earcut.hpp>
 
-UVRegion::UVRegion(const std::vector<vec2>& positions, const std::vector<vec2>& uvs) 
-    : positions(positions), uvs(uvs) {
-    if (positions.size() != uvs.size()) {
-        throw std::runtime_error("UVRegion: positions and uvs must have same size");
-    }
+UVRegion::UVRegion(const std::vector<vec2>& positions, const std::array<Vert, 2>& basis, const vec2& originUV) 
+    : positions(positions), basis(basis), originUV(originUV) {
 }
 
 bool UVRegion::contains(const vec2& p, float eps) const {
@@ -63,103 +59,45 @@ float UVRegion::distance(const vec2& pos) const {
 }
 
 vec2 UVRegion::sampleUV(const vec2& pos) const {
-    if (positions.size() < 3) return vec2(0, 0);
+    // Affine transformation from position space to UV space:
+    // pos_relative = pos - origin (where origin = positions[0])
+    // pos_relative = a * basis[0].pos + b * basis[1].pos
+    // uv = originUV + a * basis[0].uv + b * basis[1].uv
     
-    // Find closest point on region
-    vec2 closestPoint = pos;
-    if (!contains(pos, 0.0f)) {
-        float minDist = std::numeric_limits<float>::max();
-        for (size_t i = 0; i < positions.size(); ++i) {
-            const vec2& a = positions[i];
-            const vec2& b = positions[(i + 1) % positions.size()];
-            
-            vec2 ab = b - a;
-            float t = glm::clamp(glm::dot(pos - a, ab) / glm::dot(ab, ab), 0.0f, 1.0f);
-            vec2 candidate = a + t * ab;
-            
-            float dist = glm::length(pos - candidate);
-            if (dist < minDist) {
-                minDist = dist;
-                closestPoint = candidate;
-            }
-        }
+    if (positions.empty()) return originUV;
+    
+    const vec2& origin = positions[0];
+    const vec2& d0 = basis[0].pos;  // direction vector 1
+    const vec2& d1 = basis[1].pos;  // direction vector 2
+    
+    // Express (pos - origin) as linear combination of basis directions
+    vec2 rel = pos - origin;
+    
+    // Solve 2x2 system: [d0.x d1.x] [a]   [rel.x]
+    //                   [d0.y d1.y] [b] = [rel.y]
+    float det = d0.x * d1.y - d1.x * d0.y;
+    if (std::abs(det) < 1e-12f) {
+        return originUV;  // Degenerate basis, return origin UV
     }
     
-    // Triangulate region to find which triangle contains the point
-    std::vector<std::vector<std::array<double, 2>>> polygon;
-    polygon.emplace_back();
-    polygon[0].reserve(positions.size());
-    for (const vec2& v : positions) {
-        polygon[0].push_back({{static_cast<double>(v.x), static_cast<double>(v.y)}});
-    }
+    float a = (rel.x * d1.y - rel.y * d1.x) / det;
+    float b = (d0.x * rel.y - d0.y * rel.x) / det;
     
-    std::vector<uint32_t> indices = mapbox::earcut<uint32_t>(polygon);
-    
-    // Find triangle containing closestPoint
-    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
-        uint32_t i0 = indices[i];
-        uint32_t i1 = indices[i + 1];
-        uint32_t i2 = indices[i + 2];
-        
-        const vec2& a = positions[i0];
-        const vec2& b = positions[i1];
-        const vec2& c = positions[i2];
-        
-        // Check if point is in this triangle using barycentric coordinates
-        float denom = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);
-        if (std::abs(denom) < 1e-8f) continue;
-        
-        float w1 = ((b.y - c.y) * (closestPoint.x - c.x) + (c.x - b.x) * (closestPoint.y - c.y)) / denom;
-        float w2 = ((c.y - a.y) * (closestPoint.x - c.x) + (a.x - c.x) * (closestPoint.y - c.y)) / denom;
-        float w3 = 1.0f - w1 - w2;
-        
-        // Check if point is inside triangle (with small epsilon for boundary)
-        const float eps = -1e-6f;
-        if (w1 >= eps && w2 >= eps && w3 >= eps) {
-            // Clamp to valid range
-            w1 = glm::clamp(w1, 0.0f, 1.0f);
-            w2 = glm::clamp(w2, 0.0f, 1.0f);
-            w3 = glm::clamp(w3, 0.0f, 1.0f);
-            
-            // Interpolate UVs
-            return uvs[i0] * w1 + uvs[i1] * w2 + uvs[i2] * w3;
-        }
-    }
-    
-    // Fallback: find nearest vertex
-    float minDist = std::numeric_limits<float>::max();
-    size_t nearestIdx = 0;
-    for (size_t i = 0; i < positions.size(); ++i) {
-        float dist = glm::length(closestPoint - positions[i]);
-        if (dist < minDist) {
-            minDist = dist;
-            nearestIdx = i;
-        }
-    }
-    
-    return uvs[nearestIdx];
+    return originUV + a * basis[0].uv + b * basis[1].uv;
 }
 
 void UVRegion::flipUVx() {
-    if (uvs.empty()) return;
-    
-    float minU = uvs[0].x;
-    float maxU = uvs[0].x;
-    for (const vec2& uv : uvs) {
-        minU = std::min(minU, uv.x);
-        maxU = std::max(maxU, uv.x);
-    }
-    
-    float range = maxU - minU;
-    if (range < 1e-12f) return;
-    
-    for (vec2& uv : uvs) {
-        uv.x = maxU - (uv.x - minU);
-    }
+    // Negate the x component of origin and both basis UVs
+    originUV.x = -originUV.x;
+    basis[0].uv.x = -basis[0].uv.x;
+    basis[1].uv.x = -basis[1].uv.x;
 }
 
 void UVRegion::flipHorizontal() {
     for (vec2& p : positions) {
         p.x *= -1.0f;
     }
+    // Also flip the basis positions
+    basis[0].pos.x *= -1.0f;
+    basis[1].pos.x *= -1.0f;
 }
