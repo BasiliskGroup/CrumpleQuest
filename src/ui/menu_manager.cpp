@@ -123,7 +123,7 @@ Menu* MenuManager::createMainMenu() {
         },
         {
             .onUp = [this]() { 
-                // TODO: Quit the game
+                glfwSetWindowShouldClose(this->game->getEngine()->getWindow()->getWindow(), GLFW_TRUE);
             }
         }
     );
