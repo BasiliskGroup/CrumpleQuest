@@ -18,12 +18,27 @@ DyMesh::DyMesh(const std::vector<vec2>& region, Mesh* mesh) : Edger(region), reg
         std::vector<vec2> uvs;
         
         for (uint j = 0; j < 3; j++) {
-            positions.push_back({verts[i + 0], verts[i + 1]});
-            uvs.push_back({verts[i + 3], verts[i + 4]});
+            vec2 pos = {verts[i + 0], verts[i + 1]};
+            vec2 uv = {verts[i + 3], verts[i + 4]};
+            positions.push_back(pos);
+            uvs.push_back(uv);
             i += 5;
         }
         
-        regions.emplace_back(positions, uvs);
+        // Create basis from triangle vertices
+        // v0 is origin, basis vectors are (v1-v0) and (v2-v0)
+        vec2 originUV = uvs[0];
+        vec2 dir1_pos = positions[1] - positions[0];
+        vec2 dir1_uv = uvs[1] - uvs[0];
+        vec2 dir2_pos = positions[2] - positions[0];
+        vec2 dir2_uv = uvs[2] - uvs[0];
+        
+        std::array<Vert, 2> basis = {
+            Vert(dir1_pos, dir1_uv),
+            Vert(dir2_pos, dir2_uv)
+        };
+        
+        regions.emplace_back(positions, basis, originUV);
     }
 }
 
@@ -31,10 +46,6 @@ DyMesh::DyMesh(const std::vector<vec2>& region) : Edger(region), regions() {
     ensureCCW(this->region);
     
     if (region.size() < 3) return;
-    
-    // Create a single region with simple UV mapping
-    std::vector<vec2> uvs;
-    uvs.reserve(region.size());
     
     // Calculate bounding box for UV mapping
     vec2 minPos = region[0];
@@ -50,13 +61,17 @@ DyMesh::DyMesh(const std::vector<vec2>& region) : Edger(region), regions() {
     float maxDim = std::max(size.x, size.y);
     if (maxDim < 1e-6f) maxDim = 1.0f;
     
-    // Map positions to [0,1] UV space
-    for (const vec2& p : region) {
-        vec2 uv = (p - minPos) / maxDim;
-        uvs.push_back(uv);
-    }
+    // Create basis: direction vectors map position deltas to UV deltas
+    // basis[0]: x-direction, basis[1]: y-direction
+    std::array<Vert, 2> basis = {
+        Vert(vec2(maxDim, 0.0f), vec2(1.0f, 0.0f)),
+        Vert(vec2(0.0f, maxDim), vec2(0.0f, 1.0f))
+    };
     
-    regions.emplace_back(region, uvs);
+    // originUV: UV at region[0] (the origin position)
+    vec2 originUV = (region[0] - minPos) / maxDim;
+    
+    regions.emplace_back(region, basis, originUV);
 }
 
 bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
@@ -120,15 +135,9 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
             
             ensureCCW(clippedPositions);
 
-            // Sample UVs from original region for each new vertex
-            std::vector<vec2> clippedUVs;
-            clippedUVs.reserve(clippedPositions.size());
-            
-            for (const vec2& p : clippedPositions) {
-                clippedUVs.push_back(uvReg.sampleUV(p));
-            }
-
-            newRegions.emplace_back(clippedPositions, clippedUVs);
+            // Preserve basis from original region, compute new originUV for new origin position
+            vec2 newOriginUV = uvReg.sampleUV(clippedPositions[0]);
+            newRegions.emplace_back(clippedPositions, uvReg.basis, newOriginUV);
         }
     }
 
@@ -248,8 +257,21 @@ DyMesh* DyMesh::mirror(const vec2& pos, const vec2& dir) {
         
         ensureCCW(mirroredPositions);
         
-        // Keep UVs as-is (or flip if needed)
-        mirroredRegions.emplace_back(mirroredPositions, uvReg.uvs);
+        // Mirror the basis direction vectors as well
+        // For direction vectors, we need to mirror them as vectors (not points)
+        auto mirrorDir = [&](const vec2& d) -> vec2 {
+            float proj = glm::dot(d, nDir);
+            vec2 alongLine = proj * nDir;
+            vec2 perp = d - alongLine;
+            return alongLine - perp;
+        };
+        
+        std::array<Vert, 2> mirroredBasis = {
+            Vert(mirrorDir(uvReg.basis[0].pos), uvReg.basis[0].uv),
+            Vert(mirrorDir(uvReg.basis[1].pos), uvReg.basis[1].uv)
+        };
+        
+        mirroredRegions.emplace_back(mirroredPositions, mirroredBasis, uvReg.originUV);
     }
 
     return new DyMesh(mirroredRegion, mirroredRegions);
@@ -303,7 +325,7 @@ void DyMesh::toData(std::vector<float>& exp) {
             for (int j = 0; j < 3; j++) {
                 uint32_t idx = indices[i + j];
                 const vec2& pos = uvReg.positions[idx];
-                const vec2& uv = uvReg.uvs[idx];
+                vec2 uv = uvReg.sampleUV(pos);
 
                 exp.push_back(pos.x);
                 exp.push_back(-pos.y);
@@ -354,7 +376,7 @@ void DyMesh::printData() {
         std::cout << "Region " << i << ": " << regions[i].positions.size() << " vertices" << std::endl;
         for (size_t j = 0; j < regions[i].positions.size(); ++j) {
             const vec2& p = regions[i].positions[j];
-            const vec2& uv = regions[i].uvs[j];
+            vec2 uv = regions[i].sampleUV(p);
             std::cout << "  v" << j << ": pos(" << p.x << ", " << p.y 
                      << ") uv(" << uv.x << ", " << uv.y << ")" << std::endl;
         }
@@ -406,27 +428,15 @@ bool DyMesh::hasCompatibleUVs(const UVRegion& r1, const UVRegion& r2, const std:
 
     if (sharedEdge.size() != 2) return false;
 
-    // Find indices in r1 for the shared edge vertices
-    int r1_idx1 = -1, r1_idx2 = -1;
-    for (size_t i = 0; i < r1.positions.size(); ++i) {
-        if (glm::length(r1.positions[i] - sharedEdge[0]) < eps) r1_idx1 = i;
-        if (glm::length(r1.positions[i] - sharedEdge[1]) < eps) r1_idx2 = i;
-    }
-
-    // Find indices in r2 for the shared edge vertices
-    int r2_idx1 = -1, r2_idx2 = -1;
-    for (size_t i = 0; i < r2.positions.size(); ++i) {
-        if (glm::length(r2.positions[i] - sharedEdge[0]) < eps) r2_idx1 = i;
-        if (glm::length(r2.positions[i] - sharedEdge[1]) < eps) r2_idx2 = i;
-    }
-
-    if (r1_idx1 == -1 || r1_idx2 == -1 || r2_idx1 == -1 || r2_idx2 == -1) {
-        return false;
-    }
+    // Sample UVs at shared edge positions from both regions
+    vec2 uv1_at_0 = r1.sampleUV(sharedEdge[0]);
+    vec2 uv1_at_1 = r1.sampleUV(sharedEdge[1]);
+    vec2 uv2_at_0 = r2.sampleUV(sharedEdge[0]);
+    vec2 uv2_at_1 = r2.sampleUV(sharedEdge[1]);
 
     // Check if UVs match at shared vertices
-    bool uv1Match = glm::length(r1.uvs[r1_idx1] - r2.uvs[r2_idx1]) < eps;
-    bool uv2Match = glm::length(r1.uvs[r1_idx2] - r2.uvs[r2_idx2]) < eps;
+    bool uv1Match = glm::length(uv1_at_0 - uv2_at_0) < eps;
+    bool uv2Match = glm::length(uv1_at_1 - uv2_at_1) < eps;
 
     return uv1Match && uv2Match;
 }
@@ -448,7 +458,6 @@ void DyMesh::cleanupDegenerateRegions() {
         
         // Remove duplicate vertices
         std::vector<vec2> cleanedPos;
-        std::vector<vec2> cleanedUV;
         
         for (size_t j = 0; j < regions[i].positions.size(); ++j) {
             bool isDup = false;
@@ -462,7 +471,6 @@ void DyMesh::cleanupDegenerateRegions() {
             }
             if (!isDup) {
                 cleanedPos.push_back(regions[i].positions[j]);
-                cleanedUV.push_back(regions[i].uvs[j]);
             }
         }
         
@@ -492,12 +500,11 @@ void DyMesh::cleanupDegenerateRegions() {
             continue;
         }
         
-        // Update region if we removed duplicates
+        // Update region if we removed duplicates (basis stays the same)
         if (cleanedPos.size() != regions[i].positions.size()) {
             std::cout << "  Region " << i << " cleaned: " << regions[i].positions.size() 
                      << " -> " << cleanedPos.size() << " vertices" << std::endl;
             regions[i].positions = cleanedPos;
-            regions[i].uvs = cleanedUV;
         } else {
             std::cout << "  Region " << i << " is valid (area=" << area << ")" << std::endl;
         }
@@ -530,25 +537,9 @@ UVRegion DyMesh::mergeTwo(const UVRegion& r1, const UVRegion& r2) const {
     std::vector<vec2> mergedPositions = makeRegionFromPaths64(unionResult);
     ensureCCW(mergedPositions);
 
-    // Sample UVs from original regions for each vertex of merged region
-    std::vector<vec2> mergedUVs;
-    mergedUVs.reserve(mergedPositions.size());
-
-    for (const vec2& pos : mergedPositions) {
-        // Try to sample from r1 first, then r2
-        if (r1.contains(pos, 1e-5f)) {
-            mergedUVs.push_back(r1.sampleUV(pos));
-        } else if (r2.contains(pos, 1e-5f)) {
-            mergedUVs.push_back(r2.sampleUV(pos));
-        } else {
-            // Fallback: pick closer region
-            float dist1 = r1.distance(pos);
-            float dist2 = r2.distance(pos);
-            mergedUVs.push_back(dist1 < dist2 ? r1.sampleUV(pos) : r2.sampleUV(pos));
-        }
-    }
-
-    return UVRegion(mergedPositions, mergedUVs);
+    // Use r1's basis, compute originUV for new origin position
+    vec2 newOriginUV = r1.sampleUV(mergedPositions[0]);
+    return UVRegion(mergedPositions, r1.basis, newOriginUV);
 }
 
 void DyMesh::mergeAllRegions() {
@@ -593,23 +584,15 @@ void DyMesh::mergeAllRegions() {
                         // Print UV details for debugging
                         std::cout << "    Region " << i << " edge UVs: ";
                         for (const vec2& pt : sharedEdge) {
-                            for (size_t k = 0; k < regions[i].positions.size(); ++k) {
-                                if (glm::length(regions[i].positions[k] - pt) < 1e-5f) {
-                                    std::cout << "(" << regions[i].uvs[k].x << "," << regions[i].uvs[k].y << ") ";
-                                    break;
-                                }
-                            }
+                            vec2 uv = regions[i].sampleUV(pt);
+                            std::cout << "(" << uv.x << "," << uv.y << ") ";
                         }
                         std::cout << std::endl;
                         
                         std::cout << "    Region " << j << " edge UVs: ";
                         for (const vec2& pt : sharedEdge) {
-                            for (size_t k = 0; k < regions[j].positions.size(); ++k) {
-                                if (glm::length(regions[j].positions[k] - pt) < 1e-5f) {
-                                    std::cout << "(" << regions[j].uvs[k].x << "," << regions[j].uvs[k].y << ") ";
-                                    break;
-                                }
-                            }
+                            vec2 uv = regions[j].sampleUV(pt);
+                            std::cout << "(" << uv.x << "," << uv.y << ") ";
                         }
                         std::cout << std::endl;
                         

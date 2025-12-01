@@ -5,13 +5,14 @@
 #include "util/maths.h"
 
 struct UVRegion {
-    std::vector<vec2> positions;  // Polygon vertices
-    std::vector<vec2> uvs;        // UV coordinates (same size as positions)
+    std::vector<vec2> positions;     // Polygon vertices
+    std::array<Vert, 2> basis;       // Two linearly independent direction vectors (pos delta, uv delta)
+    vec2 originUV;                   // UV at positions[0] (the origin)
 
     UVRegion() = default;
-    UVRegion(const std::vector<vec2>& positions, const std::vector<vec2>& uvs);
+    UVRegion(const std::vector<vec2>& positions, const std::array<Vert, 2>& basis, const vec2& originUV);
 
-    // Sample UV at any point using barycentric interpolation
+    // Sample UV at any point using linear basis transformation
     vec2 sampleUV(const vec2& pos) const;
     
     // Check if point is inside region (with epsilon tolerance)
