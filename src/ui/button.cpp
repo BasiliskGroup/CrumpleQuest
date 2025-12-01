@@ -1,13 +1,12 @@
 #include "ui/ui.h"
 
-Button::Button(Game* game, Node2D::Params params, Button::Params callbacks) : 
-    Node2D(game->getScene(), params),
+Button::Button(Scene2D* scene, Game* game, Node2D::Params params, Button::Params callbacks) : 
+    Node2D(scene, params),
     onDown(callbacks.onDown),
     onUp(callbacks.onUp),
     onHover(callbacks.onHover),
     game(game)
 {
-    setLayer(0.9);
 }
 
 // Copy constructor

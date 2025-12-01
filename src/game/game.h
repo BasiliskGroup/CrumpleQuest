@@ -5,9 +5,13 @@
 #include "character/player.h"
 #include "character/enemy.h"
 #include "levels/paper.h"
+#include "audio/audio_manager.h"
+#include "ui/menu_manager.h"
+#include "resource/animator.h"
 
 class Floor;
 class UIElement;
+class Animator;
 
 class Game {
 private:
@@ -24,11 +28,26 @@ private:
     SingleSide* currentSide;
     Paper* paper;
 
+    // menu scene (separate from game scene)
+    Scene2D* menuScene;
+    StaticCamera2D* menuCamera;
+
     // track inputs
     bool leftWasDown = false;
     vec2 LeftStartDown = vec2();
 
     bool kWasDown = false;
+
+    // audio
+    audio::AudioManager& audioManager;
+    audio::GroupHandle musicGroup;
+    audio::GroupHandle sfxGroup;
+
+    // menu manager
+    MenuManager* menuManager;
+
+    // player animator
+    Animator* playerAnimator;
 
     // TODO maybe nove these to ui scenes
     std::vector<UIElement*> uiElements;
@@ -51,9 +70,14 @@ public:
     Material* getMaterial(std::string name) { return materials[name]; }
     Mesh* getMesh(std::string name)         { return meshes[name]; }
     Collider* getCollider(std::string name) { return currentSide->colliders[name]; }
+    audio::AudioManager& getAudio()         { return audioManager; }
+    audio::GroupHandle getMusicGroup()      { return musicGroup; }
+    audio::GroupHandle getSFXGroup()        { return sfxGroup; }
+    MenuManager* getMenus()                 { return menuManager; }
 
     Engine*& getEngine() { return engine; }
     Scene2D* getScene() { return currentSide->getScene(); }
+    Scene2D* getMenuScene() { return menuScene; }
     Paper* getPaper() { return paper; }
     SingleSide*& getSide() { return currentSide; }
 
@@ -62,6 +86,12 @@ public:
     // setters
     void setPlayer(Player* player) { this->player = player; }
     void setPaper(std::string str);
+
+    // initialization
+    void initMenus();
+
+    // game flow
+    void startGame();
 
     void update(float dt);
 };

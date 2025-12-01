@@ -3,6 +3,7 @@
 #include "ui/ui.h"
 #include "levels/levels.h"
 #include "audio/audio_manager.h"
+#include "ui/menu_manager.h"
 #include "resource/animation.h"
 #include "resource/animator.h"
 #include "weapon/weapon.h"
@@ -33,82 +34,23 @@ int main() {
     // Load game start
     // ------------------------------------------
 
+    // Setup background music
+    auto parchment_track = game->getAudio().CreateTrack();
+    game->getAudio().AddLayer(parchment_track, "parchment", "sounds/parchment.wav", "music");
+    game->getAudio().SetLayerVolume(parchment_track, "parchment", 1.0f);
+    game->getAudio().PlayTrack(parchment_track);
+
     // load levels
     SingleSide::generateTemplates(game);
     Paper::generateTemplates(game);
-    game->setPaper("empty");
 
-    game->getPaper()->regenerateWalls();
-
-    // create player
-    Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}, .collider=game->getCollider("quad") });
-    Player* player = new Player(3, 3, playerNode, game->getSide(), nullptr);
-    game->setPlayer(player);
-
-    // create weapons
-    player->setWeapon(new MeleeWeapon(player, { .mesh=game->getMesh("quad"), .material=game->getMaterial("sword"), .scale={0.75, 0.75}}, { .damage=1, .life=0.2f, .radius=0.5 }, 30.0f));
-
-    // ------------------------------------------
-    // Testing
-    // ------------------------------------------
-
-    Animation* animation = new Animation({game->getMaterial("box"), game->getMaterial("man"), game->getMaterial("knight")});
-    Animator* playerAnimator = new Animator(game->getEngine(), playerNode, animation);
-    playerAnimator->setFrameRate(1);
-
-    // test add button
-    Button* testButton = new Button(game, { .mesh=game->getMesh("quad"), .material=game->getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 
-        .onDown=[]() { std::cout << "Button Pressed" << std::endl; }
-    });
-
-    // add temp background paper
-    Node2D* paperBackground = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("paper"), .scale={16, 9} });
-    paperBackground->setLayer(-0.9);
-
-    // spawn enemy on click
-    testButton->setOnUp([game]() {
-        Node2D* enemyNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("man"), .position={3, 4}, .scale={0.7, 0.7}, .collider=game->getCollider("quad") });
-        game->addEnemy(new Enemy(3, 0.1, enemyNode, game->getSide(), nullptr, nullptr));
-    });
-
-    game->addUI(testButton);
-
-    // slider
-    Slider* testSlider = new Slider(game, { -4, 4 }, { 0, 4 }, { .pegMaterial=game->getMaterial("box") });
-    testSlider->setCallback([game](float proportion) {
-        for (Enemy* enemy : game->getEnemies()) {
-            enemy->setSpeed(5 * proportion);
-        }
-    });
-    game->addUI(testSlider);
-
-    // audio
-    auto& audio = audio::AudioManager::GetInstance();
-    if (!audio.Initialize()) {
-        std::cerr << "Failed to initialize audio system\n";
-        return 1;
-    }
-    std::cout << "Audio system initialized successfully\n";
-    
-    audio.SetMasterVolume(1.0f);
-    
-    auto music_group = audio.CreateGroup("music");
-    
-    audio.SetGroupVolume(music_group, 0.7f);
-    
-    auto parchment_track = audio.CreateTrack();
-    audio.AddLayer(parchment_track, "parchment", "sounds/parchment.wav", "music");
-    audio.SetLayerVolume(parchment_track, "parchment", 1.0f);
-    
-    audio.PlayTrack(parchment_track);
+    // initialize menus (menu scene is ready)
+    game->initMenus();
+    game->getMenus()->pushMainMenu();
 
     while (game->getEngine()->isRunning()) {
         game->update(game->getEngine()->getDeltaTime());
-        playerAnimator->update();
     }
-
-    // Shutdown audio system before deleting game
-    audio.Shutdown();
     
     delete game;
 }

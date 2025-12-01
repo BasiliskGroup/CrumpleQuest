@@ -20,6 +20,7 @@ Sound::Sound(ma_engine* engine, const std::string& filepath, AudioGroup* group)
       filepath_(filepath), 
       looping_(false), 
       volume_(1.0f),
+      pitch_(1.0f),
       group_(group ? group->GetHandle() : nullptr) {
 }
 
@@ -77,6 +78,7 @@ void Sound::Play() {
   // Configure and play
   ma_sound_set_looping(instance->sound, looping_);
   ma_sound_set_volume(instance->sound, volume_);
+  ma_sound_set_pitch(instance->sound, pitch_);
   ma_sound_start(instance->sound);
   
   // Add to our list of instances
@@ -110,6 +112,10 @@ void Sound::SetVolume(float volume) {
       ma_sound_set_volume(instance->sound, volume_);
     }
   }
+}
+
+void Sound::SetPitch(float pitch) {
+  pitch_ = (std::max)(0.1f, pitch);  // Clamp minimum to avoid issues
 }
 
 bool Sound::IsPlaying() const {
