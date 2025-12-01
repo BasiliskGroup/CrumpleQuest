@@ -48,6 +48,10 @@ public:
     float getProportion();
     void setProportion(float proportion);
     void setCallback(std::function<void(float)> callback) { this->callback = callback; }
+    
+    // Get internal nodes for layer management
+    Node2D* getBar() { return bar; }
+    Button* getPeg() { return peg; }
 
 private:
     void computeBoundGeometry();

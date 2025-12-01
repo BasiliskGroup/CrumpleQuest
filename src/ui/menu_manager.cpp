@@ -1,6 +1,7 @@
 #include "ui/menu_manager.h"
 #include "ui/menu.h"
 #include "ui/button.h"
+#include "ui/slider.h"
 #include "game/game.h"
 #include <iostream>
 
@@ -89,7 +90,7 @@ Menu* MenuManager::createMainMenu() {
         }
     );
     settingsButton->setLayer(0.3f);
-    mainMenu->addNode(settingsButton);
+    mainMenu->addElement(settingsButton);
 
     // Start button (center)
     Button* startButton = new Button(game->getMenuScene(), game,
@@ -110,7 +111,7 @@ Menu* MenuManager::createMainMenu() {
         }
     );
     startButton->setLayer(0.3f);
-    mainMenu->addNode(startButton);
+    mainMenu->addElement(startButton);
 
     // Quit button (right)
     Button* quitButton = new Button(game->getMenuScene(), game,
@@ -127,7 +128,7 @@ Menu* MenuManager::createMainMenu() {
         }
     );
     quitButton->setLayer(0.3f);
-    mainMenu->addNode(quitButton);
+    mainMenu->addElement(quitButton);
     
     return mainMenu;
 }
@@ -135,11 +136,10 @@ Menu* MenuManager::createMainMenu() {
 Menu* MenuManager::createSettingsMenu() {
     Menu* settingsMenu = new Menu(game);
     
-    // Settings menu at layer 0.4-0.6 (above main menu)
     // Create background
     Node2D* background = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("box"),  // Different material to see it
+        .material = game->getMaterial("box"),
         .scale = {16, 9}
     });
     background->setLayer(0.4f);
@@ -148,12 +148,89 @@ Menu* MenuManager::createSettingsMenu() {
     // Create title
     Node2D* title = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("lightGrey"),  // Different material
+        .material = game->getMaterial("lightGrey"),
         .position = {0, 3},
         .scale = {4, 1.5}
     });
     title->setLayer(0.5f);
     settingsMenu->addNode(title);
+
+    // Sliders layout
+    float sliderStartY = 1.5f;
+    float sliderSpacing = 1.2f;
+    float iconX = -3.5f;
+    float sliderMinX = -2.5f;
+    float sliderMaxX = 2.5f;
+    float iconSize = 0.4f;
+    
+    // Master volume slider
+    Node2D* masterIcon = new Node2D(game->getMenuScene(), {
+        .mesh = game->getMesh("quad"),
+        .material = game->getMaterial("knight"),
+        .position = {iconX, sliderStartY},
+        .scale = {iconSize, iconSize}
+    });
+    masterIcon->setLayer(0.55f);
+    settingsMenu->addNode(masterIcon);
+    
+    Slider* masterSlider = new Slider(game->getMenuScene(), game, 
+        {sliderMinX, sliderStartY}, 
+        {sliderMaxX, sliderStartY}, 
+        {.pegMaterial = game->getMaterial("box")}
+    );
+    masterSlider->getBar()->setLayer(0.54f);
+    masterSlider->getPeg()->setLayer(0.56f);
+    masterSlider->setCallback([this](float proportion) {
+        // TODO: Set master volume
+        std::cout << "Master volume: " << proportion << std::endl;
+    });
+    settingsMenu->addElement(masterSlider);
+    
+    // Music volume slider
+    Node2D* musicIcon = new Node2D(game->getMenuScene(), {
+        .mesh = game->getMesh("quad"),
+        .material = game->getMaterial("sword"),
+        .position = {iconX, sliderStartY - sliderSpacing},
+        .scale = {iconSize, iconSize}
+    });
+    musicIcon->setLayer(0.55f);
+    settingsMenu->addNode(musicIcon);
+    
+    Slider* musicSlider = new Slider(game->getMenuScene(), game,
+        {sliderMinX, sliderStartY - sliderSpacing},
+        {sliderMaxX, sliderStartY - sliderSpacing},
+        {.pegMaterial = game->getMaterial("box")}
+    );
+    musicSlider->getBar()->setLayer(0.54f);
+    musicSlider->getPeg()->setLayer(0.56f);
+    musicSlider->setCallback([this](float proportion) {
+        // TODO: Set music volume
+        std::cout << "Music volume: " << proportion << std::endl;
+    });
+    settingsMenu->addElement(musicSlider);
+    
+    // SFX volume slider
+    Node2D* sfxIcon = new Node2D(game->getMenuScene(), {
+        .mesh = game->getMesh("quad"),
+        .material = game->getMaterial("man"),
+        .position = {iconX, sliderStartY - sliderSpacing * 2},
+        .scale = {iconSize, iconSize}
+    });
+    sfxIcon->setLayer(0.55f);
+    settingsMenu->addNode(sfxIcon);
+    
+    Slider* sfxSlider = new Slider(game->getMenuScene(), game,
+        {sliderMinX, sliderStartY - sliderSpacing * 2},
+        {sliderMaxX, sliderStartY - sliderSpacing * 2},
+        {.pegMaterial = game->getMaterial("box")}
+    );
+    sfxSlider->getBar()->setLayer(0.54f);
+    sfxSlider->getPeg()->setLayer(0.56f);
+    sfxSlider->setCallback([this](float proportion) {
+        // TODO: Set SFX volume
+        std::cout << "SFX volume: " << proportion << std::endl;
+    });
+    settingsMenu->addElement(sfxSlider);
 
     // Back button
     Button* backButton = new Button(game->getMenuScene(), game,
@@ -170,9 +247,7 @@ Menu* MenuManager::createSettingsMenu() {
         }
     );
     backButton->setLayer(0.6f);
-    settingsMenu->addNode(backButton);
-    
-    // TODO: Add sliders and other settings controls here
+    settingsMenu->addElement(backButton);
     
     return settingsMenu;
 }

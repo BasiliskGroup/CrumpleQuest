@@ -10,6 +10,7 @@ class Menu {
 protected:
     Game* game;
     std::vector<Node2D*> nodes; // All visual elements
+    std::vector<UIElement*> uiElements; // Interactive elements (buttons, sliders, etc.)
     bool visible;
 
 public:
@@ -23,7 +24,8 @@ public:
     // Getters
     bool isVisible() const { return visible; }
     
-    // Track nodes for cleanup
+    // Add UI elements (buttons, sliders, etc) or plain nodes
+    void addElement(UIElement* element);
     void addNode(Node2D* node) { nodes.push_back(node); }
 };
 
