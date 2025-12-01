@@ -136,10 +136,11 @@ void Game::update(float dt) {
         }
     }
 
-    // continuous fold
-    // if (leftIsDown && paper) {
-    //     paper->fold(LeftStartDown, mousePos);
-    // }
+    // continuous fold preview
+    if (leftIsDown && paper) {
+        paper->dotData();  // Update debug visualization first
+        paper->previewFold(LeftStartDown, mousePos);  // Show fold preview
+    }
 
     // update buttons
     for (UIElement* elem : uiElements) {

@@ -107,6 +107,10 @@ public:
     void regenerateWalls(int side);
 
     void setGame(Game* game) { this->game = game; }
+    void previewFold(const vec2& start, const vec2& end);  // Preview fold cover without applying
+
+    // DEBUG
+    void dotData();
 
 private:
     void clear();
@@ -115,9 +119,6 @@ private:
 
     void pushFold(Fold& newFold);
     void popFold(); // uses activeFold index
-
-    // DEBUG
-    void dotData();
 };
 
 #endif
