@@ -169,42 +169,31 @@ void Paper::deactivateFold() {
     activeFold = NULL_FOLD;
 }
 
-void Paper::fold(const vec2& start, const vec2& end) {
-    if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) return;
-
-    if (activeFold != PAPER_FOLD && folds[activeFold].holds.size() == 0) {
-        popFold();
-        activeFold = PAPER_FOLD; // Reset to paper fold so we recreate from scratch
+Paper::FoldGeometry Paper::validateFoldGeometry(const vec2& start, const vec2& end) {
+    FoldGeometry geom;
+    geom.isValid = false;
+    
+    if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) {
+        return geom;
     }
     
-    // get starting geometry
     PaperMesh* paperMesh = getPaperMesh();
-    vec2 dx = end - start;
-
-    // paper intersections
-    vec2 edgeIntersectPaper = paperMesh->getNearestEdgeIntersection(start, -dx);
-    vec2 nearEdgePointPaper = paperMesh->getNearestEdgePoint(start);
-
-    // fold intersections or use paper if we didn't click a fold
-    vec2 edgeIntersectFold, nearEdgePointFold;
-    Fold* clickedFold;
-    if (activeFold == PAPER_FOLD) {
-        edgeIntersectFold = edgeIntersectPaper;
-        nearEdgePointFold = nearEdgePointPaper;
-    } else {
-        clickedFold = &folds[activeFold];
-        edgeIntersectFold = clickedFold->cover->getNearestEdgeIntersection(start, -dx);
-        nearEdgePointFold = clickedFold->cover->getNearestEdgePoint(start);
+    
+    // Check if start and end are inside the paper
+    if (!paperMesh->contains(start) || !paperMesh->contains(end)) {
+        return geom;
     }
-
-    // variable to modify "start" position of fold, drop and replace
-    vec2 foldDir = end - nearEdgePointPaper;
-    vec2 creasePos = 0.5f * (end + nearEdgePointPaper);
+    
+    vec2 dx = end - start;
+    geom.edgeIntersectPaper = paperMesh->getNearestEdgeIntersection(start, -dx);
+    geom.nearEdgePointPaper = paperMesh->getNearestEdgePoint(start);
+    geom.foldDir = end - geom.nearEdgePointPaper;
+    geom.creasePos = 0.5f * (end + geom.nearEdgePointPaper);
     
     // Check if fold would go more than halfway across the paper
-    float foldDistance = glm::length(foldDir);
+    float foldDistance = glm::length(geom.foldDir);
     if (foldDistance > EPSILON) {
-        vec2 normalizedFoldDir = foldDir / foldDistance;
+        vec2 normalizedFoldDir = geom.foldDir / foldDistance;
         
         // Project all region vertices onto the fold direction to find paper extent
         float minProj = std::numeric_limits<float>::max();
@@ -220,26 +209,40 @@ void Paper::fold(const vec2& start, const vec2& end) {
         
         // Reject fold if it exceeds half the paper extent in fold direction
         if (foldDistance > paperExtent * 0.5f) {
-            std::cout << "Fold rejected: would exceed halfway across paper" << std::endl;
-            return;
+            return geom;
         }
     }
     
-    // Paper is being folded directly
-    if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
-        Fold fold = Fold(start, curSide);
-        bool check = fold.initialize(
-            curSide == 0 ? paperMeshes : PaperMeshPair{ paperMeshes.second, paperMeshes.first }, 
-            creasePos, 
-            foldDir, 
-            edgeIntersectPaper
-        );
-
-        // stop fold if we run into trouble
-        if (!check) return;
-
-        pushFold(fold);
+    // Check if we're folding the paper directly (start is on the correct side)
+    if (glm::dot(geom.edgeIntersectPaper - start, geom.nearEdgePointPaper - start) > 0) {
+        geom.isValid = true;
     }
+    
+    return geom;
+}
+
+void Paper::fold(const vec2& start, const vec2& end) {
+    if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) return;
+    
+    // Validate fold geometry and check if start/end are inside paper
+    FoldGeometry geom = validateFoldGeometry(start, end);
+    if (!geom.isValid) {
+        return;
+    }
+
+    // Paper is being folded directly
+    Fold fold = Fold(start, curSide);
+    bool check = fold.initialize(
+        curSide == 0 ? paperMeshes : PaperMeshPair{ paperMeshes.second, paperMeshes.first }, 
+        geom.creasePos, 
+        geom.foldDir, 
+        geom.edgeIntersectPaper
+    );
+
+    // stop fold if we run into trouble
+    if (!check) return;
+
+    pushFold(fold);
 }
 
 void Paper::pushFold(Fold& newFold) {
@@ -720,7 +723,7 @@ void Paper::dotData() {
         // Create walls for this region's boundary
         for (int i = 0; i < regionVerts.size(); i++) {
             int j = (i + 1) % regionVerts.size();
-            auto data = connectSquare(regionVerts[i], regionVerts[j]);
+            auto data = connectSquare(regionVerts[i], regionVerts[j], 0.025);
             
             Node2D* wall = new Node2D(game->getScene(), { 
                 .mesh = game->getMesh("quad"), 
@@ -736,62 +739,38 @@ void Paper::dotData() {
 }
 
 void Paper::previewFold(const vec2& start, const vec2& end) {
-    if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) {
+    // Validate fold geometry and check if start/end are inside paper
+    FoldGeometry geom = validateFoldGeometry(start, end);
+    if (!geom.isValid) {
         return;
     }
     
-    PaperMesh* paperMesh = getPaperMesh();
-    vec2 dx = end - start;
-    vec2 edgeIntersectPaper = paperMesh->getNearestEdgeIntersection(start, -dx);
-    vec2 nearEdgePointPaper = paperMesh->getNearestEdgePoint(start);
-    vec2 foldDir = end - nearEdgePointPaper;
-    vec2 creasePos = 0.5f * (end + nearEdgePointPaper);
+    Fold tempFold(start, curSide);
+    // Try to initialize - even if it fails, cover might still be created
+    bool check = tempFold.initialize(
+        curSide == 0 ? paperMeshes : PaperMeshPair{ paperMeshes.second, paperMeshes.first },
+        geom.creasePos,
+        geom.foldDir,
+        geom.edgeIntersectPaper
+    );
     
-    // Check if fold would be valid (same checks as fold function)
-    float foldDistance = glm::length(foldDir);
-    if (foldDistance > EPSILON) {
-        vec2 normalizedFoldDir = foldDir / foldDistance;
-        float minProj = std::numeric_limits<float>::max();
-        float maxProj = std::numeric_limits<float>::lowest();
-        for (const vec2& v : paperMesh->region) {
-            float proj = glm::dot(v, normalizedFoldDir);
-            minProj = std::min(minProj, proj);
-            maxProj = std::max(maxProj, proj);
-        }
-        float paperExtent = maxProj - minProj;
-        if (foldDistance > paperExtent * 0.5f) {
-            return;
-        }
-    }
-    
-    if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
-        Fold tempFold(start, curSide);
-        // Try to initialize - even if it fails, cover might still be created
-        bool check = tempFold.initialize(
-            curSide == 0 ? paperMeshes : PaperMeshPair{ paperMeshes.second, paperMeshes.first },
-            creasePos,
-            foldDir,
-            edgeIntersectPaper
-        );
-        
-        // Show cover even if initialize returned false, as long as cover is valid
-        if (tempFold.cover != nullptr && !tempFold.cover->region.empty() && tempFold.cover->region.size() >= 3) {
-            // Visualize the cover region boundary
-            const std::vector<vec2>& coverRegion = tempFold.cover->region;
-            for (int i = 0; i < coverRegion.size(); i++) {
-                int j = (i + 1) % coverRegion.size();
-                auto edgeData = connectSquare(coverRegion[i], coverRegion[j]);
-                
-                Node2D* edge = new Node2D(game->getScene(), {
-                    .mesh = game->getMesh("quad"),
-                    .material = game->getMaterial("test"),
-                    .position = vec2{edgeData.first.x, edgeData.first.y},
-                    .rotation = edgeData.first.z,
-                    .scale = edgeData.second
-                });
-                edge->setLayer(0.95);
-                regionNodes.push_back(edge);
-            }
+    // Show cover even if initialize returned false, as long as cover is valid
+    if (tempFold.cover != nullptr && !tempFold.cover->region.empty() && tempFold.cover->region.size() >= 3) {
+        // Visualize the cover region boundary
+        const std::vector<vec2>& coverRegion = tempFold.cover->region;
+        for (int i = 0; i < coverRegion.size(); i++) {
+            int j = (i + 1) % coverRegion.size();
+            auto edgeData = connectSquare(coverRegion[i], coverRegion[j]);
+            
+            Node2D* edge = new Node2D(game->getScene(), {
+                .mesh = game->getMesh("quad"),
+                .material = game->getMaterial(check ? "green" : "red"),
+                .position = vec2{edgeData.first.x, edgeData.first.y},
+                .rotation = edgeData.first.z,
+                .scale = edgeData.second
+            });
+            edge->setLayer(0.95);
+            regionNodes.push_back(edge);
         }
     }
 }

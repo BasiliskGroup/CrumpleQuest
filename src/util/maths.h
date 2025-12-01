@@ -26,6 +26,6 @@ vec2 reflectPointOverLine(const vec2& pos, const vec2& dir, const vec2& point);
 float signedArea(const std::vector<vec2>& poly);
 void ensureCCW(std::vector<vec2>& poly);
 void flipPolyY(std::vector<vec2>& poly);
-std::pair<glm::vec3, glm::vec2> connectSquare(const glm::vec2& a, const glm::vec2& b);
+std::pair<glm::vec3, glm::vec2> connectSquare(const glm::vec2& a, const glm::vec2& b, float width=0.1f);
 
 #endif

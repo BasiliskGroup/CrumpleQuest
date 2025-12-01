@@ -111,14 +111,14 @@ void flipPolyY(std::vector<vec2>& poly) {
     for (vec2& v : poly) v.y *= -1;
 }
 
-std::pair<glm::vec3, glm::vec2> connectSquare(const glm::vec2& a, const glm::vec2& b)
+std::pair<glm::vec3, glm::vec2> connectSquare(const glm::vec2& a, const glm::vec2& b, float width)
 {
     glm::vec2 delta = b - a;
     float len = glm::length(delta);
     glm::vec2 mid = (a + b) * 0.5f;
     float angle = std::atan2(delta.y, delta.x);
     glm::vec3 pos(mid.x, mid.y, angle);
-    glm::vec2 scale(len, 0.1f);
+    glm::vec2 scale(len, width);
 
     return {pos, scale};
 }
