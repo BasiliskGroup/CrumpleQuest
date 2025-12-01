@@ -201,6 +201,30 @@ void Paper::fold(const vec2& start, const vec2& end) {
     vec2 foldDir = end - nearEdgePointPaper;
     vec2 creasePos = 0.5f * (end + nearEdgePointPaper);
     
+    // Check if fold would go more than halfway across the paper
+    float foldDistance = glm::length(foldDir);
+    if (foldDistance > EPSILON) {
+        vec2 normalizedFoldDir = foldDir / foldDistance;
+        
+        // Project all region vertices onto the fold direction to find paper extent
+        float minProj = std::numeric_limits<float>::max();
+        float maxProj = std::numeric_limits<float>::lowest();
+        
+        for (const vec2& v : paperMesh->region) {
+            float proj = glm::dot(v, normalizedFoldDir);
+            minProj = std::min(minProj, proj);
+            maxProj = std::max(maxProj, proj);
+        }
+        
+        float paperExtent = maxProj - minProj;
+        
+        // Reject fold if it exceeds half the paper extent in fold direction
+        if (foldDistance > paperExtent * 0.5f) {
+            std::cout << "Fold rejected: would exceed halfway across paper" << std::endl;
+            return;
+        }
+    }
+    
     // Paper is being folded directly
     if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
         Fold fold = Fold(start, curSide);
@@ -587,11 +611,33 @@ void Paper::popFold() {
     // restore mesh from fold
     Fold& oldFold = folds[activeFold];
     PaperMesh* paperMesh = getPaperMesh();
+    PaperMesh* backMesh = getBackPaperMesh();
 
-    // TODO, add checks on these
-    paperMesh->cut(*oldFold.underside);
-    paperMesh->paste(*oldFold.underside);
-    getBackPaperMesh()->paste(*oldFold.backside);
+    // When unfolding, we need to:
+    // 1. Remove the cover region (which is currently on top of the folded area)
+    // 2. Restore the underside region (which was folded under)
+    // 3. Restore the backside region (which was on the back)
+    
+    // Remove cover region from front paper
+    bool check = paperMesh->cut(*oldFold.cover);
+    if (!check) {
+        std::cout << "popFold: Failed to cut cover region" << std::endl;
+        return;
+    }
+    
+    // Restore underside region to front paper
+    check = paperMesh->paste(*oldFold.underside);
+    if (!check) {
+        std::cout << "popFold: Failed to paste underside region" << std::endl;
+        return;
+    }
+    
+    // Restore backside region to back paper
+    check = backMesh->paste(*oldFold.backside);
+    if (!check) {
+        std::cout << "popFold: Failed to paste backside region" << std::endl;
+        return;
+    }
 
     // Remove references TO the activeFold from other folds' holds
     for (Fold& fold : folds) {
@@ -685,6 +731,67 @@ void Paper::dotData() {
             });
             wall->setLayer(0.85);
             regionNodes.push_back(wall);
+        }
+    }
+}
+
+void Paper::previewFold(const vec2& start, const vec2& end) {
+    if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) {
+        return;
+    }
+    
+    PaperMesh* paperMesh = getPaperMesh();
+    vec2 dx = end - start;
+    vec2 edgeIntersectPaper = paperMesh->getNearestEdgeIntersection(start, -dx);
+    vec2 nearEdgePointPaper = paperMesh->getNearestEdgePoint(start);
+    vec2 foldDir = end - nearEdgePointPaper;
+    vec2 creasePos = 0.5f * (end + nearEdgePointPaper);
+    
+    // Check if fold would be valid (same checks as fold function)
+    float foldDistance = glm::length(foldDir);
+    if (foldDistance > EPSILON) {
+        vec2 normalizedFoldDir = foldDir / foldDistance;
+        float minProj = std::numeric_limits<float>::max();
+        float maxProj = std::numeric_limits<float>::lowest();
+        for (const vec2& v : paperMesh->region) {
+            float proj = glm::dot(v, normalizedFoldDir);
+            minProj = std::min(minProj, proj);
+            maxProj = std::max(maxProj, proj);
+        }
+        float paperExtent = maxProj - minProj;
+        if (foldDistance > paperExtent * 0.5f) {
+            return;
+        }
+    }
+    
+    if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) > 0) {
+        Fold tempFold(start, curSide);
+        // Try to initialize - even if it fails, cover might still be created
+        bool check = tempFold.initialize(
+            curSide == 0 ? paperMeshes : PaperMeshPair{ paperMeshes.second, paperMeshes.first },
+            creasePos,
+            foldDir,
+            edgeIntersectPaper
+        );
+        
+        // Show cover even if initialize returned false, as long as cover is valid
+        if (tempFold.cover != nullptr && !tempFold.cover->region.empty() && tempFold.cover->region.size() >= 3) {
+            // Visualize the cover region boundary
+            const std::vector<vec2>& coverRegion = tempFold.cover->region;
+            for (int i = 0; i < coverRegion.size(); i++) {
+                int j = (i + 1) % coverRegion.size();
+                auto edgeData = connectSquare(coverRegion[i], coverRegion[j]);
+                
+                Node2D* edge = new Node2D(game->getScene(), {
+                    .mesh = game->getMesh("quad"),
+                    .material = game->getMaterial("test"),
+                    .position = vec2{edgeData.first.x, edgeData.first.y},
+                    .rotation = edgeData.first.z,
+                    .scale = edgeData.second
+                });
+                edge->setLayer(0.95);
+                regionNodes.push_back(edge);
+            }
         }
     }
 }

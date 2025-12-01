@@ -489,9 +489,9 @@ void DyMesh::cleanupDegenerateRegions() {
         }
         area = std::abs(area) * 0.5f;
         
-        // Only remove truly tiny artifacts (< 0.1 square units)
-        // This is about 1% of a 10x10 square, truly microscopic
-        const float minArea = 0.1f;
+        // Only remove truly tiny artifacts (< 0.01 square units)
+        // This preserves small but legitimate triangles from fold operations
+        const float minArea = 0.01f;
         if (area < minArea) {
             std::cout << "  Region " << i << " has area " << area << " (microscopic artifact), removing" << std::endl;
             regions.erase(regions.begin() + i);
