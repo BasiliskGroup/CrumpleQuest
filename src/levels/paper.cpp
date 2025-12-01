@@ -345,9 +345,21 @@ void Paper::pushFold(Fold& newFold) {
             }
             ensureCCW(overhangSourcePositions);
             
-            // Create mesh at source positions with front paper UVs
+            // Create mesh at source positions - try front paper first, then back paper
+            // (overhang might have originated from a fold on the other side)
             DyMesh* overhangSource = new DyMesh(overhangSourcePositions);
-            if (overhangSource->copy(*paperMesh)) {
+            PaperMesh* backMeshForCopy = getBackPaperMesh();
+            
+            bool copySuccess = overhangSource->copy(*paperMesh);
+            if (!copySuccess && backMeshForCopy) {
+                // Try the back mesh - the overhang might have come from the other side
+                std::cout << "    overhangSource->copy from front FAILED, trying back mesh..." << std::endl;
+                delete overhangSource;
+                overhangSource = new DyMesh(overhangSourcePositions);
+                copySuccess = overhangSource->copy(*backMeshForCopy);
+            }
+            
+            if (copySuccess) {
                 std::cout << "    overhangSource->copy succeeded" << std::endl;
                 
                 // Mirror over crease to get to overhang's front-side position (with UVs)
@@ -371,7 +383,7 @@ void Paper::pushFold(Fold& newFold) {
                 
                 delete overhangMirrored;
             } else {
-                std::cout << "    overhangSource->copy FAILED" << std::endl;
+                std::cout << "    overhangSource->copy FAILED (both front and back)" << std::endl;
             }
             delete overhangSource;
         }
@@ -388,6 +400,19 @@ void Paper::pushFold(Fold& newFold) {
     std::cout << "overhangFrontRegions count: " << overhangFrontRegions.size() << std::endl;
     
     if (!overhangFrontRegions.empty()) {
+        // Snap overhang vertices to frontRegion vertices to fix precision issues
+        const float snapEps = 0.01f;
+        for (size_t i = 0; i < overhangFrontRegions.size(); ++i) {
+            for (vec2& ov : overhangFrontRegions[i]) {
+                for (const vec2& fv : frontRegion) {
+                    if (glm::length(ov - fv) < snapEps) {
+                        ov = fv;
+                        break;
+                    }
+                }
+            }
+        }
+        
         // First, union all overhang regions together (they may touch each other)
         Paths64 allOverhangsPath;
         bool firstOverhang = true;
@@ -458,6 +483,19 @@ void Paper::pushFold(Fold& newFold) {
 
     // Union ALL overhang regions with the back region
     if (!overhangBackRegions.empty()) {
+        // Snap overhang vertices to cleanFlipped vertices to fix precision issues
+        const float snapEps = 0.01f;
+        for (size_t i = 0; i < overhangBackRegions.size(); ++i) {
+            for (vec2& ov : overhangBackRegions[i]) {
+                for (const vec2& cv : cleanFlipped) {
+                    if (glm::length(ov - cv) < snapEps) {
+                        ov = cv;
+                        break;
+                    }
+                }
+            }
+        }
+        
         // First, union all overhang regions together (they may touch each other)
         Paths64 allOverhangsPath;
         bool firstOverhang = true;

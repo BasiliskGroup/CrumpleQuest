@@ -86,11 +86,9 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
     Paths64 sol = useIntersection ? Intersect(subjAll, clip, FillRule::NonZero) 
                                   : Difference(subjAll, clip, FillRule::NonZero);
 
-    if (sol.size() > 1) {
-        std::cout << "Polygon was cut into multiple pieces" << std::endl;
-        return false;
-    }
-    
+    // Note: sol.size() > 1 means the cut created multiple pieces.
+    // makeRegionFromPaths64 will return the largest piece, which is typically
+    // the main region we want to keep.
     std::vector<vec2> newRegion = makeRegionFromPaths64(sol);
 
     if (newRegion.size() < 3) {
