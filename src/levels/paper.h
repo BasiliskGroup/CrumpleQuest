@@ -44,9 +44,12 @@ private:
         vec2 start;
         int side; 
         Vec2Pair crease;
+        vec2 creasePos;
+        vec2 creaseDir;
 
         // cleaning
         std::vector<vec2> cleanVerts;
+        std::vector<vec2> cutVerts;  // Original corner region being folded
 
         Fold(const vec2& start, int side=0);
         ~Fold();
