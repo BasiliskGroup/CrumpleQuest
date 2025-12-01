@@ -118,7 +118,37 @@ std::pair<glm::vec3, glm::vec2> connectSquare(const glm::vec2& a, const glm::vec
     glm::vec2 mid = (a + b) * 0.5f;
     float angle = std::atan2(delta.y, delta.x);
     glm::vec3 pos(mid.x, mid.y, angle);
-    glm::vec2 scale(len, 0.1f);
+    glm::vec2 scale(len, 0.025f);
 
     return {pos, scale};
+}
+
+bool lineSegmentsIntersect(const vec2& a0, const vec2& a1, const vec2& b0, const vec2& b1) {
+    vec2 d1 = a1 - a0;
+    vec2 d2 = b1 - b0;
+    
+    float denom = cross(d1, d2);
+    if (std::abs(denom) < 1e-8f) return false; // Parallel
+    
+    vec2 d = b0 - a0;
+    float t = cross(d, d2) / denom;
+    float u = cross(d, d1) / denom;
+    
+    return (t >= 0.0f && t <= 1.0f && u >= 0.0f && u <= 1.0f);
+}
+
+bool lineSegmentIntersectsPolygon(const vec2& segStart, const vec2& segEnd, const std::vector<vec2>& polygon) {
+    if (polygon.size() < 3) return false;
+    
+    // Check if line segment intersects any edge of the polygon
+    for (size_t i = 0; i < polygon.size(); ++i) {
+        const vec2& edgeStart = polygon[i];
+        const vec2& edgeEnd = polygon[(i + 1) % polygon.size()];
+        
+        if (lineSegmentsIntersect(segStart, segEnd, edgeStart, edgeEnd)) {
+            return true;
+        }
+    }
+    
+    return false;
 }

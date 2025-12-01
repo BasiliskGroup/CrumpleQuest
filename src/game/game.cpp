@@ -137,9 +137,9 @@ void Game::update(float dt) {
     }
 
     // continuous fold
-    if (leftIsDown && paper) {
-        paper->fold(LeftStartDown, mousePos);
-    }
+    // if (leftIsDown && paper) {
+    //     paper->fold(LeftStartDown, mousePos);
+    // }
 
     // update buttons
     for (UIElement* elem : uiElements) {

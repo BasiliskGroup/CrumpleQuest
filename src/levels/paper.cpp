@@ -172,7 +172,7 @@ void Paper::deactivateFold() {
 void Paper::fold(const vec2& start, const vec2& end) {
     if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) return;
 
-    if (activeFold != PAPER_FOLD) {
+    if (activeFold != PAPER_FOLD && folds[activeFold].holds.size() == 0) {
         popFold();
         activeFold = PAPER_FOLD; // Reset to paper fold so we recreate from scratch
     }
@@ -224,10 +224,21 @@ void Paper::pushFold(Fold& newFold) {
 
     // iterate from top to bottom since covering folds will come after covered
     for (int i = insertIndex - 1; i >= 0; i--) {
-        // prevents swapping unfold layers
         Fold& fold = folds[i];
-        if (fold.underside->hasOverlap(fold.side == curSide ? *newFold.underside : *newFold.backside) == false) continue;
-        fold.holds.insert(insertIndex);
+        
+        // Check overlap with underside/backside based on which side the fold is on
+        if (fold.underside->hasOverlap(fold.side == curSide ? *newFold.underside : *newFold.backside)) {
+            fold.holds.insert(insertIndex);
+            continue;
+        }
+        
+        // For folds on the back side, also check if the crease line intersects their region
+        if (fold.side != curSide) {
+            // Check if the new fold's crease intersects the existing fold's backside region
+            if (lineSegmentIntersectsPolygon(newFold.crease[0], newFold.crease[1], fold.backside->region)) {
+                fold.holds.insert(insertIndex);
+            }
+        }
     }
 
     folds.push_back(newFold);
@@ -334,11 +345,15 @@ void Paper::popFold() {
     paperMesh->paste(*oldFold.underside);
     getBackPaperMesh()->paste(*oldFold.backside);
 
+    // Remove references TO the activeFold from other folds' holds
     for (Fold& fold : folds) {
         if (fold.holds.find(activeFold) != fold.holds.end()) {
             fold.holds.erase(activeFold);
         }
     }
+    
+    // Clear all holds that the removed fold had on other folds
+    oldFold.holds.clear();
 
     // active fold should be near to the back so this isn't the worst
     folds.erase(folds.begin() + activeFold);

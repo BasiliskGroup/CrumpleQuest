@@ -17,6 +17,8 @@ bool isCCW(const vec2& a, const vec2& b, const vec2& c);
 
 // folding helpers
 bool intersectLineSegmentInfiniteLine(const vec2& a0, const vec2& a1,const vec2& b0, const vec2& bDir,vec2& outIntersection);
+bool lineSegmentsIntersect(const vec2& a0, const vec2& a1, const vec2& b0, const vec2& b1);
+bool lineSegmentIntersectsPolygon(const vec2& segStart, const vec2& segEnd, const std::vector<vec2>& polygon);
 vec2 nearestPointOnEdgeToPoint(const vec2& start, const vec2& end, const vec2& point);
 float distancePointToEdge(const vec2& start, const vec2& end, const vec2& point);
 vec2 reflectPointOverLine(const vec2& pos, const vec2& dir, const vec2& point);
