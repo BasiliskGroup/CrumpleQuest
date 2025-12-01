@@ -3,6 +3,7 @@
 #include "ui/ui.h"
 #include "levels/levels.h"
 #include "audio/audio_manager.h"
+#include "ui/menu_manager.h"
 #include "resource/animation.h"
 #include "resource/animator.h"
 #include "weapon/weapon.h"
@@ -33,12 +34,36 @@ int main() {
     // Load game start
     // ------------------------------------------
 
+    // audio system setup
+    if (!game->getAudio().Initialize()) {
+        std::cerr << "Failed to initialize audio system\n";
+        // return 1;
+    }
+    std::cout << "Audio system initialized successfully\n";
+    
+    game->getAudio().SetMasterVolume(1.0f);
+    
+    auto music_group = game->getAudio().CreateGroup("music");
+    
+    game->getAudio().SetGroupVolume(music_group, 0.7f);
+    
+    auto parchment_track = game->getAudio().CreateTrack();
+    game->getAudio().AddLayer(parchment_track, "parchment", "sounds/parchment.wav", "music");
+    game->getAudio().SetLayerVolume(parchment_track, "parchment", 1.0f);
+    
+    game->getAudio().PlayTrack(parchment_track);
+
     // load levels
     SingleSide::generateTemplates(game);
     Paper::generateTemplates(game);
     game->setPaper("empty");
 
     game->getPaper()->regenerateWalls();
+
+    // initialize menus (after scene is ready)
+    game->initMenus();
+    
+    game->getMenus()->showMainMenu();
 
     // create player
     Node2D* playerNode = new Node2D(game->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}, .collider=game->getCollider("quad") });
@@ -82,33 +107,10 @@ int main() {
     });
     game->addUI(testSlider);
 
-    // audio
-    auto& audio = audio::AudioManager::GetInstance();
-    if (!audio.Initialize()) {
-        std::cerr << "Failed to initialize audio system\n";
-        return 1;
-    }
-    std::cout << "Audio system initialized successfully\n";
-    
-    audio.SetMasterVolume(1.0f);
-    
-    auto music_group = audio.CreateGroup("music");
-    
-    audio.SetGroupVolume(music_group, 0.7f);
-    
-    auto parchment_track = audio.CreateTrack();
-    audio.AddLayer(parchment_track, "parchment", "sounds/parchment.wav", "music");
-    audio.SetLayerVolume(parchment_track, "parchment", 1.0f);
-    
-    audio.PlayTrack(parchment_track);
-
     while (game->getEngine()->isRunning()) {
         game->update(game->getEngine()->getDeltaTime());
         playerAnimator->update();
     }
-
-    // Shutdown audio system before deleting game
-    audio.Shutdown();
     
     delete game;
 }

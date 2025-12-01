@@ -5,6 +5,8 @@
 #include "character/player.h"
 #include "character/enemy.h"
 #include "levels/paper.h"
+#include "audio/audio_manager.h"
+#include "ui/menu_manager.h"
 
 class Floor;
 class UIElement;
@@ -30,6 +32,12 @@ private:
 
     bool kWasDown = false;
 
+    // audio
+    audio::AudioManager& audioManager;
+
+    // menu manager
+    MenuManager* menuManager;
+
     // TODO maybe nove these to ui scenes
     std::vector<UIElement*> uiElements;
 
@@ -51,6 +59,8 @@ public:
     Material* getMaterial(std::string name) { return materials[name]; }
     Mesh* getMesh(std::string name)         { return meshes[name]; }
     Collider* getCollider(std::string name) { return currentSide->colliders[name]; }
+    audio::AudioManager& getAudio()         { return audioManager; }
+    MenuManager* getMenus()                 { return menuManager; }
 
     Engine*& getEngine() { return engine; }
     Scene2D* getScene() { return currentSide->getScene(); }
@@ -62,6 +72,9 @@ public:
     // setters
     void setPlayer(Player* player) { this->player = player; }
     void setPaper(std::string str);
+
+    // initialization
+    void initMenus();
 
     void update(float dt);
 };

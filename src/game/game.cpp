@@ -6,7 +6,9 @@ Game::Game() :
     floor(nullptr),
     engine(nullptr),
     currentSide(nullptr),
-    paper(nullptr)
+    paper(nullptr),
+    audioManager(audio::AudioManager::GetInstance()),
+    menuManager(nullptr)
 {
     this->engine = new Engine(800, 450, "Crumple Quest");
 }
@@ -15,6 +17,12 @@ Game::~Game() {
     delete player; player = nullptr;
     delete floor; floor = nullptr;
 
+    // shutdown audio system
+    audioManager.Shutdown();
+
+    // Delete menu manager
+    delete menuManager;
+    
     // materials
     for (auto const& [name, material] : materials) {
         delete material;
@@ -100,4 +108,8 @@ void Game::setPaper(std::string str) {
     this->paper = Paper::templates[str]();
     this->currentSide = this->paper->getSingleSide();
     this->paper->setGame(this);
+}
+
+void Game::initMenus() {
+    menuManager = new MenuManager(this);
 }
