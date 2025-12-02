@@ -626,8 +626,10 @@ void Paper::regenerateWalls() {
 void Paper::regenerateWalls(int side) {
     std::vector<vec2>& region = (side == 0) ? paperMeshes.first->region : paperMeshes.second->region;
     SingleSide* selectedSide = (side == 0) ? sides.first : sides.second;
+    PaperMesh* selectedMesh = (side == 0) ? paperMeshes.first : paperMeshes.second;
     selectedSide->clearWalls();
 
+    // create outer wall
     for (int i = 0; i < region.size(); i++) {
         int j = (i + 1) % region.size();
         auto data = connectSquare(region[i], region[j]);
@@ -640,6 +642,26 @@ void Paper::regenerateWalls(int side) {
             .collider = selectedSide->getCollider("quad"),
             .density = -1
         }));
+    }
+
+    // create inner walls
+    for (const auto& uvRegion : selectedMesh->regions) {
+        if (uvRegion.isObstacle == false) continue;
+
+        int regionSize = uvRegion.positions.size();
+        for (int i = 0; i < regionSize; i++) {
+            int j = (i + 1) % regionSize;
+            auto data = connectSquare(uvRegion.positions[i], uvRegion.positions[j]);
+            selectedSide->addWall(new Node2D(selectedSide->getScene(), { 
+                .mesh = game->getMesh("quad"), 
+                .material = game->getMaterial("knight"), 
+                .position = vec2{data.first.x, data.first.y}, 
+                .rotation = data.first.z, 
+                .scale = data.second,
+                .collider = selectedSide->getCollider("quad"),
+                .density = -1
+            }));
+        }
     }
 }
 

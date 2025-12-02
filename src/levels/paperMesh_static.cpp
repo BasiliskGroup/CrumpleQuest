@@ -11,7 +11,7 @@ void PaperMesh::generateTemplates(Game* game) {
 
     obstacleTemplates["squareMiddle"] = [game]() { 
         std::vector<UVRegion> obst;
-        obst.push_back({ game->getMesh("quad"), { 0, 0, 0 }, { 1, 1 }, true });
+        obst.push_back({ game->getMesh("quad"), { 0, 0, 0 }, { 3, 3 }, true });
         return obst; 
     };
 }

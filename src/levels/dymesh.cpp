@@ -135,7 +135,7 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
 
             // Preserve basis from original region, compute new originUV for new origin position
             vec2 newOriginUV = uvReg.sampleUV(clippedPositions[0]);
-            newRegions.emplace_back(clippedPositions, uvReg.basis, newOriginUV);
+            newRegions.emplace_back(clippedPositions, uvReg.basis, newOriginUV, uvReg.isObstacle);
         }
     }
 
@@ -266,7 +266,7 @@ DyMesh* DyMesh::mirror(const vec2& pos, const vec2& dir) {
             Vert(mirrorDir(uvReg.basis[1].pos), uvReg.basis[1].uv)
         };
         
-        mirroredRegions.emplace_back(mirroredPositions, mirroredBasis, uvReg.originUV);
+        mirroredRegions.emplace_back(mirroredPositions, mirroredBasis, uvReg.originUV, uvReg.isObstacle);
     }
 
     return new DyMesh(mirroredRegion, mirroredRegions);
@@ -519,8 +519,10 @@ UVRegion DyMesh::mergeTwo(const UVRegion& r1, const UVRegion& r2) const {
     ensureCCW(mergedPositions);
 
     // Use r1's basis, compute originUV for new origin position
+    // Preserve obstacle status - if either region is an obstacle, merged region is an obstacle
+    bool mergedIsObstacle = r1.isObstacle || r2.isObstacle;
     vec2 newOriginUV = r1.sampleUV(mergedPositions[0]);
-    return UVRegion(mergedPositions, r1.basis, newOriginUV);
+    return UVRegion(mergedPositions, r1.basis, newOriginUV, mergedIsObstacle);
 }
 
 void DyMesh::mergeAllRegions() {
