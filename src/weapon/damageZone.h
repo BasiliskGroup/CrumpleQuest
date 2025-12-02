@@ -33,7 +33,7 @@ private:
     
 public:
     DamageZone(Character* owner, Node2D::Params node, Params params, const vec2& pos, const vec2& dir);
-    ~DamageZone() = default;
+    virtual ~DamageZone() = default;
 
     bool virtual hit(Character* other);
     bool virtual update(float dt);
