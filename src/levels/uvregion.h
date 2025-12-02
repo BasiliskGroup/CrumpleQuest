@@ -12,6 +12,7 @@ struct UVRegion {
 
     UVRegion() = default;
     UVRegion(const std::vector<vec2>& positions, const std::array<Vert, 2>& basis, const vec2& originUV, bool isObstacle=false);
+    UVRegion(Mesh* mesh, const vec3& position, const vec2& scale, bool isObstacle);
 
     // Sample UV at any point using linear basis transformation
     vec2 sampleUV(const vec2& pos) const;

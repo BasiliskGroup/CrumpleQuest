@@ -6,6 +6,7 @@
 #include "levels/triangle.h"
 #include "levels/edger.h"
 #include "levels/dymesh.h"
+#include "levels/paperMesh.h"
 
 class Game;
 
@@ -19,21 +20,6 @@ public:
     static constexpr float wallScale = 3;
 
 private:
-    struct PaperMesh : public DyMesh {
-        Mesh* mesh;
-
-        PaperMesh(const std::vector<vec2> verts, Mesh* mesh);
-        ~PaperMesh();
-        
-        // Rule of 5 for PaperMesh
-        PaperMesh(const PaperMesh& other);
-        PaperMesh(PaperMesh&& other) noexcept;
-        PaperMesh& operator=(const PaperMesh& other);
-        PaperMesh& operator=(PaperMesh&& other) noexcept;
-
-        void regenerateMesh();
-    };
-
     using PaperMeshPair = std::pair<PaperMesh*, PaperMesh*>;
 
     struct Fold {
@@ -84,7 +70,7 @@ public: // DEBUG
 
 public:
     Paper();
-    Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames);
+    Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames);
     
     // Rule of 5
     Paper(const Paper& other);

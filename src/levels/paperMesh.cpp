@@ -1,27 +1,27 @@
 #include "levels/levels.h"
 
-Paper::PaperMesh::PaperMesh(const std::vector<vec2> verts, Mesh* mesh) : DyMesh(verts, mesh), mesh(nullptr) {
+PaperMesh::PaperMesh(const std::vector<vec2> verts, Mesh* mesh) : DyMesh(verts, mesh), mesh(nullptr) {
     std::vector<float> data; 
     toData(data);
     this->mesh = new Mesh(data);
 }
 
-Paper::PaperMesh::~PaperMesh() {
+PaperMesh::~PaperMesh() {
     delete mesh; 
     mesh = nullptr;
 }
 
-Paper::PaperMesh::PaperMesh(const PaperMesh& other) : DyMesh(other.region, other.regions), mesh(nullptr) {
+PaperMesh::PaperMesh(const PaperMesh& other) : DyMesh(other.region, other.regions), mesh(nullptr) {
     std::vector<float> data;
     toData(data);
     mesh = new Mesh(data);
 }
 
-Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : DyMesh(std::move(other.region), std::move(other.regions)), mesh(other.mesh) {
+PaperMesh::PaperMesh(PaperMesh&& other) noexcept : DyMesh(std::move(other.region), std::move(other.regions)), mesh(other.mesh) {
     other.mesh = nullptr;
 }
 
-Paper::PaperMesh& Paper::PaperMesh::operator=(const PaperMesh& other) {
+PaperMesh& PaperMesh::operator=(const PaperMesh& other) {
     if (this == &other) return *this;
     
     // Copy-and-swap idiom for exception safety
@@ -37,7 +37,7 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(const PaperMesh& other) {
 }
 
 // Move assignment
-Paper::PaperMesh& Paper::PaperMesh::operator=(PaperMesh&& other) noexcept {
+PaperMesh& PaperMesh::operator=(PaperMesh&& other) noexcept {
     if (this == &other) return *this;
     
     delete mesh;
@@ -50,7 +50,7 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(PaperMesh&& other) noexcept {
     return *this;
 }
 
-void Paper::PaperMesh::regenerateMesh() {
+void PaperMesh::regenerateMesh() {
     Mesh* oldPaperMesh = mesh;
     std::vector<float> newMeshData;
     toData(newMeshData);

@@ -1,7 +1,6 @@
 #include "levels/levels.h"
 #include "util/maths.h"
 
-
 Paper::Paper() : 
     curSide(0), 
     isOpen(false),
@@ -10,7 +9,7 @@ Paper::Paper() :
     paperMeshes(nullptr, nullptr) 
 {}
 
-Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames) : 
+Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames) : 
     curSide(0), 
     isOpen(false),
     activeFold(NULL_FOLD),
@@ -18,7 +17,12 @@ Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pai
     paperMeshes(nullptr, nullptr) 
 {
     paperMeshes.first  = new PaperMesh(region, mesh0);
+    auto obst = PaperMesh::obstacleTemplates[obstacleNames.first]();
+    paperMeshes.first->regions.insert(paperMeshes.first->regions.begin(), obst.begin(), obst.end());
+
     paperMeshes.second = new PaperMesh(region, mesh1);
+    obst = PaperMesh::obstacleTemplates[obstacleNames.second]();
+    paperMeshes.second->regions.insert(paperMeshes.second->regions.begin(), obst.begin(), obst.end());
 
     sides.first  = SingleSide::templates[sideNames.first]();
     sides.second = SingleSide::templates[sideNames.second]();
