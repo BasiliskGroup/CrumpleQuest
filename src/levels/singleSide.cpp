@@ -1,26 +1,63 @@
 #include "levels/levels.h"
+#include "weapon/meleeZone.h"
 
-SingleSide::SingleSide(Game* game) : scene(nullptr), camera(nullptr) {
+
+SingleSide::SingleSide(Game* game, std::string mesh, std::string material) : scene(nullptr), camera(nullptr), background(nullptr) {
     scene = new Scene2D(game->getEngine());
     this->camera = new StaticCamera2D(game->getEngine());
-    this->camera->setScale(9.0f);
+    this->camera->setScale(12.0f); // should be 9.0f
     this->scene->setCamera(this->camera);
     this->scene->getSolver()->setGravity(0);
+
+    loadResources();
+
+    // create background node
+    background = new Node2D(scene, { 
+        .mesh=game->getMesh(mesh), 
+        .material=game->getMaterial(material), 
+        .scale={ 1, 1 } 
+    });
+    background->setLayer(-0.7);
 }
 
-SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camera(nullptr) {
+SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camera(nullptr), background(nullptr) {
     if (other.scene) scene = new Scene2D(*other.scene);
     if (other.camera) camera = new StaticCamera2D(*other.camera);
     enemies = other.enemies;
+    damageZones = other.damageZones;
+    
+    // find background - iterate both trees in parallel
+    if (other.background) {
+        auto thisIt = scene->getRoot()->begin();
+        auto otherIt = other.scene->getRoot()->begin();
+        auto thisEnd = scene->getRoot()->end();
+        auto otherEnd = other.scene->getRoot()->end();
+        
+        while (otherIt != otherEnd && thisIt != thisEnd) {
+            if (*otherIt == other.background) {
+                background = *thisIt;
+                break;
+            }
+            ++otherIt;
+            ++thisIt;
+        }
+    }
+    
+    loadResources();
 }
 
 SingleSide::SingleSide(SingleSide&& other) noexcept : 
     scene(other.scene),
     camera(other.camera),
-    enemies(std::move(other.enemies))
+    enemies(std::move(other.enemies)),
+    damageZones(std::move(other.damageZones)), 
+    background(std::move(other.background))
 {
     other.scene = nullptr;
     other.camera = nullptr;
+    other.background = nullptr;
+
+    loadResources();
 }
 
 SingleSide::~SingleSide() {
@@ -35,6 +72,7 @@ SingleSide& SingleSide::operator=(const SingleSide& other) noexcept {
     if (other.camera) camera = new StaticCamera2D(*other.camera);
 
     enemies = other.enemies;
+    damageZones = other.damageZones;
     return *this;
 }
 
@@ -46,6 +84,7 @@ SingleSide& SingleSide::operator=(SingleSide&& other) noexcept {
     scene = other.scene;
     camera = other.camera;
     enemies = std::move(other.enemies);
+    damageZones = std::move(other.damageZones);
 
     // clear other
     other.scene = nullptr;
@@ -57,7 +96,42 @@ void SingleSide::generateNavmesh() {
     
 }
 
-void SingleSide::update(float dt) {
+void SingleSide::update(const vec2& playerPos, float dt) {
+    // update all damageZones
+    // done before enemy update to give a "summoning sickness" for a single frame
+    for (int i = 0; i < damageZones.size(); i++) {
+        DamageZone* zone = damageZones[i];
+
+        bool good = zone->update(dt);
+        if (good == false) {
+            delete zone; zone = nullptr;
+            damageZones.erase(damageZones.begin() + i--);
+            continue;
+        }
+
+        // check collision
+        for (Enemy* enemy : enemies) {
+            if (glm::length2(enemy->getPosition() - zone->getPosition()) > (enemy->getRadius() + zone->getRadius())) continue;
+            zone->hit(enemy);
+        }
+    }
+
+    // remove all dead enemies
+    for (int i = 0; i < enemies.size(); i++) {
+        Enemy* enemy = enemies[i];
+        if (enemy->isDead() == false) continue;
+
+        enemy->onDeath();
+        enemies.erase(enemies.begin() + i);
+        delete enemy;
+        i--;
+    }
+
+    // update all enemies
+    for (Enemy* enemy : enemies) {
+        enemy->move(playerPos, dt);
+    }
+
     scene->update();
     scene->render();
 }
@@ -67,7 +141,19 @@ void SingleSide::clear() {
         delete enemy;
     }
     enemies.clear();
+    walls.clear(); // will get cleaned by the scene
 
     delete scene; scene = nullptr;
     delete camera; camera = nullptr;
+}
+
+void SingleSide::clearWalls() {
+    for (auto& wall : walls) {
+        delete wall;
+    }
+    walls.clear();
+}
+
+void SingleSide::loadResources() {
+    addCollider("quad", new Collider(scene->getSolver(), {{0.5f, 0.5f}, {-0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, -0.5f}}));
 }

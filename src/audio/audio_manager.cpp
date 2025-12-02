@@ -11,6 +11,11 @@
 #include <stdexcept>
 #include <iostream>
 #include <algorithm>
+#include <cstdlib>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 // Place all std usage in global namespace
 using ::std::lock_guard;
@@ -176,7 +181,19 @@ void AudioManager::AddLayer(TrackHandle track, const string& layerName,
     auto track_it = tracks_.find(track);
     if (track_it == tracks_.end() || !track_it->second) return;
     
-    track_it->second->AddLayer(layerName, filepath, group, true);
+    // Look up the group by name if provided
+    AudioGroup* group_ptr = nullptr;
+    if (!group.empty()) {
+        auto group_it = group_names_.find(group);
+        if (group_it != group_names_.end()) {
+            auto groups_it = groups_.find(group_it->second);
+            if (groups_it != groups_.end() && groups_it->second) {
+                group_ptr = groups_it->second.get();
+            }
+        }
+    }
+    
+    track_it->second->AddLayer(layerName, filepath, group_ptr, true);
 }
 
 void AudioManager::RemoveLayer(TrackHandle track, const string& layerName) {
@@ -212,11 +229,11 @@ GroupHandle AudioManager::CreateGroup(const string& name) {
     GroupHandle handle = NextGroupHandle();
     
     // Create the group in the audio system
-    auto* group_ptr = audio_system_->CreateGroup(name);
-    if (!group_ptr) return 0;
+    auto group = audio_system_->CreateGroup(name);
+    if (!group) return 0;
     
     // Store the group
-    groups_[handle].reset(group_ptr);
+    groups_[handle] = std::move(group);
     
     // Store name mapping if provided
     if (!name.empty()) {
@@ -250,6 +267,15 @@ void AudioManager::SetGroupVolume(GroupHandle group, float volume) {
     }
 }
 
+float AudioManager::GetGroupVolume(GroupHandle group) const {
+    lock_guard<mutex> lock(resource_mutex_);
+    auto it = groups_.find(group);
+    if (it != groups_.end() && it->second) {
+        return it->second->GetVolume();
+    }
+    return 0.0f;
+}
+
 void AudioManager::FadeGroup(GroupHandle group, float targetVolume, 
                             std::chrono::milliseconds duration) {
     lock_guard<mutex> lock(resource_mutex_);
@@ -267,11 +293,11 @@ SoundHandle AudioManager::LoadSound(const string& filepath) {
     SoundHandle handle = NextSoundHandle();
     
     // Create the sound
-    Sound* sound_ptr = audio_system_->CreateSound(filepath);
+    auto sound_ptr = audio_system_->CreateSound(filepath);
     if (!sound_ptr) return 0;
     
     // Store the sound
-    sounds_[handle] = shared_ptr<Sound>(sound_ptr);
+    sounds_[handle] = std::move(sound_ptr);
     
     return handle;
 }
@@ -308,6 +334,14 @@ void AudioManager::SetSoundVolume(SoundHandle sound, float volume) {
     }
 }
 
+void AudioManager::SetSoundPitch(SoundHandle sound, float pitch) {
+    lock_guard<mutex> lock(resource_mutex_);
+    auto it = sounds_.find(sound);
+    if (it != sounds_.end() && it->second) {
+        it->second->SetPitch(pitch);
+    }
+}
+
 bool AudioManager::IsSoundPlaying(SoundHandle sound) const {
     lock_guard<mutex> lock(resource_mutex_);
     auto it = sounds_.find(sound);
@@ -315,6 +349,74 @@ bool AudioManager::IsSoundPlaying(SoundHandle sound) const {
         return it->second->IsPlaying();
     }
     return false;
+}
+
+void AudioManager::PlayRandomSoundFromFolder(const string& folderPath, GroupHandle group) {
+    lock_guard<mutex> lock(resource_mutex_);
+    
+    // Find the group name for this handle
+    string groupName = "";
+    if (group != 0) {
+        for (const auto& [name, handle] : group_names_) {
+            if (handle == group) {
+                groupName = name;
+                break;
+            }
+        }
+    }
+    
+    // Check if we've already loaded sounds from this folder
+    auto folder_it = folder_sounds_.find(folderPath);
+    if (folder_it == folder_sounds_.end()) {
+        // First time accessing this folder - load all .wav files
+        std::vector<SoundHandle> loaded_sounds;
+        
+        // Get all .wav files in the folder
+        #ifdef _WIN32
+        string searchPath = folderPath + "/*.wav";
+        WIN32_FIND_DATAA findData;
+        HANDLE hFind = FindFirstFileA(searchPath.c_str(), &findData);
+        
+        if (hFind != INVALID_HANDLE_VALUE) {
+            std::cout << "Found sounds in folder: " << folderPath << std::endl;
+            do {
+                if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                    string filepath = folderPath + "/" + findData.cFileName;
+                    
+                    // Load the sound
+                    SoundHandle handle = NextSoundHandle();
+                    Sound* sound_ptr = audio_system_->CreateSound(filepath, groupName);
+                    if (sound_ptr) {
+                        sounds_[handle] = shared_ptr<Sound>(sound_ptr);
+                        loaded_sounds.push_back(handle);
+                    }
+                }
+            } while (FindNextFileA(hFind, &findData));
+            FindClose(hFind);
+        }
+        #else
+        // Unix/Linux implementation would go here using opendir/readdir
+        #endif
+        
+        if (loaded_sounds.empty()) {
+            std::cerr << "No .wav files found in folder: " << folderPath << std::endl;
+            return;
+        }
+        
+        folder_sounds_[folderPath] = loaded_sounds;
+        folder_it = folder_sounds_.find(folderPath);
+    }
+    
+    // Play a random sound from the folder
+    if (!folder_it->second.empty()) {
+        size_t randomIndex = rand() % folder_it->second.size();
+        SoundHandle randomSound = folder_it->second[randomIndex];
+        
+        auto sound_it = sounds_.find(randomSound);
+        if (sound_it != sounds_.end() && sound_it->second) {
+            sound_it->second->Play();
+        }
+    }
 }
 
 } // namespace audio

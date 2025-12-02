@@ -50,10 +50,10 @@ vec2 Edger::getNearestEdgePoint(const vec2& pos) {
     return bestPoint;
 }
 
-std::pair<int, int> Edger::getVertexRangeBelowThreshold(const vec2& dir, float thresh, const vec2& start) {
+bool Edger::getVertexRangeBelowThreshold(const vec2& dir, float thresh, const vec2& start, std::pair<int, int>& outRange) {
     size_t n = region.size();
     if (n == 0) {
-        throw std::runtime_error("Cannot get vertex range on empty vertex list");
+        return false;
     }
 
     // Step 1: Find the vertex closest to start
@@ -71,7 +71,7 @@ std::pair<int, int> Edger::getVertexRangeBelowThreshold(const vec2& dir, float t
     // Verify that the closest vertex satisfies the threshold condition
     float closestDot = glm::dot(region[closestIndex], dir);
     if (closestDot >= thresh) {
-        throw std::runtime_error("Closest vertex dot product is not less than threshold");
+        return false;
     }
 
     // Step 2: Walk CCW (backwards in index) from closest until we find a vertex >= thresh
@@ -96,7 +96,8 @@ std::pair<int, int> Edger::getVertexRangeBelowThreshold(const vec2& dir, float t
     
     // If we walked all vertices, all are below threshold
     if (stepsLeft == n) {
-        return {0, static_cast<int>(n - 1)};
+        outRange = {0, static_cast<int>(n - 1)};
+        return true;
     }
 
     // Step 3: Walk CW (forwards in index) from closest until we find a vertex >= thresh
@@ -122,7 +123,8 @@ std::pair<int, int> Edger::getVertexRangeBelowThreshold(const vec2& dir, float t
     int first = (leftFirstOutside + 1) % static_cast<int>(n);
     int second = (rightFirstOutside - 1 + static_cast<int>(n)) % static_cast<int>(n);
     
-    return {first, second};
+    outRange = {first, second};
+    return true;
 }
 
 void Edger::addRangeInside(std::vector<vec2>& vecs, const std::pair<int, int> range) {

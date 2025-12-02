@@ -5,9 +5,9 @@
 
 class ContactZone : public DamageZone {
 public:
-    ContactZone(Character* owner, Node2D* hitbox, int damage, float life, bool friendlyDamage=false, bool selfDamage=false);
+    ContactZone(Character* owner, Node2D::Params node, Params params, const vec2& pos);
 
-    bool update(float dt);
+    bool update(float dt) override;
 };
 
 #endif

@@ -3,6 +3,7 @@
 
 #include "util/includes.h"
 
+class SingleSide;
 class Weapon;
 
 class Character {
@@ -10,12 +11,17 @@ protected:
     int maxHealth;
     int health;
     float speed;
+    float accel = 5;
+    float itime = 0;
+    float radius = 0.5;
+    vec2 moveDir = vec2();
     Weapon* weapon;
     Node2D* node;
+    SingleSide* side;
     std::string team;
 
 public:
-    Character(int maxHealth, float speed, Node2D* node, Weapon* weapon, std::string team);
+    Character(int maxHealth, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team);
     ~Character();
 
     void onDamage(int damage);
@@ -30,9 +36,11 @@ public:
     Weapon*& getWeapon() { return weapon; }
     std::string getTeam() { return team; }
     Node2D* getNode() { return node; }
+    SingleSide* getSide() { return side; }
 
     vec2 getPosition() { return node->getPosition(); }
     vec3 getVelocity() { return node->getVelocity(); }
+    float getRadius() { return radius; }
 
     // setters
     void setMaxMealth(int maxHealth) { this->maxHealth = maxHealth; }

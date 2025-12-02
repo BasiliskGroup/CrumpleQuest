@@ -16,6 +16,7 @@ namespace audio {
 // Forward declarations
 class Sound;
 class AudioSystem;
+class AudioGroup;
 
 /**
  * @class AudioTrack
@@ -75,11 +76,11 @@ class AudioTrack {
    * 
    * @param name Identifier for the layer
    * @param filepath Path to the audio file
-   * @param group_name Optional name of the group this layer belongs to
+   * @param group Optional pointer to the group this layer belongs to
    * @param looping Whether the layer should loop continuously
    */
   void AddLayer(const std::string& name, const std::string& filepath, 
-                const std::string& group_name = "", bool looping = true);
+                AudioGroup* group = nullptr, bool looping = true);
 
   /**
    * @brief Removes a layer from the track

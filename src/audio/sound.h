@@ -130,6 +130,13 @@ class Sound {
    * @param volume Volume level (0.0 to 1.0)
    */
   void SetVolume(float volume);
+  
+  /**
+   * @brief Sets pitch for the next instance to be played
+   * 
+   * @param pitch Pitch multiplier (1.0 = normal pitch, 0.5 = half speed, 2.0 = double speed)
+   */
+  void SetPitch(float pitch);
   ///@}
 
   ///@name State Queries
@@ -171,6 +178,7 @@ class Sound {
   std::string filepath_;                             ///< Path to the audio file
   bool looping_;                                     ///< Whether new instances should loop
   float volume_;                                     ///< Current volume level
+  float pitch_;                                      ///< Pitch for next instance (1.0 = normal)
 };
 
 }  // namespace audio

@@ -5,16 +5,18 @@
 #include "character/player.h"
 #include "character/enemy.h"
 #include "levels/paper.h"
+#include "audio/audio_manager.h"
+#include "ui/menu_manager.h"
+#include "resource/animator.h"
 
 class Floor;
 class UIElement;
+class Animator;
 
 class Game {
 private:
     Engine* engine;
-    SingleSide* currentSide;
 
-    std::unordered_map<std::string, Collider*> colliders;
     std::unordered_map<std::string, Image*> images;
     std::unordered_map<std::string, Material*> materials;
     std::unordered_map<std::string, Mesh*> meshes;
@@ -23,14 +25,29 @@ private:
     Floor* floor;
 
     // rendering paper
+    SingleSide* currentSide;
     Paper* paper;
-    Node2D* paperNode;
+
+    // menu scene (separate from game scene)
+    Scene2D* menuScene;
+    StaticCamera2D* menuCamera;
 
     // track inputs
     bool leftWasDown = false;
     vec2 LeftStartDown = vec2();
 
     bool kWasDown = false;
+
+    // audio
+    audio::AudioManager& audioManager;
+    audio::GroupHandle musicGroup;
+    audio::GroupHandle sfxGroup;
+
+    // menu manager
+    MenuManager* menuManager;
+
+    // player animator
+    Animator* playerAnimator;
 
     // TODO maybe nove these to ui scenes
     std::vector<UIElement*> uiElements;
@@ -42,7 +59,7 @@ public:
     void addImage(std::string name, Image* image)          { this->images[name] = image; }
     void addMaterial(std::string name, Material* material) { this->materials[name] = material; }
     void addMesh(std::string name, Mesh* mesh)             { this->meshes[name] = mesh; }
-    void addCollider(std::string name, Collider* collider) { this->colliders[name] = collider; }
+    void addCollider(std::string name, Collider* collider) { this->currentSide->colliders[name] = collider; }
 
     // TODO temporary debug
     void addEnemy(Enemy* enemy) { this->currentSide->addEnemy(enemy); }
@@ -52,22 +69,29 @@ public:
     Image* getImage(std::string name)       { return images[name]; }
     Material* getMaterial(std::string name) { return materials[name]; }
     Mesh* getMesh(std::string name)         { return meshes[name]; }
-    Collider* getCollider(std::string name) { return colliders[name]; }
+    Collider* getCollider(std::string name) { return currentSide->colliders[name]; }
+    audio::AudioManager& getAudio()         { return audioManager; }
+    audio::GroupHandle getMusicGroup()      { return musicGroup; }
+    audio::GroupHandle getSFXGroup()        { return sfxGroup; }
+    MenuManager* getMenus()                 { return menuManager; }
 
     Engine*& getEngine() { return engine; }
-    Scene2D*& getScene() { return currentSide->getScene(); }
+    Scene2D* getScene() { return currentSide->getScene(); }
+    Scene2D* getMenuScene() { return menuScene; }
     Paper* getPaper() { return paper; }
+    SingleSide*& getSide() { return currentSide; }
 
     auto& getEnemies() { return currentSide->getEnemies(); }
 
     // setters
     void setPlayer(Player* player) { this->player = player; }
-    void setPaper(Paper* paper) { 
-        this->paper = paper; 
-        this->paper->setGame(this);
-    }
+    void setPaper(std::string str);
 
-    void setSide(std::string str) { this->currentSide = SingleSide::templates[str](); }
+    // initialization
+    void initMenus();
+
+    // game flow
+    void startGame();
 
     void update(float dt);
 };

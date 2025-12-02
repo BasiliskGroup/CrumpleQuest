@@ -1,7 +1,7 @@
 #include "weapon/contactZone.h"
 
-ContactZone::ContactZone(Character* owner, Node2D* hitbox, int damage, float life, bool friendlyDamage, bool selfDamage) :
-    DamageZone(owner, hitbox, { damage, life, friendlyDamage, selfDamage })
+ContactZone::ContactZone(Character* owner, Node2D::Params node, Params params, const vec2& pos) :
+    DamageZone(owner, node, params, pos, vec2())
 {}
 
 bool ContactZone::update(float dt) {

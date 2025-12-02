@@ -1,7 +1,7 @@
 #include "weapon/projectileZone.h"
 
-ProjectileZone::ProjectileZone(Character* owner, Node2D* hitbox, int damage, float life, int ricochet, bool friendlyDamage, bool selfDamage) :
-    DamageZone(owner, hitbox, { damage, life, friendlyDamage, selfDamage }),
+ProjectileZone::ProjectileZone(Character* owner, Node2D::Params node, Params params, const vec2& pos, const vec2& dir, int ricochet) :
+    DamageZone(owner, node, params, pos, dir),
     ricochet(ricochet)
 {}
 

@@ -11,13 +11,13 @@ Paper::PaperMesh::~PaperMesh() {
     mesh = nullptr;
 }
 
-Paper::PaperMesh::PaperMesh(const PaperMesh& other) : DyMesh(other.region, other.data), mesh(nullptr) {
+Paper::PaperMesh::PaperMesh(const PaperMesh& other) : DyMesh(other.region, other.regions), mesh(nullptr) {
     std::vector<float> data;
     toData(data);
     mesh = new Mesh(data);
 }
 
-Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : DyMesh(std::move(other.region), std::move(other.data)), mesh(other.mesh) {
+Paper::PaperMesh::PaperMesh(PaperMesh&& other) noexcept : DyMesh(std::move(other.region), std::move(other.regions)), mesh(other.mesh) {
     other.mesh = nullptr;
 }
 
@@ -30,7 +30,7 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(const PaperMesh& other) {
     delete mesh;
     mesh = temp.mesh;
     region = std::move(temp.region);
-    data = std::move(temp.data);
+    regions = std::move(temp.regions);
     temp.mesh = nullptr;
     
     return *this;
@@ -43,7 +43,7 @@ Paper::PaperMesh& Paper::PaperMesh::operator=(PaperMesh&& other) noexcept {
     delete mesh;
     
     region = std::move(other.region);
-    data = std::move(other.data);
+    regions = std::move(other.regions);
     mesh = other.mesh;
     other.mesh = nullptr;
     

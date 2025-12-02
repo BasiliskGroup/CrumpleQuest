@@ -26,9 +26,6 @@ AudioGroup::~AudioGroup() {
 void AudioGroup::SetVolume(float volume) {
   // Clamp volume between 0 and 1
   volume_ = std::min(1.0f, std::max(0.0f, volume));
-  
-  std::cout << "Setting group volume to " << volume_ 
-            << " (requested: " << volume << ")" << std::endl;
             
   if (sound_group_) {
     ma_sound_group_set_volume(sound_group_, volume_);

@@ -11,7 +11,7 @@ void Animator::update() {
 
     time += engine->getDeltaTime();
 
-    std::cout << "Frame : " << frame << " out of " << animation->getNumberFrames() << std::endl;
+    // std::cout << "Frame : " << frame << " out of " << animation->getNumberFrames() << std::endl;
     node->setMaterial(animation->getFrame(frame));
 }
 

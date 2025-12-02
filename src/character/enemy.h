@@ -9,7 +9,7 @@ private:
     AI* ai;
 
 public:
-    Enemy(int health, float speed, Node2D* node, Weapon* weapon, AI* ai);
+    Enemy(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai);
     ~Enemy() = default;
 
     void onDamage(int damage);
