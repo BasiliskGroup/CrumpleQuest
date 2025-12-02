@@ -9,6 +9,7 @@ private:
 
 public:
     Player(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon);
+    ~Player() = default;
     
     void onDamage(int damage);
     void move(float dt);

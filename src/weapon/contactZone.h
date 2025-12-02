@@ -6,6 +6,7 @@
 class ContactZone : public DamageZone {
 public:
     ContactZone(Character* owner, Node2D::Params node, Params params, const vec2& pos);
+    ~ContactZone() = default;
 
     bool update(float dt) override;
 };

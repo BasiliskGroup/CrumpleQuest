@@ -86,9 +86,6 @@ Game::~Game() {
 }
 
 void Game::update(float dt) {
-    // always unhide mouse 
-    this->engine->getMouse()->setVisible();
-
     // get mouse state
     bool leftIsDown = engine->getMouse()->getLeftDown();
     vec2 mousePos = { 0, 0 };

@@ -2,7 +2,9 @@
 #include "weapon/weapon.h"
 
 
-Character::Character(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team) : health(health), speed(speed), radius(glm::length(node->getScale())), node(node), side(side), weapon(weapon), team(team) {}
+Character::Character(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team) : health(health), speed(speed), radius(glm::length(node->getScale())), node(node), side(side), weapon(weapon), team(team) {
+    node->setManifoldMask(1, 1, 0);
+}
 
 Character::~Character() {
     delete weapon; weapon = nullptr;
