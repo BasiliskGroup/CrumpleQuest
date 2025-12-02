@@ -86,6 +86,13 @@ Game::~Game() {
 }
 
 void Game::update(float dt) {
+    // pathing
+    pathTimer -= dt;
+    if (paper && pathTimer < 0) {
+        paper->updatePathing(player->getPosition());
+        pathTimer = maxPathTimer;
+    }
+
     // get mouse state
     bool leftIsDown = engine->getMouse()->getLeftDown();
     vec2 mousePos = { 0, 0 };

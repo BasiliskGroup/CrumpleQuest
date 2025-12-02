@@ -548,6 +548,8 @@ void Paper::pushFold(Fold& newFold) {
     paperMeshes.second->regenerateMesh();
     paperMeshes.first->mergeAllRegions();
     paperMeshes.second->mergeAllRegions();
+    paperMeshes.first->regenerateNavmesh();
+    paperMeshes.second->regenerateNavmesh();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
     sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
@@ -566,11 +568,6 @@ void Paper::popFold() {
     Fold& oldFold = folds[activeFold];
     PaperMesh* paperMesh = getPaperMesh();
     PaperMesh* backMesh = getBackPaperMesh();
-
-    // When unfolding, we need to:
-    // 1. Remove the cover region (which is currently on top of the folded area)
-    // 2. Restore the underside region (which was folded under)
-    // 3. Restore the backside region (which was on the back)
     
     // Remove cover region from front paper
     bool check = paperMesh->cut(*oldFold.cover);
@@ -610,6 +607,8 @@ void Paper::popFold() {
     paperMeshes.second->regenerateMesh();
     paperMeshes.first->mergeAllRegions();
     paperMeshes.second->mergeAllRegions();
+    paperMeshes.first->regenerateNavmesh();
+    paperMeshes.second->regenerateNavmesh();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
     sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
@@ -745,5 +744,16 @@ void Paper::previewFold(const vec2& start, const vec2& end) {
             edge->setLayer(0.95);
             regionNodes.push_back(edge);
         }
+    }
+}
+
+void Paper::updatePathing(vec2 playerPos) {
+    SingleSide* side = (curSide == 0) ? sides.first : sides.second;
+    PaperMesh* mesh = (curSide == 0) ? paperMeshes.first : paperMeshes.second;
+
+    for (Enemy* enemy : side->getEnemies()) {
+        std::vector<vec2> path;
+        mesh->getPath(path, enemy->getPosition(), playerPos);
+        enemy->setPath(path);
     }
 }

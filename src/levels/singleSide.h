@@ -1,8 +1,6 @@
 #ifndef SINGLE_SIDE_H
 #define SINGLE_SIDE_H
 
-#include "levels/navmesh.h"
-
 class Enemy;
 class Game;
 class DamageZone;

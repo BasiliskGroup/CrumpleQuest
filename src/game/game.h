@@ -49,6 +49,10 @@ private:
     // player animator
     Animator* playerAnimator;
 
+    // enemy data
+    float pathTimer = 0;
+    float maxPathTimer = 0.2;
+
     // TODO maybe nove these to ui scenes
     std::vector<UIElement*> uiElements;
 

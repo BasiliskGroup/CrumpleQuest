@@ -17,7 +17,6 @@ public:
     static void generateTemplates(Game* game);
     static Paper* getRandomTemplate(RoomTypes type);
     static void flattenVertices(const std::vector<Vert>& vertices, std::vector<float>& data); // TODO move to generic helper
-    static constexpr float wallScale = 3;
 
 private:
     using PaperMeshPair = std::pair<PaperMesh*, PaperMesh*>;
@@ -94,6 +93,9 @@ public:
 
     void setGame(Game* game) { this->game = game; }
     void previewFold(const vec2& start, const vec2& end);  // Preview fold cover without applying
+
+    // enemies
+    void updatePathing(vec2 playerPos);
 
     // DEBUG
     void dotData();
