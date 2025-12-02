@@ -8,9 +8,10 @@ struct UVRegion {
     std::vector<vec2> positions;     // Polygon vertices
     std::array<Vert, 2> basis;       // Two linearly independent direction vectors (pos delta, uv delta)
     vec2 originUV;                   // UV at positions[0] (the origin)
+    bool isObstacle;
 
     UVRegion() = default;
-    UVRegion(const std::vector<vec2>& positions, const std::array<Vert, 2>& basis, const vec2& originUV);
+    UVRegion(const std::vector<vec2>& positions, const std::array<Vert, 2>& basis, const vec2& originUV, bool isObstacle=false);
 
     // Sample UV at any point using linear basis transformation
     vec2 sampleUV(const vec2& pos) const;

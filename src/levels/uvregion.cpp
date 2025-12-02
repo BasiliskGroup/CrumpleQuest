@@ -1,7 +1,7 @@
 #include "levels/uvregion.h"
 
-UVRegion::UVRegion(const std::vector<vec2>& positions, const std::array<Vert, 2>& basis, const vec2& originUV) 
-    : positions(positions), basis(basis), originUV(originUV) {
+UVRegion::UVRegion(const std::vector<vec2>& positions, const std::array<Vert, 2>& basis, const vec2& originUV, bool isObstacle) 
+    : positions(positions), basis(basis), originUV(originUV), isObstacle(isObstacle) {
 }
 
 bool UVRegion::contains(const vec2& p, float eps) const {
