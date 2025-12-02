@@ -354,14 +354,12 @@ bool AudioManager::IsSoundPlaying(SoundHandle sound) const {
 void AudioManager::PlayRandomSoundFromFolder(const string& folderPath, GroupHandle group) {
     lock_guard<mutex> lock(resource_mutex_);
     
-    // Find the group name for this handle
-    string groupName = "";
+    // Get the AudioGroup pointer for this handle
+    AudioGroup* group_ptr = nullptr;
     if (group != 0) {
-        for (const auto& [name, handle] : group_names_) {
-            if (handle == group) {
-                groupName = name;
-                break;
-            }
+        auto group_it = groups_.find(group);
+        if (group_it != groups_.end()) {
+            group_ptr = group_it->second.get();
         }
     }
     
@@ -385,9 +383,9 @@ void AudioManager::PlayRandomSoundFromFolder(const string& folderPath, GroupHand
                     
                     // Load the sound
                     SoundHandle handle = NextSoundHandle();
-                    Sound* sound_ptr = audio_system_->CreateSound(filepath, groupName);
-                    if (sound_ptr) {
-                        sounds_[handle] = shared_ptr<Sound>(sound_ptr);
+                    auto sound = audio_system_->CreateSound(filepath, group_ptr);
+                    if (sound) {
+                        sounds_[handle] = std::move(sound);
                         loaded_sounds.push_back(handle);
                     }
                 }
