@@ -9,7 +9,7 @@ Game::Game() :
     paper(nullptr),
     paperNode(nullptr)
 {
-    this->engine = new Engine(1600, 900, "Crumple Quest");
+    this->engine = new Engine(1600, 900, "Crumple Quest", false);
 }
 
 Game::~Game() {
