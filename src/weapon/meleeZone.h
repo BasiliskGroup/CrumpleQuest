@@ -9,6 +9,8 @@ private:
 
 public:
     MeleeZone(Character* owner, Node2D::Params node, Params params, const vec2& pos, const vec2& dir, float knockback=0);
+    ~MeleeZone() = default;
+
     bool update(float dt) override;
     bool hit(Character* other) override;
 };
