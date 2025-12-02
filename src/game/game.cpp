@@ -19,10 +19,7 @@ Game::Game() :
     musicGroup(0),
     sfxGroup(0)
 {
-<<<<<<< HEAD
-    this->engine = new Engine(1600, 900, "Crumple Quest", false);
-=======
-    this->engine = new Engine(800, 450, "Crumple Quest");
+    this->engine = new Engine(800, 450, "Crumple Quest", false);
     
     // Initialize audio system
     if (!audioManager.Initialize()) {
@@ -44,7 +41,6 @@ Game::Game() :
     menuCamera->setScale(9.0f);
     menuScene->setCamera(menuCamera);
     menuScene->getSolver()->setGravity(0);
->>>>>>> c8353bb7f77ac357bbff13c5cc8e50bae89b6fd5
 }
 
 Game::~Game() {
