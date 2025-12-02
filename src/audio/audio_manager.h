@@ -8,6 +8,7 @@
 #include <chrono>
 #include <string>
 #include <memory>
+#include <vector>
 
 /**
  * @file audio_manager.h
