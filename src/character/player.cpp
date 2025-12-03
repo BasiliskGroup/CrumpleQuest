@@ -3,17 +3,17 @@
 #include "game/game.h"
 
 
-Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::unordered_map<std::string, Animation*>* animations, Node2D* weaponNode)
+Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon)
     : Character(game, health, speed, node, side, weapon, "Ally")
 {
     this->accel = 30;
-    this->animations = animations;
-    this->weaponNode = weaponNode;
+    weaponNode = new Node2D(node, { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}});
+    weaponNode->setLayer(0.1f);
 
-    animator = new Animator(node->getEngine(), node, animations->at("player_idle"));
+    animator = new Animator(node->getEngine(), node, game->getAnimation("player_idle"));
     animator->setFrameRate(8);
 
-    weaponAnimator = new Animator(node->getEngine(), weaponNode, animations->at("pencil_run"));
+    weaponAnimator = new Animator(node->getEngine(), weaponNode, game->getAnimation("pencil_run"));
     weaponAnimator->setFrameRate(8);
 }
 
@@ -32,18 +32,18 @@ void Player::move(float dt) {
     Keyboard* keys = node->getEngine()->getKeyboard();
 
     if (attacking > 0.0) {
-        animator->setAnimation(animations->at("player_attack"));
-        weaponAnimator->setAnimation(animations->at("pencil_attack"));
+        animator->setAnimation(game->getAnimation("player_attack"));
+        weaponAnimator->setAnimation(game->getAnimation("pencil_attack"));
         attacking -= node->getEngine()->getDeltaTime();
     }
     else {
         if (keys->getPressed(GLFW_KEY_W) || keys->getPressed(GLFW_KEY_D) || keys->getPressed(GLFW_KEY_A) || keys->getPressed(GLFW_KEY_S)) {
-            animator->setAnimation(animations->at("player_run"));
-            weaponAnimator->setAnimation(animations->at("pencil_run"));
+            animator->setAnimation(game->getAnimation("player_run"));
+            weaponAnimator->setAnimation(game->getAnimation("pencil_run"));
         }
         else {
-            animator->setAnimation(animations->at("player_idle"));
-            weaponAnimator->setAnimation(animations->at("pencil_idle"));
+            animator->setAnimation(game->getAnimation("player_idle"));
+            weaponAnimator->setAnimation(game->getAnimation("pencil_idle"));
         }
     }
 
