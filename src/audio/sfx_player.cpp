@@ -3,8 +3,17 @@
 
 namespace audio {
 
-SFXPlayer::SFXPlayer(GroupHandle sfx_group) 
-    : sfx_group_(sfx_group) {
+SFXPlayer::SFXPlayer() 
+    : sfx_group_(0), initialized_(false) {
+}
+
+void SFXPlayer::Initialize(GroupHandle sfx_group) {
+    if (initialized_) {
+        return; // Already initialized
+    }
+    
+    sfx_group_ = sfx_group;
+    initialized_ = true;
     
     // Load fold start sounds
     RandomSoundContainerConfig foldConfig;
@@ -37,8 +46,8 @@ SFXPlayer::SFXPlayer(GroupHandle sfx_group)
     // Load player woosh/attack sounds
     RandomSoundContainerConfig wooshConfig;
     wooshConfig.avoidRepeat = true;
-    wooshConfig.pitchMin = 0.85f;
-    wooshConfig.pitchMax = 1.2f;
+    wooshConfig.pitchMin = 0.9f;
+    wooshConfig.pitchMax = 1.1f;
     LoadCollection("woosh", "sounds/sfx/player/woosh-2", wooshConfig);
 }
 
@@ -56,12 +65,22 @@ void SFXPlayer::LoadCollection(const std::string& name,
 }
 
 void SFXPlayer::Play(const std::string& name) {
+    if (!initialized_) {
+        std::cerr << "SFXPlayer: Not initialized! Call Initialize() first." << std::endl;
+        return;
+    }
+    
     auto it = containers_.find(name);
     if (it != containers_.end()) {
         it->second->Play();
     } else {
         std::cerr << "SFXPlayer: Sound effect '" << name << "' not found" << std::endl;
     }
+}
+
+SFXPlayer& SFXPlayer::Get() {
+    static SFXPlayer instance; // Meyers singleton - thread-safe in C++11+
+    return instance;
 }
 
 } // namespace audio

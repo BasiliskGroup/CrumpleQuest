@@ -19,19 +19,30 @@ class SFXPlayer {
 private:
     GroupHandle sfx_group_;
     std::unordered_map<std::string, std::unique_ptr<RandomSoundContainer>> containers_;
+    bool initialized_;
 
+    // Private constructor for singleton
+    SFXPlayer();
+    
+    // Delete copy and move
+    SFXPlayer(const SFXPlayer&) = delete;
+    SFXPlayer& operator=(const SFXPlayer&) = delete;
+    SFXPlayer(SFXPlayer&&) = delete;
+    SFXPlayer& operator=(SFXPlayer&&) = delete;
+    
     // Helper to load a collection
     void LoadCollection(const std::string& name, 
                        const std::string& folder_path,
                        const RandomSoundContainerConfig& config);
 
 public:
-    /**
-     * @brief Construct and initialize all sound collections
-     * @param sfx_group The audio group handle for all SFX
-     */
-    explicit SFXPlayer(GroupHandle sfx_group);
     ~SFXPlayer() = default;
+    
+    // Singleton access (Meyers singleton - thread-safe, automatic cleanup)
+    static SFXPlayer& Get();
+    
+    // Initialize with SFX group (must be called before first use)
+    void Initialize(GroupHandle sfx_group);
 
     /**
      * @brief Play a sound effect

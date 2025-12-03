@@ -66,7 +66,6 @@ int main() {
 
     // initialize menus (menu scene is ready)
     game->initMenus();
-    game->getMenus()->pushMainMenu();
 
     while (game->getEngine()->isRunning()) {
         game->update(game->getEngine()->getDeltaTime());

@@ -13,7 +13,6 @@ Game::Game() :
     currentSide(nullptr),
     paper(nullptr),
     audioManager(audio::AudioManager::GetInstance()),
-    menuManager(nullptr),
     playerAnimator(nullptr),
     menuScene(nullptr),
     menuCamera(nullptr),
@@ -37,8 +36,9 @@ Game::Game() :
     audioManager.SetGroupVolume(musicGroup, 0.7f);
     audioManager.SetGroupVolume(sfxGroup, 0.21f);  // 70% of max (0.7 * 0.3 = 0.21)
     
-    // Create SFX player (loads all sound collections)
-    sfxPlayer = std::make_unique<audio::SFXPlayer>(sfxGroup);
+    // Initialize singletons (Meyers singletons are created on first Get() call)
+    audio::SFXPlayer::Get().Initialize(sfxGroup);
+    MenuManager::Get().SetGame(this);
     
     // Create menu scene
     menuScene = new Scene2D(engine);
@@ -54,9 +54,8 @@ Game::~Game() {
 
     // shutdown audio system
     audioManager.Shutdown();
-
-    // Delete menu manager
-    delete menuManager;
+    
+    // Singletons are automatically cleaned up at program exit
     
     // materials
     for (auto const& [name, material] : materials) {
@@ -104,7 +103,7 @@ void Game::update(float dt) {
     vec2 mousePos = { 0, 0 };
     
     // Use menu camera for mouse position when in menus, otherwise use game camera
-    if (menuManager && menuManager->hasActiveMenu()) {
+    if (MenuManager::Get().hasActiveMenu()) {
         mousePos = { 
             engine->getMouse()->getWorldX(menuCamera), 
             engine->getMouse()->getWorldY(menuCamera) 
@@ -117,9 +116,7 @@ void Game::update(float dt) {
     }
 
     // update menu events
-    if (menuManager) {
-        menuManager->handleEvent(mousePos, leftIsDown);
-    }
+    MenuManager::Get().handleEvent(mousePos, leftIsDown);
 
     // keyboard
     auto keys = this->engine->getKeyboard();
@@ -129,34 +126,32 @@ void Game::update(float dt) {
             this->currentSide = paper->getSingleSide();
             
             // Play flip sound
-            if (sfxPlayer) {
-                sfxPlayer->Play("flip");
-            }
+            audio::SFXPlayer::Get().Play("flip");
         }
     }
     kWasDown = keys->getPressed(GLFW_KEY_F);
     
     // pause (escape key)
     if (keys->getPressed(GLFW_KEY_ESCAPE) && escapeWasDown == false) {
-        if (player == nullptr && menuManager) {
-            if (menuManager->getMenuStackSize() > 1) {
-                menuManager->popMenu();
+        if (player == nullptr) {
+            if (MenuManager::Get().getMenuStackSize() > 1) {
+                MenuManager::Get().popMenu();
             } else {
-                menuManager->pushSettingsMenu();
+                MenuManager::Get().pushSettingsMenu();
             }
-        } else if (menuManager) {
+        } else {
             // in game
-            if (menuManager->hasActiveMenu()) {
-                menuManager->popMenu();
+            if (MenuManager::Get().hasActiveMenu()) {
+                MenuManager::Get().popMenu();
             } else {
-                menuManager->pushSettingsMenu();
+                MenuManager::Get().pushSettingsMenu();
             }
         }
     }
     escapeWasDown = keys->getPressed(GLFW_KEY_ESCAPE);
 
     // folding
-    if (menuManager && !menuManager->hasActiveMenu())
+    if (!MenuManager::Get().hasActiveMenu())
     {
         if (!rightWasDown && rightIsDown) { // we just clicked
             rightStartDown = mousePos;
@@ -165,8 +160,8 @@ void Game::update(float dt) {
                 foldIsActive = paper->activateFold(mousePos);
                 
                 // Play fold sound only if a fold was actually activated
-                if (sfxPlayer && foldIsActive) {
-                    sfxPlayer->Play("fold");
+                if (foldIsActive) {
+                    audio::SFXPlayer::Get().Play("fold");
                 }
             }
     
@@ -176,8 +171,8 @@ void Game::update(float dt) {
                 paper->deactivateFold();
                 
                 // Play fold end sound only if there was an active fold
-                if (sfxPlayer && foldIsActive) {
-                    sfxPlayer->Play("fold_end");
+                if (foldIsActive) {
+                    audio::SFXPlayer::Get().Play("fold_end");
                 }
                 
                 foldIsActive = false;
@@ -209,7 +204,7 @@ void Game::update(float dt) {
     // Update and render scenes
     if (currentSide) {
         // Always update game scene if it exists (unless menus are active)
-        if (!menuManager || !menuManager->hasActiveMenu()) {
+        if (!MenuManager::Get().hasActiveMenu()) {
             if (player != nullptr) {
                 currentSide->update(player->getPosition(), dt);
             } else {
@@ -220,7 +215,7 @@ void Game::update(float dt) {
         currentSide->getScene()->render();
     }
     
-    if (menuManager && menuManager->hasActiveMenu()) {
+    if (MenuManager::Get().hasActiveMenu()) {
         // Menu scene renders on top
         menuScene->update();
         menuScene->render();
@@ -236,7 +231,7 @@ void Game::setPaper(std::string str) {
 }
 
 void Game::initMenus() {
-    menuManager = new MenuManager(this);
+    MenuManager::Get().pushMainMenu();
 }
 
 // Spawn in player, enemies, etc
@@ -247,7 +242,7 @@ void Game::startGame() {
 
     // create player
     Node2D* playerNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("knight"), .scale={1.5, 1.5}, .collider=getCollider("quad"), .colliderScale={0.5, 0.8} });
-    Player* player = new Player(this, 3, 3, playerNode, getSide(), nullptr, 1.25, playerNode->getScale(), menuManager);
+    Player* player = new Player(this, 3, 3, playerNode, getSide(), nullptr, 1.25, playerNode->getScale());
     setPlayer(player);
 
     // create weapons

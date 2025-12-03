@@ -48,10 +48,6 @@ private:
     audio::AudioManager& audioManager;
     audio::GroupHandle musicGroup;
     audio::GroupHandle sfxGroup;
-    std::unique_ptr<audio::SFXPlayer> sfxPlayer;
-
-    // menu manager
-    MenuManager* menuManager;
 
     // player animator
     Animator* playerAnimator;
@@ -86,8 +82,6 @@ public:
     audio::AudioManager& getAudio()         { return audioManager; }
     audio::GroupHandle getMusicGroup()      { return musicGroup; }
     audio::GroupHandle getSFXGroup()        { return sfxGroup; }
-    audio::SFXPlayer* getSFX()              { return sfxPlayer.get(); }
-    MenuManager* getMenus()                 { return menuManager; }
 
     Engine*& getEngine() { return engine; }
     Scene2D* getScene() { return currentSide->getScene(); }

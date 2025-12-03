@@ -20,6 +20,7 @@ class Animator {
         void update();
         void setAnimation(Animation* animation);
         void setFrameRate(float frameRate) { timePerFrame = 1.0 / frameRate; }
+        unsigned int getCurrentFrame() const { return frame; }
 };
 
 #endif

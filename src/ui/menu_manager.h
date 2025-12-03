@@ -14,6 +14,15 @@ private:
     MenuStack* menuStack;
     std::vector<Menu*> pendingDelete; // Menus to delete after current frame
     
+    // Private constructor for singleton
+    MenuManager();
+    
+    // Delete copy and move
+    MenuManager(const MenuManager&) = delete;
+    MenuManager& operator=(const MenuManager&) = delete;
+    MenuManager(MenuManager&&) = delete;
+    MenuManager& operator=(MenuManager&&) = delete;
+    
     // Helper to play menu touch sound
     void playMenuTouchSound();
     
@@ -22,8 +31,13 @@ private:
     Menu* createSettingsMenu();
 
 public:
-    MenuManager(Game* game);
     ~MenuManager();
+    
+    // Singleton access (Meyers singleton - thread-safe, automatic cleanup)
+    static MenuManager& Get();
+    
+    // Initialize with game instance (must be called before first use)
+    void SetGame(Game* game) { this->game = game; }
 
     // Menu navigation
     void pushMainMenu();

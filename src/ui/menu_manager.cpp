@@ -5,7 +5,7 @@
 #include "game/game.h"
 #include <iostream>
 
-MenuManager::MenuManager(Game* game) : game(game) {
+MenuManager::MenuManager() : game(nullptr) {
     menuStack = new MenuStack();
 }
 
@@ -13,10 +13,13 @@ MenuManager::~MenuManager() {
     delete menuStack;
 }
 
+MenuManager& MenuManager::Get() {
+    static MenuManager instance; // Meyers singleton - thread-safe in C++11+
+    return instance;
+}
+
 void MenuManager::playMenuTouchSound() {
-    if (game && game->getSFX()) {
-        game->getSFX()->Play("menu_touch");
-    }
+    audio::SFXPlayer::Get().Play("menu_touch");
 }
 
 void MenuManager::pushMainMenu() {
