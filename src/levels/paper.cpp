@@ -911,11 +911,11 @@ void Paper::toData(std::vector<float>& out) {
     paperMeshes.second->toData(pageData);
     i = 0;
     while (i < pageData.size()) {
-        out.push_back(pageData[i]);
+        out.push_back(-pageData[i]); // reverse x to flip side of page, TODO reverse UVs or no? 
         out.insert(out.end(), pageData.begin() + i + 1, pageData.end() + i + 5);
         out.push_back(0);
         out.push_back(0);
-        out.push_back(1);
+        out.push_back(-1);
 
         i += 5;
     }
