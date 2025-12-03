@@ -742,3 +742,32 @@ void Paper::updatePathing(vec2 playerPos) {
         enemy->setPath(path);
     }
 }
+
+void Paper::toData(std::vector<float>& out) {
+    out.clear();
+
+    std::vector<float> pageData;
+    paperMeshes.first->toData(pageData);
+    int i = 0;
+    while (i < pageData.size()) {
+        out.insert(out.end(), pageData.begin() + i + 0, pageData.end() + i + 5);
+        out.push_back(0);
+        out.push_back(0);
+        out.push_back(1);
+
+        i += 5;
+    }
+
+    pageData.clear();
+    paperMeshes.second->toData(pageData);
+    i = 0;
+    while (i < pageData.size()) {
+        out.push_back(pageData[i]);
+        out.insert(out.end(), pageData.begin() + i + 1, pageData.end() + i + 5);
+        out.push_back(0);
+        out.push_back(0);
+        out.push_back(1);
+
+        i += 5;
+    }
+}

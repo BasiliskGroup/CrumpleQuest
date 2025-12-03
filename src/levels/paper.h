@@ -94,6 +94,7 @@ public:
 
     void setGame(Game* game) { this->game = game; }
     void previewFold(const vec2& start, const vec2& end);  // Preview fold cover without applying
+    void toData(std::vector<float>& out);
 
     // enemies
     void updatePathing(vec2 playerPos);
