@@ -230,13 +230,13 @@ Paper::FoldGeometry Paper::validateFoldGeometry(const vec2& start, const vec2& e
     return geom;
 }
 
-void Paper::fold(const vec2& start, const vec2& end) {
-    if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) return;
+bool Paper::fold(const vec2& start, const vec2& end) {
+    if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) return false;
     
     // Validate fold geometry and check if start/end are inside paper
     FoldGeometry geom = validateFoldGeometry(start, end);
     if (!geom.isValid) {
-        return;
+        return false;
     }
 
     // Paper is being folded directly
@@ -249,12 +249,12 @@ void Paper::fold(const vec2& start, const vec2& end) {
     );
 
     // stop fold if we run into trouble
-    if (!check) return;
+    if (!check) return false;
 
-    pushFold(fold);
+    return pushFold(fold);
 }
 
-void Paper::pushFold(Fold& newFold) {
+bool Paper::pushFold(Fold& newFold) {
     std::set<int> seen; // TODO implement cover cache
     int insertIndex = folds.size();
 
@@ -287,14 +287,14 @@ void Paper::pushFold(Fold& newFold) {
     if (!check) {
         delete paperCopy; paperCopy = nullptr;
         folds.pop_back();
-        return;
+        return false;
     }
 
     check = paperCopy->paste(*newFold.cover);
     if (!check) {
         delete paperCopy; paperCopy = nullptr;
         folds.pop_back();
-        return;
+        return false;
     }
 
     // Handle back side
@@ -305,7 +305,7 @@ void Paper::pushFold(Fold& newFold) {
         delete paperCopy; paperCopy = nullptr;
         delete backCopy; backCopy = nullptr;
         folds.pop_back();
-        return;
+        return false;
     }
 
     // Calculate overhangs using the same method as previewFold:
@@ -365,7 +365,7 @@ void Paper::pushFold(Fold& newFold) {
         delete paperCopy; paperCopy = nullptr;
         delete backCopy;  backCopy  = nullptr;
         folds.pop_back();
-        return;
+        return false;
     }
 
     // Set front side region - no overhangs possible here anymore
@@ -410,6 +410,8 @@ void Paper::pushFold(Fold& newFold) {
 
     // DEBUG
     dotData();
+    
+    return true;
 }
 
 void Paper::popFold() {

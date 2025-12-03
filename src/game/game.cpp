@@ -167,11 +167,11 @@ void Game::update(float dt) {
     
         } else if (rightWasDown && !rightIsDown) { // we just let go
             if (paper) {
-                paper->fold(rightStartDown, mousePos);
+                bool foldSucceeded = paper->fold(rightStartDown, mousePos);
                 paper->deactivateFold();
                 
-                // Play fold end sound only if there was an active fold
-                if (foldIsActive) {
+                // Play fold end sound only if the fold was valid and successful
+                if (foldIsActive && foldSucceeded) {
                     audio::SFXPlayer::Get().Play("fold_end");
                 }
                 

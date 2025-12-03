@@ -84,7 +84,7 @@ public:
 
     void flip();
     void open();
-    void fold(const vec2& start, const vec2& end);
+    bool fold(const vec2& start, const vec2& end);
 
     bool activateFold(const vec2& start);
     void deactivateFold();
@@ -116,7 +116,7 @@ private:
     PaperMesh* getPaperMesh() { return curSide == 0 ? paperMeshes.first : paperMeshes.second; }
     PaperMesh* getBackPaperMesh() { return curSide == 0 ? paperMeshes.second : paperMeshes.first; }
 
-    void pushFold(Fold& newFold);
+    bool pushFold(Fold& newFold);
     void popFold(); // uses activeFold index
 };
 
