@@ -10,6 +10,7 @@
 class Player : public Character {
 private:
     int money = 0;
+    float attacking = 0;
     Animator* animator;
     Node2D* weaponNode;
     Animator* weaponAnimator;
