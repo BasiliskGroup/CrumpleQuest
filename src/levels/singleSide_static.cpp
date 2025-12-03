@@ -6,12 +6,12 @@ void SingleSide::generateTemplates(Game* game) {
 
     // empty level
     templates["empty0"] = [game]() {
-        SingleSide* side = new SingleSide(game, "paper0", "test");
+        SingleSide* side = new SingleSide(game, "paper0", "knight");
         return side;
     };
 
     templates["empty1"] = [game]() {
-        SingleSide* side = new SingleSide(game, "paper1", "test");
+        SingleSide* side = new SingleSide(game, "paper1", "knight");
         return side;
     };
 }
