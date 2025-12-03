@@ -27,6 +27,7 @@ Character::~Character() {
 
 void Character::onDamage(int damage) {
     if (itime > 0) return;
+    if (isDead()) return; // Don't process damage if already dead
     
     // Play damage sound
     if (!damageSound.empty()) {

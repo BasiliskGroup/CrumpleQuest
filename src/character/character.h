@@ -33,7 +33,7 @@ public:
     void onDamage(int damage);
     void onDeath();
 
-    bool isDead() { return health < 0; }
+    bool isDead() { return health <= 0; }
 
     // getters
     int& getMaxHealth() { return maxHealth; }

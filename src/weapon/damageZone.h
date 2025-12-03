@@ -37,6 +37,8 @@ public:
 
     bool virtual hit(Character* other);
     bool virtual update(float dt);
+    
+    Character* getOwner() const { return owner; }
 
     // getters
     Character* getOwner() { return this->owner; }
