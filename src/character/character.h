@@ -5,6 +5,7 @@
 
 class SingleSide;
 class Weapon;
+class Game;
 
 class Character {
 protected:
@@ -19,9 +20,10 @@ protected:
     Node2D* node;
     SingleSide* side;
     std::string team;
+    Game* game;
 
 public:
-    Character(int maxHealth, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team);
+    Character(Game* game, int maxHealth, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team);
     ~Character();
 
     void onDamage(int damage);

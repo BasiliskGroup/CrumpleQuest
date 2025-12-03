@@ -20,7 +20,7 @@ int main() {
     // ------------------------------------------
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
@@ -48,6 +48,7 @@ int main() {
     game->getAudio().PlayTrack(parchment_track);
 
     // load levels
+    Enemy::generateTemplates(game);
     SingleSide::generateTemplates(game);
     PaperMesh::generateTemplates(game);
     Paper::generateTemplates(game);

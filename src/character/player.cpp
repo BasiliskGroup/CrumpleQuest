@@ -1,9 +1,10 @@
 #include "character/player.h"
 #include "weapon/weapon.h"
+#include "game/game.h"
 
 
-Player::Player(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::unordered_map<std::string, Animation*>* animations, Node2D* weaponNode)
-    : Character(health, speed, node, side, weapon, "Ally")
+Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::unordered_map<std::string, Animation*>* animations, Node2D* weaponNode)
+    : Character(game, health, speed, node, side, weapon, "Ally")
 {
     this->accel = 30;
     this->animations = animations;
