@@ -43,8 +43,10 @@ public:
     void pushMainMenu();
     void pushSettingsMenu();
     void popMenu();
+    void popMenuDeferred(); // Pop menu but defer deletion until next frame
     bool hasActiveMenu() const { return menuStack->hasActiveMenu(); }
     size_t getMenuStackSize() const { return menuStack->size(); }
+    bool isInGame() const;
     
     // Event handling and updates
     void handleEvent(const vec2& mousePos, bool mouseDown);
