@@ -46,6 +46,7 @@ int main() {
 
     // load levels
     SingleSide::generateTemplates(game);
+    PaperMesh::generateTemplates(game);
     Paper::generateTemplates(game);
 
     // initialize menus (menu scene is ready)

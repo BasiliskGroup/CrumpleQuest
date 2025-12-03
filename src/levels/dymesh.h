@@ -44,7 +44,7 @@ private:
     bool hasCompatibleUVs(const UVRegion& r1, const UVRegion& r2, const std::vector<vec2>& sharedEdge) const;
     UVRegion mergeTwo(const UVRegion& r1, const UVRegion& r2) const;
     void cleanupDegenerateRegions();
-    void removeContainedRegions();
+    // void removeContainedRegions();
 };
 
 #endif

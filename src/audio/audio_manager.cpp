@@ -12,9 +12,13 @@
 #include <iostream>
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 
 #ifdef _WIN32
 #include <windows.h>
+#else
+#include <dirent.h>
+#include <sys/stat.h>
 #endif
 
 // Place all std usage in global namespace
@@ -354,14 +358,12 @@ bool AudioManager::IsSoundPlaying(SoundHandle sound) const {
 void AudioManager::PlayRandomSoundFromFolder(const string& folderPath, GroupHandle group) {
     lock_guard<mutex> lock(resource_mutex_);
     
-    // Find the group name for this handle
-    string groupName = "";
+    // Get the AudioGroup pointer for this handle
+    AudioGroup* group_ptr = nullptr;
     if (group != 0) {
-        for (const auto& [name, handle] : group_names_) {
-            if (handle == group) {
-                groupName = name;
-                break;
-            }
+        auto group_it = groups_.find(group);
+        if (group_it != groups_.end()) {
+            group_ptr = group_it->second.get();
         }
     }
     
@@ -385,9 +387,9 @@ void AudioManager::PlayRandomSoundFromFolder(const string& folderPath, GroupHand
                     
                     // Load the sound
                     SoundHandle handle = NextSoundHandle();
-                    Sound* sound_ptr = audio_system_->CreateSound(filepath, groupName);
-                    if (sound_ptr) {
-                        sounds_[handle] = shared_ptr<Sound>(sound_ptr);
+                    auto sound = audio_system_->CreateSound(filepath, group_ptr);
+                    if (sound) {
+                        sounds_[handle] = std::move(sound);
                         loaded_sounds.push_back(handle);
                     }
                 }
@@ -395,7 +397,45 @@ void AudioManager::PlayRandomSoundFromFolder(const string& folderPath, GroupHand
             FindClose(hFind);
         }
         #else
-        // Unix/Linux implementation would go here using opendir/readdir
+        // Unix/Linux/macOS implementation using opendir/readdir
+        DIR* dir = opendir(folderPath.c_str());
+        if (dir != nullptr) {
+            std::cout << "Found sounds in folder: " << folderPath << std::endl;
+            struct dirent* entry;
+            while ((entry = readdir(dir)) != nullptr) {
+                string filename = entry->d_name;
+                
+                // Skip . and .. entries
+                if (filename == "." || filename == "..") {
+                    continue;
+                }
+                
+                // Check if file ends with .wav (case-insensitive)
+                if (filename.length() > 4) {
+                    string extension = filename.substr(filename.length() - 4);
+                    // Convert to lowercase for comparison
+                    std::transform(extension.begin(), extension.end(), extension.begin(),
+                                   [](unsigned char c) { return std::tolower(c); });
+                    
+                    if (extension == ".wav") {
+                        string filepath = folderPath + "/" + filename;
+                        
+                        // Verify it's a regular file (not a directory or symlink to directory)
+                        struct stat statbuf;
+                        if (stat(filepath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
+                            // Load the sound
+                            SoundHandle handle = NextSoundHandle();
+                            auto sound = audio_system_->CreateSound(filepath, group_ptr);
+                            if (sound) {
+                                sounds_[handle] = std::move(sound);
+                                loaded_sounds.push_back(handle);
+                            }
+                        }
+                    }
+                }
+            }
+            closedir(dir);
+        }
         #endif
         
         if (loaded_sounds.empty()) {

@@ -17,7 +17,7 @@ void Paper::generateTemplates(Game* game) {
             vec2{-6.0, -4.5}, 
             vec2{ 6.0, -4.5}
         }, 
-        {"empty0", "empty1"});
+        { "empty0", "empty1" }, { "squareMiddle", "empty" });
     };
 
     // ---------------------

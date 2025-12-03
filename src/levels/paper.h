@@ -6,6 +6,7 @@
 #include "levels/triangle.h"
 #include "levels/edger.h"
 #include "levels/dymesh.h"
+#include "levels/paperMesh.h"
 
 class Game;
 
@@ -16,24 +17,8 @@ public:
     static void generateTemplates(Game* game);
     static Paper* getRandomTemplate(RoomTypes type);
     static void flattenVertices(const std::vector<Vert>& vertices, std::vector<float>& data); // TODO move to generic helper
-    static constexpr float wallScale = 3;
 
 private:
-    struct PaperMesh : public DyMesh {
-        Mesh* mesh;
-
-        PaperMesh(const std::vector<vec2> verts, Mesh* mesh);
-        ~PaperMesh();
-        
-        // Rule of 5 for PaperMesh
-        PaperMesh(const PaperMesh& other);
-        PaperMesh(PaperMesh&& other) noexcept;
-        PaperMesh& operator=(const PaperMesh& other);
-        PaperMesh& operator=(PaperMesh&& other) noexcept;
-
-        void regenerateMesh();
-    };
-
     using PaperMeshPair = std::pair<PaperMesh*, PaperMesh*>;
 
     struct Fold {
@@ -84,7 +69,7 @@ public: // DEBUG
 
 public:
     Paper();
-    Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames);
+    Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames);
     
     // Rule of 5
     Paper(const Paper& other);
@@ -108,6 +93,9 @@ public:
 
     void setGame(Game* game) { this->game = game; }
     void previewFold(const vec2& start, const vec2& end);  // Preview fold cover without applying
+
+    // enemies
+    void updatePathing(vec2 playerPos);
 
     // DEBUG
     void dotData();
