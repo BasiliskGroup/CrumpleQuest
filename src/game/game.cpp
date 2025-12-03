@@ -231,36 +231,6 @@ void Game::startGame() {
 
     // create weapons
     player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("sword"), .scale={0.75, 0.75}}, { .damage=1, .life=0.2f, .radius=0.5 }, 30.0f));
-
-    // ------------------------------------------
-    // Testing
-    // ------------------------------------------
-
-    // test add button
-    Button* testButton = new Button(getScene(), this, { .mesh=getMesh("quad"), .material=getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 
-        .onDown=[]() { std::cout << "Button Pressed" << std::endl; }
-    });
-
-    // add temp background paper
-    Node2D* paperBackground = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("paper"), .scale={16, 9} });
-    paperBackground->setLayer(-0.9);
-
-    // spawn enemy on click
-    testButton->setOnUp([this]() {
-        Node2D* enemyNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("man"), .position={3, 4}, .scale={0.7, 0.7}, .collider=getCollider("quad") });
-        addEnemy(new Enemy(this, 3, 0.1, enemyNode, getSide(), nullptr, nullptr, 0.25, { 0.7, 0.7 } ));
-    });
-
-    addUI(testButton);
-
-    // slider
-    Slider* testSlider = new Slider(getScene(), this, { -4, 4 }, { 0, 4 }, { .pegMaterial=getMaterial("box") });
-    testSlider->setCallback([this](float proportion) {
-        for (Enemy* enemy : getEnemies()) {
-            enemy->setSpeed(5 * proportion);
-        }
-    });
-    addUI(testSlider);
 }
 
 void Game::addAnimation(std::string name, std::string folder, unsigned int nImages) {
