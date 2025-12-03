@@ -81,7 +81,7 @@ void Player::move(float dt) {
     if (glm::length2(dir) < 1e-6f) return;
 
     dir = glm::normalize(dir);
-    vec2 offset = radius * dir + getPosition();
+    vec2 offset = radius / 2 * dir + getPosition();
     weapon->attack(offset, dir);
     attacking = 1.0 / 8.0 * 4.0;
 }
