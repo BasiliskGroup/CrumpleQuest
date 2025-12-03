@@ -126,26 +126,48 @@ void Game::update(float dt) {
         }
     }
     kWasDown = keys->getPressed(GLFW_KEY_F);
-
-    // folding
-    if (!rightWasDown && rightIsDown) { // we just clicked
-        rightStartDown = mousePos;
-        
-        if (paper) {
-            paper->activateFold(mousePos);
-        }
-
-    } else if (rightWasDown && !rightIsDown) { // we just let go
-        if (paper) {
-            paper->fold(rightStartDown, mousePos);
-            paper->deactivateFold();
+    
+    // pause (escape key)
+    if (keys->getPressed(GLFW_KEY_ESCAPE) && escapeWasDown == false) {
+        if (player == nullptr && menuManager) {
+            if (menuManager->getMenuStackSize() > 1) {
+                menuManager->popMenu();
+            } else {
+                menuManager->pushSettingsMenu();
+            }
+        } else if (menuManager) {
+            // in game
+            if (menuManager->hasActiveMenu()) {
+                menuManager->popMenu();
+            } else {
+                menuManager->pushSettingsMenu();
+            }
         }
     }
+    escapeWasDown = keys->getPressed(GLFW_KEY_ESCAPE);
 
-    // continuous fold preview
-    if (rightIsDown && paper) {
-        paper->dotData();  // Update debug visualization first
-        paper->previewFold(rightStartDown, mousePos);  // Show fold preview
+    // folding
+    if (menuManager && !menuManager->hasActiveMenu())
+    {
+        if (!rightWasDown && rightIsDown) { // we just clicked
+            rightStartDown = mousePos;
+            
+            if (paper) {
+                paper->activateFold(mousePos);
+            }
+    
+        } else if (rightWasDown && !rightIsDown) { // we just let go
+            if (paper) {
+                paper->fold(rightStartDown, mousePos);
+                paper->deactivateFold();
+            }
+        }
+    
+        // continuous fold preview
+        if (rightIsDown && paper) {
+            paper->dotData();  // Update debug visualization first
+            paper->previewFold(rightStartDown, mousePos);  // Show fold preview
+        }
     }
 
     // update buttons
