@@ -90,6 +90,13 @@ Game::~Game() {
 }
 
 void Game::update(float dt) {
+    // Process pending return to main menu (deferred from button callback)
+    if (pendingReturnToMainMenu) {
+        pendingReturnToMainMenu = false;
+        processReturnToMainMenu();
+        return; // Skip rest of update this frame
+    }
+
     // pathing
     pathTimer -= dt;
     if (paper && pathTimer < 0) {
@@ -246,6 +253,36 @@ void Game::startGame() {
 
     // create weapons
     player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("sword"), .scale={0.75, 0.75}}, { .damage=1, .life=0.2f, .radius=0.5 }, 30.0f));
+}
+
+void Game::returnToMainMenu() {
+    // Set flag to process on next update (after button callback completes)
+    pendingReturnToMainMenu = true;
+}
+
+void Game::processReturnToMainMenu() {
+    // Delete player first, before paper (since player's node is in paper's scene)
+    if (player) {
+        delete player;
+        player = nullptr;
+    }
+    
+    // Destroy the game scene
+    if (paper) {
+        delete paper;
+        paper = nullptr;
+    }
+    
+    currentSide = nullptr;
+    
+    // Clear all menus and return to main menu
+    // Pop all existing menus (they will be deleted immediately, safe now)
+    while (MenuManager::Get().getMenuStackSize() > 0) {
+        MenuManager::Get().popMenu();
+    }
+    
+    // Then push the main menu (which will be the only menu)
+    MenuManager::Get().pushMainMenu();
 }
 
 void Game::addAnimation(std::string name, std::string folder, unsigned int nImages) {

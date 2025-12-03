@@ -41,6 +41,19 @@ void MenuManager::popMenu() {
     delete menu;  // Delete the menu when hiding it
 }
 
+void MenuManager::popMenuDeferred() {
+    if (!menuStack || !menuStack->top()) {
+        return;
+    }
+    Menu* menu = menuStack->top();
+    menuStack->pop();
+    pendingDelete.push_back(menu);  // Defer deletion until next frame
+}
+
+bool MenuManager::isInGame() const {
+    return game && game->getPaper() != nullptr;
+}
+
 void MenuManager::handleEvent(const vec2& mousePos, bool mouseDown) {
     menuStack->handleEvent(mousePos, mouseDown);
 }
@@ -252,12 +265,31 @@ Menu* MenuManager::createSettingsMenu() {
     });
     settingsMenu->addElement(sfxSlider);
 
+    // Return to Main Menu button (only shown when in-game)
+    if (game->getPaper() != nullptr) {
+        Button* mainMenuButton = new Button(game->getMenuScene(), game,
+            {
+                .mesh = game->getMesh("quad"),
+                .material = game->getMaterial("lightGrey"),
+                .position = {0, -2},
+                .scale = {3, 1}
+            },
+            {
+                .onUp = [this]() {
+                    this->game->returnToMainMenu();
+                }
+            }
+        );
+        mainMenuButton->setLayer(0.6f);
+        settingsMenu->addElement(mainMenuButton);
+    }
+
     // Back button
     Button* backButton = new Button(game->getMenuScene(), game,
         {
             .mesh = game->getMesh("quad"),
             .material = game->getMaterial("box"),
-            .position = {0, -3},
+            .position = {0, game->getPaper() != nullptr ? -3.5f : -3},
             .scale = {2, 1}
         },
         {

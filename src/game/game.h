@@ -44,6 +44,9 @@ private:
     bool kWasDown = false;
     bool escapeWasDown = false;
 
+    // menu management
+    bool pendingReturnToMainMenu = false;
+
     // audio
     audio::AudioManager& audioManager;
     audio::GroupHandle musicGroup;
@@ -98,9 +101,11 @@ public:
 
     // initialization
     void initMenus();
+    void processReturnToMainMenu(); // Internal method to actually process the return
 
     // game flow
     void startGame();
+    void returnToMainMenu();
 
     void update(float dt);
 };
