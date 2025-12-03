@@ -3,6 +3,7 @@
 #include "resource/animation.h"
 #include "resource/animator.h"
 #include "weapon/weapon.h"
+#include "audio/sfx_player.h"
 #include <iostream>
 
 Game::Game() : 
@@ -34,7 +35,10 @@ Game::Game() :
     // Set initial volumes
     audioManager.SetMasterVolume(1.0f);
     audioManager.SetGroupVolume(musicGroup, 0.7f);
-    audioManager.SetGroupVolume(sfxGroup, 1.0f);
+    audioManager.SetGroupVolume(sfxGroup, 0.6f);
+    
+    // Create SFX player (loads all sound collections)
+    sfxPlayer = std::make_unique<audio::SFXPlayer>(sfxGroup);
     
     // Create menu scene
     menuScene = new Scene2D(engine);
@@ -123,6 +127,11 @@ void Game::update(float dt) {
         if (paper) {
             paper->flip();
             this->currentSide = paper->getSingleSide();
+            
+            // Play flip sound
+            if (sfxPlayer) {
+                sfxPlayer->Play("flip");
+            }
         }
     }
     kWasDown = keys->getPressed(GLFW_KEY_F);
@@ -153,13 +162,25 @@ void Game::update(float dt) {
             rightStartDown = mousePos;
             
             if (paper) {
-                paper->activateFold(mousePos);
+                foldIsActive = paper->activateFold(mousePos);
+                
+                // Play fold sound only if a fold was actually activated
+                if (sfxPlayer && foldIsActive) {
+                    sfxPlayer->Play("fold");
+                }
             }
     
         } else if (rightWasDown && !rightIsDown) { // we just let go
             if (paper) {
                 paper->fold(rightStartDown, mousePos);
                 paper->deactivateFold();
+                
+                // Play fold end sound only if there was an active fold
+                if (sfxPlayer && foldIsActive) {
+                    sfxPlayer->Play("fold_end");
+                }
+                
+                foldIsActive = false;
             }
         }
     

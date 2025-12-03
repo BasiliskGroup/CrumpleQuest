@@ -86,7 +86,7 @@ public:
     void open();
     void fold(const vec2& start, const vec2& end);
 
-    void activateFold(const vec2& start);
+    bool activateFold(const vec2& start);
     void deactivateFold();
     void regenerateWalls();
     void regenerateWalls(int side);

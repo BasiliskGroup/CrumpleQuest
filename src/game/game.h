@@ -6,9 +6,11 @@
 #include "character/enemy.h"
 #include "levels/paper.h"
 #include "audio/audio_manager.h"
+#include "audio/sfx_player.h"
 #include "ui/menu_manager.h"
 #include "resource/animator.h"
 #include "resource/animation.h"
+#include <memory>
 
 class Floor;
 class UIElement;
@@ -37,6 +39,7 @@ private:
     // track inputs
     bool rightWasDown = false;
     vec2 rightStartDown = vec2();
+    bool foldIsActive = false;  // Track if a fold was activated
 
     bool kWasDown = false;
     bool escapeWasDown = false;
@@ -45,6 +48,7 @@ private:
     audio::AudioManager& audioManager;
     audio::GroupHandle musicGroup;
     audio::GroupHandle sfxGroup;
+    std::unique_ptr<audio::SFXPlayer> sfxPlayer;
 
     // menu manager
     MenuManager* menuManager;
@@ -82,6 +86,7 @@ public:
     audio::AudioManager& getAudio()         { return audioManager; }
     audio::GroupHandle getMusicGroup()      { return musicGroup; }
     audio::GroupHandle getSFXGroup()        { return sfxGroup; }
+    audio::SFXPlayer* getSFX()              { return sfxPlayer.get(); }
     MenuManager* getMenus()                 { return menuManager; }
 
     Engine*& getEngine() { return engine; }

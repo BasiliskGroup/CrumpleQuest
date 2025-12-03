@@ -151,7 +151,7 @@ Mesh* Paper::getMesh() {
     return curMesh->mesh;
 }
 
-void Paper::activateFold(const vec2& start) {
+bool Paper::activateFold(const vec2& start) {
     activeFold = NULL_FOLD;
 
     // we push_back like a stack so the first fold we find is the top
@@ -160,13 +160,18 @@ void Paper::activateFold(const vec2& start) {
 
         if (folds[i].cover->contains(start)) {
             activeFold = i;
-            return;
+            return true;
         }
     }
 
     // check if we're clicking the paper if we're not clicking a fold
     PaperMesh* paperMesh = getPaperMesh();
-    if (paperMesh->contains(start)) activeFold = PAPER_FOLD;
+    if (paperMesh->contains(start)) {
+        activeFold = PAPER_FOLD;
+        return true;
+    }
+    
+    return false;
 }
 
 void Paper::deactivateFold() {

@@ -3,21 +3,10 @@
 #include "ui/button.h"
 #include "ui/slider.h"
 #include "game/game.h"
-#include "audio/random_sound_container.h"
 #include <iostream>
 
 MenuManager::MenuManager(Game* game) : game(game) {
     menuStack = new MenuStack();
-    
-    // Create random sound container for touch sounds with pitch variation
-    audio::RandomSoundContainerConfig config;
-    config.avoidRepeat = true;
-    config.pitchMin = 0.8f;  // Slight pitch variation for more natural sound
-    config.pitchMax = 1.2f;
-    config.group = game->getSFXGroup();
-    
-    touchSoundContainer = std::make_unique<audio::RandomSoundContainer>("MenuTouchSounds", config);
-    touchSoundContainer->LoadFromFolder("sounds/sfx/paper/touch_sounds");
 }
 
 MenuManager::~MenuManager() {
@@ -25,8 +14,8 @@ MenuManager::~MenuManager() {
 }
 
 void MenuManager::playMenuTouchSound() {
-    if (touchSoundContainer) {
-        touchSoundContainer->Play();
+    if (game && game->getSFX()) {
+        game->getSFX()->Play("menu_touch");
     }
 }
 

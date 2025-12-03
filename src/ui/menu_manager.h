@@ -8,16 +8,11 @@
 class Game;
 class Menu;
 
-namespace audio {
-    class RandomSoundContainer;
-}
-
 class MenuManager {
 private:
     Game* game;
     MenuStack* menuStack;
     std::vector<Menu*> pendingDelete; // Menus to delete after current frame
-    std::unique_ptr<audio::RandomSoundContainer> touchSoundContainer;
     
     // Helper to play menu touch sound
     void playMenuTouchSound();
