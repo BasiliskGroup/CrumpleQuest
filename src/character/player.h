@@ -4,6 +4,7 @@
 #include "character/character.h"
 #include "resource/animator.h"
 #include "resource/animation.h"
+#include "ui/menu_manager.h"
 #include <unordered_map>
 
 
@@ -13,10 +14,11 @@ private:
     Animator* animator;
     Node2D* weaponNode;
     Animator* weaponAnimator;
+    MenuManager* menuManager;
     std::unordered_map<std::string, Animation*>* animations;
 
 public:
-    Player(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::unordered_map<std::string, Animation*>* animations, Node2D* weaponNode);
+    Player(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::unordered_map<std::string, Animation*>* animations, Node2D* weaponNode, MenuManager* menuManager);
     ~Player() = default;
     
     void onDamage(int damage);
