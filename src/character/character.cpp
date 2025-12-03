@@ -3,15 +3,16 @@
 #include "game/game.h"
 
 
-Character::Character(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team) : 
+Character::Character(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team, float radius, vec2 scale) : 
     game(game),
     health(health), 
     speed(speed), 
-    radius(glm::length(node->getScale())), 
     node(node), 
     side(side), 
     weapon(weapon), 
-    team(team) 
+    team(team),
+    radius(radius),
+    scale(scale)
 {
     node->setManifoldMask(1, 1, 0);
 }

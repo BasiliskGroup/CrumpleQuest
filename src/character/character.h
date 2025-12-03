@@ -14,18 +14,19 @@ protected:
     float speed;
     float accel = 5;
     float itime = 0;
-    float radius = 0.5;
+    float radius = 0.25;
     vec2 moveDir = vec2();
     Weapon* weapon;
     Node2D* node;
     std::string team;
+    vec2 scale;
 
     // back reference pointers
     SingleSide* side;
     Game* game;
 
 public:
-    Character(Game* game, int maxHealth, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team);
+    Character(Game* game, int maxHealth, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team, float radius, vec2 scale);
     ~Character();
 
     void onDamage(int damage);
