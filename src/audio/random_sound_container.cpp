@@ -26,7 +26,15 @@ RandomSoundContainer::~RandomSoundContainer() {
 
 void RandomSoundContainer::AddSound(const std::string& filepath) {
     AudioManager& audio = AudioManager::GetInstance();
-    SoundHandle handle = audio.LoadSound(filepath);
+    SoundHandle handle;
+    
+    // Load sound with group if specified in config
+    if (config_.group != 0) {
+        handle = audio.LoadSound(filepath, config_.group);
+    } else {
+        handle = audio.LoadSound(filepath);
+    }
+    
     if (handle != 0) {
         sounds_.push_back(handle);
     }

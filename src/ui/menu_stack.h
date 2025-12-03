@@ -22,6 +22,7 @@ public:
     Menu* top() const;
     bool empty() const { return stack.empty(); }
     bool hasActiveMenu() const { return !stack.empty(); }
+    size_t size() const { return stack.size(); }
     
     // Event handling - only passes to top menu
     void handleEvent(const vec2& mousePos, bool mouseDown);

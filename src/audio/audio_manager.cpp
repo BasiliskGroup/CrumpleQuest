@@ -306,6 +306,31 @@ SoundHandle AudioManager::LoadSound(const string& filepath) {
     return handle;
 }
 
+SoundHandle AudioManager::LoadSound(const string& filepath, GroupHandle group) {
+    lock_guard<mutex> lock(resource_mutex_);
+    
+    // Create a new sound handle
+    SoundHandle handle = NextSoundHandle();
+    
+    // Get the AudioGroup pointer
+    AudioGroup* group_ptr = nullptr;
+    if (group != 0) {
+        auto group_it = groups_.find(group);
+        if (group_it != groups_.end()) {
+            group_ptr = group_it->second.get();
+        }
+    }
+    
+    // Create the sound with the group
+    auto sound_ptr = audio_system_->CreateSound(filepath, group_ptr);
+    if (!sound_ptr) return 0;
+    
+    // Store the sound
+    sounds_[handle] = std::move(sound_ptr);
+    
+    return handle;
+}
+
 void AudioManager::UnloadSound(SoundHandle sound) {
     lock_guard<mutex> lock(resource_mutex_);
     auto it = sounds_.find(sound);
