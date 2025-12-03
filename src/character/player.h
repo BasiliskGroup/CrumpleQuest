@@ -15,9 +15,10 @@ private:
     Animator* animator;
     Node2D* weaponNode;
     Animator* weaponAnimator;
+    MenuManager* menuManager;
 
 public:
-    Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon);
+    Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, MenuManager* menuManager);
     ~Player() = default;
     
     void onDamage(int damage);

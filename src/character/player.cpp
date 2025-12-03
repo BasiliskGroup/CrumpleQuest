@@ -3,8 +3,8 @@
 #include "game/game.h"
 
 
-Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon)
-    : Character(game, health, speed, node, side, weapon, "Ally")
+Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, MenuManager* menuManager)
+    : Character(game, health, speed, node, side, weapon, "Ally"), menuManager(menuManager)
 {
     this->accel = 30;
     weaponNode = new Node2D(node, { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}});
