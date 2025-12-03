@@ -1,7 +1,6 @@
 #include "levels/levels.h"
 #include "util/maths.h"
 
-
 Paper::Paper() : 
     curSide(0), 
     isOpen(false),
@@ -10,7 +9,7 @@ Paper::Paper() :
     paperMeshes(nullptr, nullptr) 
 {}
 
-Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames) : 
+Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames) : 
     curSide(0), 
     isOpen(false),
     activeFold(NULL_FOLD),
@@ -18,7 +17,12 @@ Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pai
     paperMeshes(nullptr, nullptr) 
 {
     paperMeshes.first  = new PaperMesh(region, mesh0);
+    auto obst = PaperMesh::obstacleTemplates[obstacleNames.first]();
+    paperMeshes.first->regions.insert(paperMeshes.first->regions.begin(), obst.begin(), obst.end());
+
     paperMeshes.second = new PaperMesh(region, mesh1);
+    obst = PaperMesh::obstacleTemplates[obstacleNames.second]();
+    paperMeshes.second->regions.insert(paperMeshes.second->regions.begin(), obst.begin(), obst.end());
 
     sides.first  = SingleSide::templates[sideNames.first]();
     sides.second = SingleSide::templates[sideNames.second]();
@@ -544,6 +548,8 @@ void Paper::pushFold(Fold& newFold) {
     paperMeshes.second->regenerateMesh();
     paperMeshes.first->mergeAllRegions();
     paperMeshes.second->mergeAllRegions();
+    paperMeshes.first->regenerateNavmesh();
+    paperMeshes.second->regenerateNavmesh();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
     sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
@@ -562,11 +568,6 @@ void Paper::popFold() {
     Fold& oldFold = folds[activeFold];
     PaperMesh* paperMesh = getPaperMesh();
     PaperMesh* backMesh = getBackPaperMesh();
-
-    // When unfolding, we need to:
-    // 1. Remove the cover region (which is currently on top of the folded area)
-    // 2. Restore the underside region (which was folded under)
-    // 3. Restore the backside region (which was on the back)
     
     // Remove cover region from front paper
     bool check = paperMesh->cut(*oldFold.cover);
@@ -606,6 +607,8 @@ void Paper::popFold() {
     paperMeshes.second->regenerateMesh();
     paperMeshes.first->mergeAllRegions();
     paperMeshes.second->mergeAllRegions();
+    paperMeshes.first->regenerateNavmesh();
+    paperMeshes.second->regenerateNavmesh();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
     sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
@@ -622,8 +625,10 @@ void Paper::regenerateWalls() {
 void Paper::regenerateWalls(int side) {
     std::vector<vec2>& region = (side == 0) ? paperMeshes.first->region : paperMeshes.second->region;
     SingleSide* selectedSide = (side == 0) ? sides.first : sides.second;
+    PaperMesh* selectedMesh = (side == 0) ? paperMeshes.first : paperMeshes.second;
     selectedSide->clearWalls();
 
+    // create outer wall
     for (int i = 0; i < region.size(); i++) {
         int j = (i + 1) % region.size();
         auto data = connectSquare(region[i], region[j]);
@@ -636,6 +641,26 @@ void Paper::regenerateWalls(int side) {
             .collider = selectedSide->getCollider("quad"),
             .density = -1
         }));
+    }
+
+    // create inner walls
+    for (const auto& uvRegion : selectedMesh->regions) {
+        if (uvRegion.isObstacle == false) continue;
+
+        int regionSize = uvRegion.positions.size();
+        for (int i = 0; i < regionSize; i++) {
+            int j = (i + 1) % regionSize;
+            auto data = connectSquare(uvRegion.positions[i], uvRegion.positions[j]);
+            selectedSide->addWall(new Node2D(selectedSide->getScene(), { 
+                .mesh = game->getMesh("quad"), 
+                .material = game->getMaterial("knight"), 
+                .position = vec2{data.first.x, data.first.y}, 
+                .rotation = data.first.z, 
+                .scale = data.second,
+                .collider = selectedSide->getCollider("quad"),
+                .density = -1
+            }));
+        }
     }
 }
 
@@ -719,5 +744,16 @@ void Paper::previewFold(const vec2& start, const vec2& end) {
             edge->setLayer(0.95);
             regionNodes.push_back(edge);
         }
+    }
+}
+
+void Paper::updatePathing(vec2 playerPos) {
+    SingleSide* side = (curSide == 0) ? sides.first : sides.second;
+    PaperMesh* mesh = (curSide == 0) ? paperMeshes.first : paperMeshes.second;
+
+    for (Enemy* enemy : side->getEnemies()) {
+        std::vector<vec2> path;
+        mesh->getPath(path, enemy->getPosition(), playerPos);
+        enemy->setPath(path);
     }
 }

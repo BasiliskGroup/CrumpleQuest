@@ -29,11 +29,17 @@ file(GLOB_RECURSE SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
 
-add_executable(game ${SRC_FILES})
+# External include folder sources (kept separate)
+file(GLOB_RECURSE INCLUDE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/*.cpp
+)
+
+add_executable(game ${SRC_FILES} ${INCLUDE_FILES})
 
 target_include_directories(game PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_BINARY_DIR}/_deps/assimp-src/contrib/earcut-hpp
 )
 
@@ -68,3 +74,4 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders  DESTINATION ${CMAKE_CURRENT_BINAR
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/sounds   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/art      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

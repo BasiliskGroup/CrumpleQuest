@@ -88,12 +88,15 @@ public:
     Navmesh& operator=(const Navmesh& other) = default;
     Navmesh& operator=(Navmesh&& other) = default;
     
-    uint addObstacle(std::vector<vec2> obstacleMesh);
+    void addObstacle(std::vector<vec2> obstacleMesh);
+    void addMesh(std::vector<vec2> mesh);
     void getPath(std::vector<vec2>& path, vec2 start, vec2 dest);
     void generateNavmesh();
 
     static void earcut(const std::vector<std::vector<vec2>>& polygon, std::vector<uint>& indices);
     static void convertToMesh(const std::vector<std::vector<vec2>>& polygon, std::vector<uint>& indices, std::vector<float>& data);
+
+    void clear();
 
 private:
     void earcut();
@@ -107,7 +110,12 @@ private:
     void AStar(const vec2& start, const vec2& dest, std::vector<uint>& path);
     void getPortals(const std::vector<uint>& path);
     void funnel(const vec2& start, const vec2& dest, std::vector<vec2>& path);
-    void clear();
+
+    inline float sign(const vec2& a, const vec2& b, const vec2& c) {
+        vec2 ab = b - a;
+        vec2 ac = c - a;
+        return ab.x * ac.y - ab.y * ac.x;
+    }
 };
 
 #endif

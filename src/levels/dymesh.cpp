@@ -135,7 +135,7 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
 
             // Preserve basis from original region, compute new originUV for new origin position
             vec2 newOriginUV = uvReg.sampleUV(clippedPositions[0]);
-            newRegions.emplace_back(clippedPositions, uvReg.basis, newOriginUV);
+            newRegions.emplace_back(clippedPositions, uvReg.basis, newOriginUV, uvReg.isObstacle);
         }
     }
 
@@ -266,7 +266,7 @@ DyMesh* DyMesh::mirror(const vec2& pos, const vec2& dir) {
             Vert(mirrorDir(uvReg.basis[1].pos), uvReg.basis[1].uv)
         };
         
-        mirroredRegions.emplace_back(mirroredPositions, mirroredBasis, uvReg.originUV);
+        mirroredRegions.emplace_back(mirroredPositions, mirroredBasis, uvReg.originUV, uvReg.isObstacle);
     }
 
     return new DyMesh(mirroredRegion, mirroredRegions);
@@ -437,6 +437,7 @@ bool DyMesh::hasCompatibleUVs(const UVRegion& r1, const UVRegion& r2, const std:
 }
 
 bool DyMesh::canMergeRegions(const UVRegion& r1, const UVRegion& r2, std::vector<vec2>& sharedEdge) const {
+    if (r1.isObstacle || r2.isObstacle) return false;
     if (!hasSharedEdge(r1, r2, sharedEdge)) return false;
     if (!hasCompatibleUVs(r1, r2, sharedEdge)) return false;
     return true;
@@ -495,48 +496,6 @@ void DyMesh::cleanupDegenerateRegions() {
     }
 }
 
-void DyMesh::removeContainedRegions() {
-    if (regions.size() < 2) return;
-    
-    const double eps = 1e-6;
-    
-    for (size_t i = 0; i < regions.size(); ) {
-        bool wasRemoved = false;
-        
-        Paths64 pathI = makePaths64FromRegion(regions[i].positions);
-        double areaI = std::abs(Area(pathI));
-        
-        for (size_t j = 0; j < regions.size(); ++j) {
-            if (i == j) continue;
-            
-            Paths64 pathJ = makePaths64FromRegion(regions[j].positions);
-            double areaJ = std::abs(Area(pathJ));
-            
-            // Compute union of regions i and j
-            Paths64 unionResult;
-            try {
-                unionResult = Union(pathI, pathJ, FillRule::NonZero);
-            } catch (...) {
-                continue;
-            }
-            
-            double unionArea = std::abs(Area(unionResult));
-            
-            // If union area equals area of j, then region i is contained within region j
-            if (std::abs(unionArea - areaJ) < eps) {
-                regions.erase(regions.begin() + i);
-                wasRemoved = true;
-                break;
-            }
-        }
-        
-        if (!wasRemoved) {
-            ++i;
-        }
-    }
-    
-}
-
 UVRegion DyMesh::mergeTwo(const UVRegion& r1, const UVRegion& r2) const {
     // Use Clipper2 to union the two regions
     Paths64 paths1 = makePaths64FromRegion(r1.positions);
@@ -560,8 +519,10 @@ UVRegion DyMesh::mergeTwo(const UVRegion& r1, const UVRegion& r2) const {
     ensureCCW(mergedPositions);
 
     // Use r1's basis, compute originUV for new origin position
+    // Preserve obstacle status - if either region is an obstacle, merged region is an obstacle
+    bool mergedIsObstacle = r1.isObstacle || r2.isObstacle;
     vec2 newOriginUV = r1.sampleUV(mergedPositions[0]);
-    return UVRegion(mergedPositions, r1.basis, newOriginUV);
+    return UVRegion(mergedPositions, r1.basis, newOriginUV, mergedIsObstacle);
 }
 
 void DyMesh::mergeAllRegions() {
@@ -571,13 +532,6 @@ void DyMesh::mergeAllRegions() {
     
     // First cleanup pass
     cleanupDegenerateRegions();
-    
-    if (regions.size() < 2) {
-        return;
-    }
-    
-    // Remove regions that are completely contained by other regions
-    removeContainedRegions();
     
     if (regions.size() < 2) {
         return;

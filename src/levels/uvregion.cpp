@@ -1,7 +1,98 @@
 #include "levels/uvregion.h"
 
-UVRegion::UVRegion(const std::vector<vec2>& positions, const std::array<Vert, 2>& basis, const vec2& originUV) 
-    : positions(positions), basis(basis), originUV(originUV) {
+UVRegion::UVRegion(const std::vector<vec2>& positions, const std::array<Vert, 2>& basis, const vec2& originUV, bool isObstacle) 
+    : positions(positions), basis(basis), originUV(originUV), isObstacle(isObstacle) {
+}
+
+UVRegion::UVRegion(Mesh* mesh, const vec3& position, const vec2& scale, bool isObstacle)
+    : positions(), basis(), originUV(0.0f), isObstacle(isObstacle)
+{
+    // Transform components
+    vec2 pos = vec2(position.x, position.y);
+    float r  = position.z;
+
+    float s = std::sin(r);
+    float c = std::cos(r);
+
+    auto rot = [&](const vec2& v) {
+        return vec2(c * v.x - s * v.y,
+                    s * v.x + c * v.y);
+    };
+
+    auto& verts = mesh->getVertices();      // [x,y,z,u,v,...]
+    const int vstride = 5;
+    const int numVerts = verts.size() / vstride;
+
+    positions.reserve(numVerts);
+
+    std::vector<vec2> localPos;
+    std::vector<vec2> uv;
+    localPos.reserve(numVerts);
+    uv.reserve(numVerts);
+
+    // Load vertex data
+    for (int i = 0; i < numVerts; i++) {
+        float lx = verts[i*vstride + 0];
+        float ly = verts[i*vstride + 1];
+        float ux = verts[i*vstride + 3];
+        float uy = verts[i*vstride + 4];
+
+        vec2 pLocal = vec2(lx, ly) * scale;
+        vec2 pWorld = rot(pLocal) + pos;
+
+        localPos.push_back(pLocal);
+        uv.push_back(vec2(ux, uy));
+        positions.push_back(pWorld);
+    }
+
+    if (numVerts == 0)
+        return;
+
+    // Origin UV
+    originUV = uv[0];
+
+    // Find two non-collinear edges for basis
+    int i1 = -1, i2 = -1;
+
+    for (int i = 1; i < numVerts; i++) {
+        if ((localPos[i] - localPos[0]).length() > 1e-6f) {
+            i1 = i;
+            break;
+        }
+    }
+    for (int i = 1; i < numVerts; i++) {
+        if (i != i1 &&
+            std::abs(cross(localPos[i] - localPos[0],
+                           localPos[i1] - localPos[0])) > 1e-6f)
+        {
+            i2 = i;
+            break;
+        }
+    }
+
+    // Degenerate fallback
+    if (i1 < 0 || i2 < 0) {
+        basis[0].pos = vec2(1, 0);
+        basis[0].uv  = vec2(1, 0);
+        basis[1].pos = vec2(0, 1);
+        basis[1].uv  = vec2(0, 1);
+        return;
+    }
+
+    // Construct basis
+    vec2 p0  = positions[0];
+    vec2 p1w = positions[i1];
+    vec2 p2w = positions[i2];
+
+    vec2 uv0  = uv[0];
+    vec2 uv1  = uv[i1];
+    vec2 uv2  = uv[i2];
+
+    basis[0].pos = p1w - p0;
+    basis[0].uv  = uv1 - uv0;
+
+    basis[1].pos = p2w - p0;
+    basis[1].uv  = uv2 - uv0;
 }
 
 bool UVRegion::contains(const vec2& p, float eps) const {
