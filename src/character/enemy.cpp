@@ -1,5 +1,6 @@
 #include "character/enemy.h"
 #include "game/game.h"
+#include "weapon/weapon.h"
 
 
 Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale) 
@@ -62,5 +63,10 @@ void Enemy::move(const vec2& playerPos, float dt) {
 void Enemy::attack(const vec2& playerPos, float dt) {
     if (weapon == nullptr) return;
 
+    vec2 dir = playerPos - getPosition();
+    if (glm::length2(dir) < 1e-6f) return;
+    dir = glm::normalize(dir);
 
+    vec2 offset = radius / 2 * dir + getPosition();
+    weapon->attack(offset, dir);
 }

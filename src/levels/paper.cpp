@@ -303,164 +303,70 @@ void Paper::pushFold(Fold& newFold) {
         return;
     }
 
-    // Calculate overhang: reflect cutVerts over crease to get fold landing positions
-    std::vector<vec2> foldedCutVerts;
-    for (const vec2& v : newFold.cutVerts) {
-        foldedCutVerts.push_back(reflectPointOverLine(newFold.creasePos, newFold.creaseDir, v));
-    }
-    ensureCCW(foldedCutVerts);
-
-    // Find overhang: part of folded region outside paper boundary
-    Paths64 foldedPath = makePaths64FromRegion(foldedCutVerts);
+    // Calculate overhangs using the same method as previewFold:
+    // overhang = coverRegion - uncutPaperRegion.
+    const std::vector<vec2>& coverRegion = newFold.cover->region;
+    Paths64 coverPath = makePaths64FromRegion(coverRegion);
     Paths64 paperPath = makePaths64FromRegion(paperMesh->region);
     Paths64 overhangPath;
-    
     try {
-        overhangPath = Difference(foldedPath, paperPath, FillRule::NonZero);
+        overhangPath = Difference(coverPath, paperPath, FillRule::NonZero);
     } catch (...) {
+        std::cout << "pushFold: Exception while computing overhang Difference()" << std::endl;
         overhangPath.clear();
     }
 
-    // Track ALL overhang regions for later region updates (multiple overhangs possible)
-    std::vector<std::vector<vec2>> overhangFrontRegions;  // Front-side coordinates
-    std::vector<std::vector<vec2>> overhangBackRegions;   // Back-side coordinates
-    
-    // Process ALL overhang paths, not just the largest one
-    if (!overhangPath.empty()) {
-        for (size_t pathIdx = 0; pathIdx < overhangPath.size(); ++pathIdx) {
-            const Path64& path = overhangPath[pathIdx];
-            
-            // Convert this path to vec2 positions
-            std::vector<vec2> overhangPositions;
-            overhangPositions.reserve(path.size());
-            for (const Point64& pt : path) {
-                overhangPositions.emplace_back(
-                    static_cast<float>(pt.x / CLIPPER_SCALE),
-                    static_cast<float>(pt.y / CLIPPER_SCALE)
-                );
-            }
-            overhangPositions = simplifyCollinear(overhangPositions);
-            
-            if (overhangPositions.size() < 3) {
-                continue;
-            }
-            
-            ensureCCW(overhangPositions);
-            
-            // Save overhang in front-side coordinates
-            overhangFrontRegions.push_back(overhangPositions);
-            
-            // Reflect overhang positions back to get source positions on original paper
-            std::vector<vec2> overhangSourcePositions;
-            for (const vec2& v : overhangPositions) {
-                overhangSourcePositions.push_back(reflectPointOverLine(newFold.creasePos, newFold.creaseDir, v));
-            }
-            ensureCCW(overhangSourcePositions);
-            
-            // Create mesh at source positions - try front paper first, then back paper
-            // (overhang might have originated from a fold on the other side)
-            DyMesh* overhangSource = new DyMesh(overhangSourcePositions);
-            PaperMesh* backMeshForCopy = getBackPaperMesh();
-            
-            bool copySuccess = overhangSource->copy(*paperMesh);
-            if (!copySuccess && backMeshForCopy) {
-                // Try the back mesh - the overhang might have come from the other side
-                delete overhangSource;
-                overhangSource = new DyMesh(overhangSourcePositions);
-                copySuccess = overhangSource->copy(*backMeshForCopy);
-            }
-            
-            if (copySuccess) {
-                
-                // Mirror over crease to get to overhang's front-side position (with UVs)
-                DyMesh* overhangMirrored = overhangSource->mirror(newFold.creasePos, newFold.creaseDir);
-                
-                // Flip to back-side coordinates
-                overhangMirrored->flipHorizontal();
-                
-                // Compute overhangBackRegion directly from overhangFrontRegion 
-                // using the same transformation as cleanFlipped for consistency
-                std::vector<vec2> overhangBackRegion;
-                for (const auto& v : overhangPositions) {
-                    overhangBackRegion.push_back({ -v.x, v.y });
-                }
-                std::reverse(overhangBackRegion.begin(), overhangBackRegion.end());
-                overhangBackRegions.push_back(overhangBackRegion);
-                
-                // Paste onto back paper
-                backCopy->paste(*overhangMirrored);
-                
-                delete overhangMirrored;
-            } else {
-            }
-            delete overhangSource;
+    // Filter out degenerate / tiny overhang regions based on polygon area.
+    auto polygonArea = [](const std::vector<vec2>& pts) -> float {
+        if (pts.size() < 3) return 0.0f;
+        float a = 0.0f;
+        for (size_t i = 0; i < pts.size(); ++i) {
+            const vec2& p0 = pts[i];
+            const vec2& p1 = pts[(i + 1) % pts.size()];
+            a += p0.x * p1.y - p1.x * p0.y;
         }
-    } else {
+        return 0.5f * a;
+    };
+
+    const float OVERHANG_AREA_EPS = 1e-4f;
+    bool hasOverhang = false;
+
+    for (size_t pathIdx = 0; pathIdx < overhangPath.size(); ++pathIdx) {
+        const Path64& path = overhangPath[pathIdx];
+        if (path.size() < 3) continue;
+
+        std::vector<vec2> pts;
+        pts.reserve(path.size());
+        for (const Point64& pt : path) {
+            pts.emplace_back(
+                static_cast<float>(pt.x / CLIPPER_SCALE),
+                static_cast<float>(pt.y / CLIPPER_SCALE)
+            );
+        }
+
+        float area = std::fabs(polygonArea(pts));
+        if (area < OVERHANG_AREA_EPS) {
+            std::cout << "pushFold: ignoring tiny overhang path, area=" << area << std::endl;
+            continue;
+        }
+
+        hasOverhang = true;
+        break;
     }
 
-    // Set front side region - union with ALL overhang regions
+    if (hasOverhang) {
+        std::cout << "pushFold: rejecting fold due to overhangs. "
+                  << "numOverhangPaths=" << overhangPath.size() << std::endl;
+        delete paperCopy; paperCopy = nullptr;
+        delete backCopy;  backCopy  = nullptr;
+        folds.pop_back();
+        return;
+    }
+
+    // Set front side region - no overhangs possible here anymore
     std::vector<vec2> frontRegion = newFold.cleanVerts;
     ensureCCW(frontRegion);
-    
-    if (!overhangFrontRegions.empty()) {
-        // Snap overhang vertices to frontRegion vertices to fix precision issues
-        const float snapEps = 0.01f;
-        for (size_t i = 0; i < overhangFrontRegions.size(); ++i) {
-            for (vec2& ov : overhangFrontRegions[i]) {
-                for (const vec2& fv : frontRegion) {
-                    if (glm::length(ov - fv) < snapEps) {
-                        ov = fv;
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // First, union all overhang regions together (they may touch each other)
-        Paths64 allOverhangsPath;
-        bool firstOverhang = true;
-        
-        for (size_t i = 0; i < overhangFrontRegions.size(); ++i) {
-            std::vector<vec2>& overhangFrontRegion = overhangFrontRegions[i];
-            if (overhangFrontRegion.size() < 3) continue;
-            
-            ensureCCW(overhangFrontRegion);
-            Paths64 overhangFrontPath = makePaths64FromRegion(overhangFrontRegion);
-            
-            if (firstOverhang) {
-                allOverhangsPath = overhangFrontPath;
-                firstOverhang = false;
-            } else {
-                try {
-                    allOverhangsPath = Union(allOverhangsPath, overhangFrontPath, FillRule::NonZero);
-                } catch (...) {
-                    std::cout << "  Failed to union overhang " << i << std::endl;
-                }
-            }
-        }
-        
-        // Now union the combined overhangs with frontRegion
-        Paths64 frontPath = makePaths64FromRegion(frontRegion);
-        Paths64 combinedPath;
-        
-        try {
-            combinedPath = Union(frontPath, allOverhangsPath, FillRule::NonZero);
-        } catch (...) {
-            combinedPath = frontPath;
-        }
-        
-        std::vector<vec2> combinedRegion = makeRegionFromPaths64(combinedPath);
-        
-        if (combinedRegion.size() >= 3) {
-            combinedRegion = simplifyCollinear(combinedRegion);
-            ensureCCW(combinedRegion);
-            paperCopy->region = combinedRegion;
-        } else {
-            paperCopy->region = frontRegion;
-        }
-    } else {
-        paperCopy->region = frontRegion;
-    }
+    paperCopy->region = frontRegion;
     paperCopy->pruneDups();
 
     // Set back side region - start with cleanFlipped
@@ -469,68 +375,8 @@ void Paper::pushFold(Fold& newFold) {
     std::reverse(cleanFlipped.begin(), cleanFlipped.end());
     ensureCCW(cleanFlipped);
 
-    // Union ALL overhang regions with the back region
-    if (!overhangBackRegions.empty()) {
-        // Snap overhang vertices to cleanFlipped vertices to fix precision issues
-        const float snapEps = 0.01f;
-        for (size_t i = 0; i < overhangBackRegions.size(); ++i) {
-            for (vec2& ov : overhangBackRegions[i]) {
-                for (const vec2& cv : cleanFlipped) {
-                    if (glm::length(ov - cv) < snapEps) {
-                        ov = cv;
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // First, union all overhang regions together (they may touch each other)
-        Paths64 allOverhangsPath;
-        bool firstOverhang = true;
-        
-        for (size_t i = 0; i < overhangBackRegions.size(); ++i) {
-            std::vector<vec2>& overhangBackRegion = overhangBackRegions[i];
-            if (overhangBackRegion.size() < 3) continue;
-            
-            ensureCCW(overhangBackRegion);
-            Paths64 overhangBackPath = makePaths64FromRegion(overhangBackRegion);
-            
-            if (firstOverhang) {
-                allOverhangsPath = overhangBackPath;
-                firstOverhang = false;
-            } else {
-                try {
-                    allOverhangsPath = Union(allOverhangsPath, overhangBackPath, FillRule::NonZero);
-                } catch (...) {
-                    std::cout << "  Failed to union overhang " << i << std::endl;
-                }
-            }
-        }
-        
-        // Now union the combined overhangs with cleanFlipped
-        Paths64 cleanFlippedPath = makePaths64FromRegion(cleanFlipped);
-        Paths64 combinedPath;
-        
-        try {
-            combinedPath = Union(cleanFlippedPath, allOverhangsPath, FillRule::NonZero);
-        } catch (...) {
-            std::cout << "    Back union threw exception" << std::endl;
-            combinedPath = cleanFlippedPath;
-        }
-        
-        std::vector<vec2> combinedRegion = makeRegionFromPaths64(combinedPath);
-        
-        if (combinedRegion.size() >= 3) {
-            combinedRegion = simplifyCollinear(combinedRegion);
-            ensureCCW(combinedRegion);
-            backCopy->region = combinedRegion;
-        } else {
-            backCopy->region = cleanFlipped;
-            std::cout << "Combined too small, using cleanFlipped" << std::endl;
-        }
-    } else {
-        backCopy->region = cleanFlipped;
-    }
+    // Back side region: with overhangs disallowed, this is just the flipped clean region
+    backCopy->region = cleanFlipped;
     
     backCopy->pruneDups();
 
@@ -711,38 +557,165 @@ void Paper::dotData() {
 }
 
 void Paper::previewFold(const vec2& start, const vec2& end) {
-    // Validate fold geometry and check if start/end are inside paper
-    FoldGeometry geom = validateFoldGeometry(start, end);
-    if (!geom.isValid) {
+    // Basic guards – still reject obviously invalid drags
+    if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) {
         return;
     }
-    
+
+    PaperMesh* paperMesh = getPaperMesh();
+    if (!paperMesh->contains(start) || !paperMesh->contains(end)) {
+        return;
+    }
+
+    // Recompute fold geometry here so we can distinguish "too far" cases
+    // without rejecting them outright (unlike validateFoldGeometry)
+    vec2 dx = end - start;
+    vec2 edgeIntersectPaper = paperMesh->getNearestEdgeIntersection(start, -dx);
+    vec2 nearEdgePointPaper = paperMesh->getNearestEdgePoint(start);
+    vec2 foldDir = end - nearEdgePointPaper;
+    vec2 creasePos = 0.5f * (end + nearEdgePointPaper);
+
+    // Check if fold would go more than halfway across the paper
+    bool tooFar = false;
+    float foldDistance = glm::length(foldDir);
+    if (foldDistance > EPSILON) {
+        vec2 normalizedFoldDir = foldDir / foldDistance;
+
+        float minProj = std::numeric_limits<float>::max();
+        float maxProj = std::numeric_limits<float>::lowest();
+        for (const vec2& v : paperMesh->region) {
+            float proj = glm::dot(v, normalizedFoldDir);
+            minProj = std::min(minProj, proj);
+            maxProj = std::max(maxProj, proj);
+        }
+        float paperExtent = maxProj - minProj;
+        if (foldDistance > paperExtent * 0.5f) {
+            tooFar = true;
+        }
+    }
+
+    // Still require that the fold direction/orientation is valid; otherwise skip preview
+    if (glm::dot(edgeIntersectPaper - start, nearEdgePointPaper - start) <= 0) {
+        return;
+    }
+
     Fold tempFold(start, curSide);
     // Try to initialize - even if it fails, cover might still be created
     bool check = tempFold.initialize(
         curSide == 0 ? paperMeshes : PaperMeshPair{ paperMeshes.second, paperMeshes.first },
-        geom.creasePos,
-        geom.foldDir,
-        geom.edgeIntersectPaper
+        creasePos,
+        foldDir,
+        edgeIntersectPaper
     );
     
     // Show cover even if initialize returned false, as long as cover is valid
     if (tempFold.cover != nullptr && !tempFold.cover->region.empty() && tempFold.cover->region.size() >= 3) {
-        // Visualize the cover region boundary
+        // Detect overhangs by subtracting the uncut paper region from the cover region:
+        // overhang = coverRegion - paperRegion
         const std::vector<vec2>& coverRegion = tempFold.cover->region;
-        for (int i = 0; i < coverRegion.size(); i++) {
+        Paths64 coverPath = makePaths64FromRegion(coverRegion);
+        Paths64 paperPath = makePaths64FromRegion(paperMesh->region);
+
+        Paths64 overhangPath;
+        try {
+            overhangPath = Difference(coverPath, paperPath, FillRule::NonZero);
+        } catch (...) {
+            overhangPath.clear();
+        }
+
+        // Filter out degenerate / tiny overhang regions based on polygon area.
+        auto polygonArea = [](const std::vector<vec2>& pts) -> float {
+            if (pts.size() < 3) return 0.0f;
+            float a = 0.0f;
+            for (size_t i = 0; i < pts.size(); ++i) {
+                const vec2& p0 = pts[i];
+                const vec2& p1 = pts[(i + 1) % pts.size()];
+                a += p0.x * p1.y - p1.x * p0.y;
+            }
+            return 0.5f * a;
+        };
+
+        const float OVERHANG_AREA_EPS = 1e-4f;
+        bool hasOverhang = false;
+
+        // We will reuse non-degenerate overhang polygons when drawing red outlines.
+        std::vector<std::vector<vec2>> nonDegenerateOverhangs;
+
+        for (size_t pathIdx = 0; pathIdx < overhangPath.size(); ++pathIdx) {
+            const Path64& path = overhangPath[pathIdx];
+            if (path.size() < 3) continue;
+
+            std::vector<vec2> pts;
+            pts.reserve(path.size());
+            for (const Point64& pt : path) {
+                pts.emplace_back(
+                    static_cast<float>(pt.x / CLIPPER_SCALE),
+                    static_cast<float>(pt.y / CLIPPER_SCALE)
+                );
+            }
+
+            float area = std::fabs(polygonArea(pts));
+            if (area < OVERHANG_AREA_EPS) {
+                // Very small sliver – treat as numerical noise.
+                continue;
+            }
+
+            hasOverhang = true;
+            nonDegenerateOverhangs.push_back(std::move(pts));
+        }
+
+        // Choose base material:
+        //  - no overhangs, within extent -> green (valid)
+        //  - no overhangs, too far      -> red (invalid extent)
+        //  - any overhangs              -> yellow for contained part (with red overlays below)
+        const char* baseMatName = nullptr;
+        if (hasOverhang) {
+            baseMatName = "yellow";
+        } else if (tooFar) {
+            baseMatName = "red";
+        } else {
+            baseMatName = "green";
+        }
+
+        // Visualize the cover region boundary
+        for (int i = 0; i < static_cast<int>(coverRegion.size()); i++) {
             int j = (i + 1) % coverRegion.size();
             auto edgeData = connectSquare(coverRegion[i], coverRegion[j]);
             
             Node2D* edge = new Node2D(game->getScene(), {
                 .mesh = game->getMesh("quad"),
-                .material = game->getMaterial("green"),
+                .material = game->getMaterial(baseMatName),
                 .position = vec2{edgeData.first.x, edgeData.first.y},
                 .rotation = edgeData.first.z,
                 .scale = edgeData.second
             });
             edge->setLayer(0.95);
             regionNodes.push_back(edge);
+        }
+
+        // If we have overhangs, render their boundaries in red on top of the base preview.
+        if (hasOverhang) {
+            for (const auto& overhangPositionsRaw : nonDegenerateOverhangs) {
+                if (overhangPositionsRaw.size() < 2) continue;
+
+                std::vector<vec2> overhangPositions = overhangPositionsRaw;
+                ensureCCW(overhangPositions);
+
+                for (int i = 0; i < static_cast<int>(overhangPositions.size()); ++i) {
+                    int j = (i + 1) % static_cast<int>(overhangPositions.size());
+                    auto edgeData = connectSquare(overhangPositions[i], overhangPositions[j]);
+
+                    Node2D* edge = new Node2D(game->getScene(), {
+                        .mesh = game->getMesh("quad"),
+                        .material = game->getMaterial("red"),
+                        .position = vec2{edgeData.first.x, edgeData.first.y},
+                        .rotation = edgeData.first.z,
+                        .scale = edgeData.second
+                    });
+                    edge->setLayer(0.97f); // slightly above base preview
+                    regionNodes.push_back(edge);
+                }
+            }
         }
     }
 }
