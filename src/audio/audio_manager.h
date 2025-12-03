@@ -257,6 +257,15 @@ public:
     SoundHandle LoadSound(const string& filepath);
     
     /**
+     * @brief Load a sound from a file and assign it to a group
+     * 
+     * @param filepath Path to the audio file
+     * @param group Handle to the audio group to assign the sound to
+     * @return SoundHandle Handle to the loaded sound
+     */
+    SoundHandle LoadSound(const string& filepath, GroupHandle group);
+    
+    /**
      * @brief Unload a previously loaded sound
      * 
      * @param sound Handle to the sound to unload

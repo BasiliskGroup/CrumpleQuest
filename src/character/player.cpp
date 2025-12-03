@@ -2,9 +2,8 @@
 #include "weapon/weapon.h"
 #include "game/game.h"
 
-
-Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon)
-    : Character(game, health, speed, node, side, weapon, "Ally")
+Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, float radius, vec2 scale, MenuManager* menuManager)
+    : Character(game, health, speed, node, side, weapon, "Ally", radius, scale), menuManager(menuManager)
 {
     this->accel = 30;
     weaponNode = new Node2D(node, { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}});
@@ -23,6 +22,10 @@ void Player::onDamage(int damage) {
 }
 
 void Player::move(float dt) {
+    // if menu open, do nothing
+    if (menuManager && menuManager->hasActiveMenu()) {
+        return;
+    }
 
     // Update animations
     animator->update();

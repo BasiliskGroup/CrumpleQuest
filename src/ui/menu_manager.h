@@ -35,6 +35,7 @@ public:
     void pushSettingsMenu();
     void popMenu();
     bool hasActiveMenu() const { return menuStack->hasActiveMenu(); }
+    size_t getMenuStackSize() const { return menuStack->size(); }
     
     // Event handling and updates
     void handleEvent(const vec2& mousePos, bool mouseDown);

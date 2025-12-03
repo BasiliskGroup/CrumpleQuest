@@ -39,6 +39,7 @@ private:
     vec2 rightStartDown = vec2();
 
     bool kWasDown = false;
+    bool escapeWasDown = false;
 
     // audio
     audio::AudioManager& audioManager;

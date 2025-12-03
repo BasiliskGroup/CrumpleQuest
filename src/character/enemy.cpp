@@ -2,8 +2,8 @@
 #include "game/game.h"
 
 
-Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai) 
-    : Character(game, health, speed, node, side, weapon, "Enemy"), ai(ai), path() 
+Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale) 
+    : Character(game, health, speed, node, side, weapon, "Enemy", radius, scale), ai(ai), path() 
 {
     animator = new Animator(game->getEngine(), node, game->getAnimation("player_idle"));
     animator->setFrameRate(8);
