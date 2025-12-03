@@ -1,6 +1,8 @@
 #ifndef SINGLE_SIDE_H
 #define SINGLE_SIDE_H
 
+#include "util/includes.h"
+
 class Enemy;
 class Game;
 class DamageZone;

@@ -91,6 +91,7 @@ public:
     Scene2D* getMenuScene() { return menuScene; }
     Paper* getPaper() { return paper; }
     SingleSide*& getSide() { return currentSide; }
+    Player* getPlayer() { return player; }
 
     auto& getEnemies() { return currentSide->getEnemies(); }
 

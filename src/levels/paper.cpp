@@ -1,6 +1,7 @@
 #include "levels/levels.h"
 #include "util/maths.h"
 #include "audio/sfx_player.h"
+#include "util/clipper_helper.h"
 
 Paper::Paper() : 
     curSide(0), 
@@ -183,6 +184,7 @@ void Paper::deactivateFold() {
 Paper::FoldGeometry Paper::validateFoldGeometry(const vec2& start, const vec2& end) {
     FoldGeometry geom;
     geom.isValid = false;
+    geom.playerInFold = false;
     
     if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) {
         return geom;
@@ -227,6 +229,25 @@ Paper::FoldGeometry Paper::validateFoldGeometry(const vec2& start, const vec2& e
     // Check if we're folding the paper directly (start is on the correct side)
     if (glm::dot(geom.edgeIntersectPaper - start, geom.nearEdgePointPaper - start) > 0) {
         geom.isValid = true;
+        
+        // Check if player is in the fold underside region (the part that gets folded underneath)
+        SingleSide* currentSide = getSingleSide();
+        if (currentSide && currentSide->getPlayerNode()) {
+            vec2 playerPos = currentSide->getPlayerNode()->getPosition();
+            
+            // Create a temporary fold to check if player is in the underside
+            Fold tempFold(start, curSide);
+            bool check = tempFold.initialize(
+                curSide == 0 ? paperMeshes : PaperMeshPair{ paperMeshes.second, paperMeshes.first },
+                geom.creasePos,
+                geom.foldDir,
+                geom.edgeIntersectPaper
+            );
+            
+            if (check && tempFold.underside != nullptr) {
+                geom.playerInFold = tempFold.underside->contains(playerPos);
+            }
+        }
     }
     
     return geom;
@@ -238,6 +259,11 @@ bool Paper::fold(const vec2& start, const vec2& end) {
     // Validate fold geometry and check if start/end are inside paper
     FoldGeometry geom = validateFoldGeometry(start, end);
     if (!geom.isValid) {
+        return false;
+    }
+    
+    // Reject fold if player is in the fold cover region
+    if (geom.playerInFold) {
         return false;
     }
 
@@ -260,13 +286,26 @@ bool Paper::unfold(const vec2& pos) {
     activateFold(pos);
     bool check = popFold();
     if (check) {
+        vec2 playerPos = getSingleSide()->getPlayerNode()->getPosition();
         flip();
+        playerPos = { -playerPos.x, playerPos.y };
+        getSingleSide()->getPlayerNode()->setPosition(playerPos);
     };
     deactivateFold();
     return check;
 }
 
 bool Paper::pushFold(Fold& newFold) {
+    // Safety check: reject fold if player is in the fold underside region (the part that gets folded underneath)
+    SingleSide* currentSide = getSingleSide();
+    if (currentSide && currentSide->getPlayerNode() && newFold.underside != nullptr) {
+        vec2 playerPos = currentSide->getPlayerNode()->getPosition();
+        if (newFold.underside->contains(playerPos)) {
+            std::cout << "pushFold: rejecting fold - player is in fold underside region" << std::endl;
+            return false;
+        }
+    }
+    
     std::set<int> seen; // TODO implement cover cache
     int insertIndex = folds.size();
 
@@ -383,6 +422,7 @@ bool Paper::pushFold(Fold& newFold) {
     // Set front side region - no overhangs possible here anymore
     std::vector<vec2> frontRegion = newFold.cleanVerts;
     ensureCCW(frontRegion);
+    frontRegion = simplifyCollinear(frontRegion);
     paperCopy->region = frontRegion;
     paperCopy->pruneDups();
 
@@ -391,6 +431,7 @@ bool Paper::pushFold(Fold& newFold) {
     for (const auto& v : newFold.cleanVerts) cleanFlipped.push_back({ -v.x, v.y });
     std::reverse(cleanFlipped.begin(), cleanFlipped.end());
     ensureCCW(cleanFlipped);
+    cleanFlipped = simplifyCollinear(cleanFlipped);
 
     // Back side region: with overhangs disallowed, this is just the flipped clean region
     backCopy->region = cleanFlipped;
@@ -457,6 +498,9 @@ bool Paper::popFold() {
     for (auto it = oldFold.originalFoldedVerts.rbegin(); it != oldFold.originalFoldedVerts.rend(); ++it) {
         regionCopy.insert(regionCopy.begin() + insertPos, *it);
     }
+    
+    // Simplify collinear vertices after inserting
+    regionCopy = simplifyCollinear(regionCopy);
 
     // Remove cover region from front paper
     bool check = paperMesh->cut(*oldFold.cover);
@@ -488,17 +532,24 @@ bool Paper::popFold() {
 
     // apply copied region to paper mesh
     paperMesh->region = regionCopy;
+    paperMesh->region = simplifyCollinear(paperMesh->region);
     paperMesh->pruneDups();
 
     auto flippedRegionCopy = regionCopy;
     flipVecsHorizontal(flippedRegionCopy);
     std::reverse(flippedRegionCopy.begin(), flippedRegionCopy.end());
     ensureCCW(flippedRegionCopy);
+    flippedRegionCopy = simplifyCollinear(flippedRegionCopy);
 
     // apply copied region to back mesh
     backMesh->region = flippedRegionCopy;
+    backMesh->region = simplifyCollinear(backMesh->region);
     backMesh->pruneDups();
 
+    // Save crease information before erasing the fold (since oldFold reference becomes invalid)
+    vec2 creaseStart = oldFold.crease[0];
+    vec2 creaseEnd = oldFold.crease[1];
+    
     // Clear all holds that the removed fold had on other folds
     oldFold.holds.clear();
     folds.erase(folds.begin() + activeFold);
@@ -510,6 +561,22 @@ bool Paper::popFold() {
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
     sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     regenerateWalls();
+
+    // Reflect player position over the crease line
+    SingleSide* currentSide = getSingleSide();
+    if (currentSide && currentSide->getPlayerNode()) {
+        vec2 playerPos = currentSide->getPlayerNode()->getPosition();
+        
+        // Compute crease direction from crease endpoints
+        vec2 creaseDir = creaseEnd - creaseStart;
+        float creaseLen = glm::length(creaseDir);
+        
+        // Only reflect if crease direction is valid
+        if (creaseLen > EPSILON) {
+            vec2 reflectedPos = reflectPointOverLine(creaseStart, creaseDir, playerPos);
+            currentSide->getPlayerNode()->setPosition(reflectedPos);
+        }
+    }
 
     // DEBUG
     dotData();
@@ -653,6 +720,10 @@ void Paper::previewFold(const vec2& start, const vec2& end) {
         return;
     }
 
+    // Check if player is in fold using validateFoldGeometry
+    FoldGeometry geom = validateFoldGeometry(start, end);
+    bool playerInFold = geom.playerInFold;
+
     Fold tempFold(start, curSide);
     // Try to initialize - even if it fails, cover might still be created
     bool check = tempFold.initialize(
@@ -719,14 +790,17 @@ void Paper::previewFold(const vec2& start, const vec2& end) {
         }
 
         // Choose base material:
-        //  - no overhangs, within extent -> green (valid)
+        //  - no overhangs, within extent, player not in fold -> green (valid)
         //  - no overhangs, too far      -> red (invalid extent)
+        //  - player in fold              -> yellow (invalid - would fold over player, but show yellow with red square)
         //  - any overhangs              -> yellow for contained part (with red overlays below)
         const char* baseMatName = nullptr;
         if (hasOverhang) {
             baseMatName = "yellow";
         } else if (tooFar) {
             baseMatName = "red";
+        } else if (playerInFold) {
+            baseMatName = "yellow";
         } else {
             baseMatName = "green";
         }
@@ -767,6 +841,39 @@ void Paper::previewFold(const vec2& start, const vec2& end) {
                         .scale = edgeData.second
                     });
                     edge->setLayer(0.97f); // slightly above base preview
+                    regionNodes.push_back(edge);
+                }
+            }
+        }
+        
+        // If player is in fold, draw a red square around the player
+        if (playerInFold) {
+            SingleSide* currentSide = getSingleSide();
+            if (currentSide && currentSide->getPlayerNode()) {
+                vec2 playerPos = currentSide->getPlayerNode()->getPosition();
+                float halfSide = 0.375f; // half of 0.75
+                
+                // Create 4 corners of the square
+                vec2 corners[4] = {
+                    {playerPos.x - halfSide, playerPos.y + halfSide}, // top-left
+                    {playerPos.x + halfSide, playerPos.y + halfSide}, // top-right
+                    {playerPos.x + halfSide, playerPos.y - halfSide}, // bottom-right
+                    {playerPos.x - halfSide, playerPos.y - halfSide}  // bottom-left
+                };
+                
+                // Draw 4 edges to form the square
+                for (int i = 0; i < 4; i++) {
+                    int j = (i + 1) % 4;
+                    auto edgeData = connectSquare(corners[i], corners[j]);
+                    
+                    Node2D* edge = new Node2D(game->getScene(), {
+                        .mesh = game->getMesh("quad"),
+                        .material = game->getMaterial("red"),
+                        .position = vec2{edgeData.first.x, edgeData.first.y},
+                        .rotation = edgeData.first.z,
+                        .scale = edgeData.second
+                    });
+                    edge->setLayer(0.98f); // above base preview
                     regionNodes.push_back(edge);
                 }
             }
