@@ -18,8 +18,10 @@ protected:
     vec2 moveDir = vec2();
     Weapon* weapon;
     Node2D* node;
-    SingleSide* side;
     std::string team;
+
+    // back reference pointers
+    SingleSide* side;
     Game* game;
 
 public:
