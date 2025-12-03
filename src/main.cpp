@@ -26,12 +26,23 @@ int main() {
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
     }
 
+    // Player
     game->addAnimation("player_idle", "art/sprites/player/idle/", 4);
     game->addAnimation("player_run", "art/sprites/player/run/", 3);
     game->addAnimation("player_attack", "art/sprites/player/attack/", 4);
+    // Pencil
     game->addAnimation("pencil_idle", "art/sprites/player/weapons/pencil/idle/", 4);
     game->addAnimation("pencil_run", "art/sprites/player/weapons/pencil/run/", 3);
     game->addAnimation("pencil_attack", "art/sprites/player/weapons/pencil/attack/", 4);
+    // Clipfly
+    game->addAnimation("clipfly_idle", "art/sprites/enemies/contact/notebook_clipfly/idle/", 4);
+    game->addAnimation("clipfly_attack", "art/sprites/enemies/contact/notebook_clipfly/attack/", 4);
+    // Staple
+    game->addAnimation("staple_idle", "art/sprites/enemies/melee/notebook_staple/idle/", 4);
+    game->addAnimation("staple_attack", "art/sprites/enemies/melee/notebook_staple/attack/", 4);
+    // Glue
+    game->addAnimation("glue_idle", "art/sprites/enemies/ranged/notebook_glue/idle/", 4);
+    game->addAnimation("glue_attack", "art/sprites/enemies/ranged/notebook_glue/attack/", 4);
 
     // mesh
     std::vector<std::string> meshNames = { "quad", "paper0", "paper1" };
