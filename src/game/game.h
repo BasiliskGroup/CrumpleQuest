@@ -35,8 +35,8 @@ private:
     StaticCamera2D* menuCamera;
 
     // track inputs
-    bool leftWasDown = false;
-    vec2 LeftStartDown = vec2();
+    bool rightWasDown = false;
+    vec2 rightStartDown = vec2();
 
     bool kWasDown = false;
 

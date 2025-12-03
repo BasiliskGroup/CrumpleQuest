@@ -95,6 +95,7 @@ void Game::update(float dt) {
     }
 
     // get mouse state
+    bool rightIsDown = engine->getMouse()->getRightDown();
     bool leftIsDown = engine->getMouse()->getLeftDown();
     vec2 mousePos = { 0, 0 };
     
@@ -127,24 +128,24 @@ void Game::update(float dt) {
     kWasDown = keys->getPressed(GLFW_KEY_F);
 
     // folding
-    if (!leftWasDown && leftIsDown) { // we just clicked
-        LeftStartDown = mousePos;
+    if (!rightWasDown && rightIsDown) { // we just clicked
+        rightStartDown = mousePos;
         
         if (paper) {
             paper->activateFold(mousePos);
         }
 
-    } else if (leftWasDown && !leftIsDown) { // we just let go
+    } else if (rightWasDown && !rightIsDown) { // we just let go
         if (paper) {
-            paper->fold(LeftStartDown, mousePos);
+            paper->fold(rightStartDown, mousePos);
             paper->deactivateFold();
         }
     }
 
     // continuous fold preview
-    if (leftIsDown && paper) {
+    if (rightIsDown && paper) {
         paper->dotData();  // Update debug visualization first
-        paper->previewFold(LeftStartDown, mousePos);  // Show fold preview
+        paper->previewFold(rightStartDown, mousePos);  // Show fold preview
     }
 
     // update buttons
@@ -152,7 +153,7 @@ void Game::update(float dt) {
         elem->event(mousePos, leftIsDown);
     }
 
-    leftWasDown = leftIsDown;
+    rightWasDown = rightIsDown;
 
     // entity update
     if (player != nullptr) {
