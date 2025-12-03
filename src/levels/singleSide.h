@@ -8,6 +8,7 @@ class DamageZone;
 class SingleSide {  
 public:
     static std::unordered_map<std::string, std::function<SingleSide*()>> templates;
+    static Node2D* genPlayerNode(Game* game, SingleSide* side);
     static void generateTemplates(Game* game);
 
     std::unordered_map<std::string, Collider*> colliders;
@@ -17,7 +18,9 @@ private:
     StaticCamera2D* camera;
     std::vector<Enemy*> enemies;
     std::vector<DamageZone*> damageZones;
+
     Node2D* background;
+    Node2D* playerNode;
 
     // point to nodes in scene so no need to delete
     std::vector<Node2D*> walls; 
@@ -36,6 +39,7 @@ public:
     auto& getEnemies() { return enemies; }
     Collider* getCollider(std::string name) { return colliders[name]; }
     Node2D* getBackground() { return background; }
+    Node2D* getPlayerNode() { return playerNode; }
 
     void addEnemy(Enemy* enemy) { this->enemies.push_back(enemy); }
     void addWall(Node2D* wall) { this->walls.push_back(wall); }

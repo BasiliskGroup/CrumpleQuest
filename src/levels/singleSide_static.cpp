@@ -20,3 +20,15 @@ void SingleSide::generateTemplates(Game* game) {
         return side;
     };
 }
+
+Node2D* SingleSide::genPlayerNode(Game* game, SingleSide* side) {
+    Node2D* node = new Node2D(side->getScene(), {
+        .mesh = game->getMesh("quad"),
+        .material = game->getMaterial("knight"),
+        .scale = { 1.5, 1.5 },
+        .collider = side->getCollider("quad"),
+        .colliderScale = { 0.5, 0.8 }
+    });
+    node->setManifoldMask(1, 1, 0);
+    return node;
+}

@@ -249,6 +249,16 @@ void Paper::fold(const vec2& start, const vec2& end) {
     pushFold(fold);
 }
 
+bool Paper::unfold(const vec2& pos) {
+    activateFold(pos);
+    bool check = popFold();
+    if (check) {
+        flip();
+    };
+    deactivateFold();
+    return check;
+}
+
 void Paper::pushFold(Fold& newFold) {
     std::set<int> seen; // TODO implement cover cache
     int insertIndex = folds.size();
@@ -407,8 +417,8 @@ void Paper::pushFold(Fold& newFold) {
     dotData();
 }
 
-void Paper::popFold() {
-    if (activeFold < 0 || activeFold >= folds.size()) return;
+bool Paper::popFold() {
+    if (activeFold < 0 || activeFold >= folds.size()) return false;
 
     // restore mesh from fold
     Fold& oldFold = folds[activeFold];
@@ -419,21 +429,21 @@ void Paper::popFold() {
     bool check = paperMesh->cut(*oldFold.cover);
     if (!check) {
         std::cout << "popFold: Failed to cut cover region" << std::endl;
-        return;
+        return false;
     }
     
     // Restore underside region to front paper
     check = paperMesh->paste(*oldFold.underside);
     if (!check) {
         std::cout << "popFold: Failed to paste underside region" << std::endl;
-        return;
+        return false;
     }
     
     // Restore backside region to back paper
     check = backMesh->paste(*oldFold.backside);
     if (!check) {
         std::cout << "popFold: Failed to paste backside region" << std::endl;
-        return;
+        return false;
     }
 
     // Remove references TO the activeFold from other folds' holds
@@ -461,6 +471,8 @@ void Paper::popFold() {
 
     // DEBUG
     dotData();
+
+    return true;
 }
 
 void Paper::regenerateWalls() {
