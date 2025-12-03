@@ -23,6 +23,14 @@ void Enemy::move(const vec2& playerPos, float dt) {
         animator->setAnimation(runAnimation);
     }
 
+    if (moveDir[0] > 0) {
+        node->setScale({-scale.x, scale.y});
+    }
+    else {
+        node->setScale({scale.x, scale.y});
+    }
+
+
     // no valid path, stay still TODO make idle behavior
     if (path.size() == 0) {
         moveDir = { 0, 0 };

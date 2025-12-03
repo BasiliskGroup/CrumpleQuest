@@ -39,10 +39,10 @@ int main() {
     game->addAnimation("clipfly_attack", "art/sprites/enemies/contact/notebook_clipfly/attack/", 4);
     // Staple
     game->addAnimation("staple_idle", "art/sprites/enemies/melee/notebook_staple/idle/", 4);
-    game->addAnimation("staple_attack", "art/sprites/enemies/melee/notebook_staple/attack/", 4);
+    game->addAnimation("staple_attack", "art/sprites/enemies/melee/notebook_staple/attack/", 6);
     // Glue
-    game->addAnimation("glue_idle", "art/sprites/enemies/ranged/notebook_glue/idle/", 4);
-    game->addAnimation("glue_attack", "art/sprites/enemies/ranged/notebook_glue/attack/", 4);
+    game->addAnimation("glue_idle", "art/sprites/enemies/ranged/notebook_glue/idle/", 6);
+    game->addAnimation("glue_attack", "art/sprites/enemies/ranged/notebook_glue/attack/", 7);
 
     // mesh
     std::vector<std::string> meshNames = { "quad", "paper0", "paper1" };
