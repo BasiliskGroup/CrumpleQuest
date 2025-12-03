@@ -84,8 +84,12 @@ void Button::event(const vec2& pos, bool mouseDown) {
     // always call hover when we're overlapping
     onHover();
 
-    if (mouseDown && wasPressed == false) onDown();
-    else if (mouseDown == false && wasPressed) onUp();
-
+    if (mouseDown && wasPressed == false) {
+        onDown(); 
+    }
+    else if (mouseDown == false && wasPressed) {
+        onUp();
+    }
+    
     wasPressed = mouseDown;
 }

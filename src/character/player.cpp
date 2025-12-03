@@ -1,19 +1,20 @@
 #include "character/player.h"
 #include "weapon/weapon.h"
+#include "game/game.h"
 
 
-Player::Player(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::unordered_map<std::string, Animation*>* animations, Node2D* weaponNode, MenuManager* menuManager)
-    : Character(health, speed, node, side, weapon, "Ally")
+Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon)
+    : Character(game, health, speed, node, side, weapon, "Ally")
 {
     this->accel = 30;
-    this->animations = animations;
-    this->weaponNode = weaponNode;
-    this->menuManager = menuManager;
-    animator = new Animator(node->getEngine(), node, animations->at("player_idle"));
-    animator->setFrameRate(6);
+    weaponNode = new Node2D(node, { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}});
+    weaponNode->setLayer(0.1f);
 
-    weaponAnimator = new Animator(node->getEngine(), weaponNode, animations->at("pencil_run"));
-    weaponAnimator->setFrameRate(6);
+    animator = new Animator(node->getEngine(), node, game->getAnimation("player_idle"));
+    animator->setFrameRate(8);
+
+    weaponAnimator = new Animator(node->getEngine(), weaponNode, game->getAnimation("pencil_run"));
+    weaponAnimator->setFrameRate(8);
 }
 
 void Player::onDamage(int damage) {
@@ -34,11 +35,20 @@ void Player::move(float dt) {
     // actual movement
     Keyboard* keys = node->getEngine()->getKeyboard();
 
-    if (keys->getPressed(GLFW_KEY_W) || keys->getPressed(GLFW_KEY_D) || keys->getPressed(GLFW_KEY_A) || keys->getPressed(GLFW_KEY_S)) {
-        animator->setAnimation(animations->at("player_run"));
+    if (attacking > 0.0) {
+        animator->setAnimation(game->getAnimation("player_attack"));
+        weaponAnimator->setAnimation(game->getAnimation("pencil_attack"));
+        attacking -= node->getEngine()->getDeltaTime();
     }
     else {
-        animator->setAnimation(animations->at("player_idle"));
+        if (keys->getPressed(GLFW_KEY_W) || keys->getPressed(GLFW_KEY_D) || keys->getPressed(GLFW_KEY_A) || keys->getPressed(GLFW_KEY_S)) {
+            animator->setAnimation(game->getAnimation("player_run"));
+            weaponAnimator->setAnimation(game->getAnimation("pencil_run"));
+        }
+        else {
+            animator->setAnimation(game->getAnimation("player_idle"));
+            weaponAnimator->setAnimation(game->getAnimation("pencil_idle"));
+        }
     }
 
     if (keys->getPressed(GLFW_KEY_A)) {
@@ -74,4 +84,5 @@ void Player::move(float dt) {
     dir = glm::normalize(dir);
     vec2 offset = radius * dir + getPosition();
     weapon->attack(offset, dir);
+    attacking = 1.0 / 8.0 * 4.0;
 }

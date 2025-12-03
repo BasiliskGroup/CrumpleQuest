@@ -63,7 +63,7 @@ public:
     Game();
     ~Game();
 
-    void addImage(std::string name, Image* image)          { this->images[name] = image; }
+    void addImage(std::string name, Image* image)          { this->images[name] = image; engine->getResourceServer()->getTextureServer()->add(image); }
     void addMaterial(std::string name, Material* material) { this->materials[name] = material; }
     void addAnimation(std::string name, std::string folder, unsigned int nImages);
     void addMesh(std::string name, Mesh* mesh)             { this->meshes[name] = mesh; }

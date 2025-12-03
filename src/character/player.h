@@ -11,14 +11,13 @@
 class Player : public Character {
 private:
     int money = 0;
+    float attacking = 0;
     Animator* animator;
     Node2D* weaponNode;
     Animator* weaponAnimator;
-    MenuManager* menuManager;
-    std::unordered_map<std::string, Animation*>* animations;
 
 public:
-    Player(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::unordered_map<std::string, Animation*>* animations, Node2D* weaponNode, MenuManager* menuManager);
+    Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon);
     ~Player() = default;
     
     void onDamage(int damage);

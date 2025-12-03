@@ -1,7 +1,9 @@
 #include "character/enemy.h"
+#include "game/game.h"
 
-Enemy::Enemy(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai) 
-    : Character(health, speed, node, side, weapon, "Enemy"), ai(ai), path() 
+
+Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai) 
+    : Character(game, health, speed, node, side, weapon, "Enemy"), ai(ai), path() 
 {}
 
 void Enemy::onDamage(int damage) {
@@ -26,8 +28,19 @@ void Enemy::move(const vec2& playerPos, float dt) {
         }
     }
 
+    // we have direct line of sight
+    if (path.size() == 1) {
+        attack(playerPos, dt); 
+    }
+
     moveDir = path[0] - getPosition();
 
     // moveDir = playerPos - getPosition(); // old - direct line pathing
     Character::move(dt);
+}
+
+void Enemy::attack(const vec2& playerPos, float dt) {
+    if (weapon == nullptr) return;
+
+
 }
