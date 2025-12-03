@@ -29,6 +29,8 @@ int main() {
     game->addAnimation("player_idle", "art/sprites/player/idle/", 4);
     game->addAnimation("player_run", "art/sprites/player/run/", 3);
     game->addAnimation("player_attack", "art/sprites/player/attack/", 4);
+    game->addAnimation("pencil_run", "art/sprites/player/weapons/pencil/run/", 3);
+    game->addAnimation("pencil_attack", "art/sprites/player/weapons/pencil/attack/", 4);
 
     // mesh
     std::vector<std::string> meshNames = { "quad", "paper0", "paper1" };

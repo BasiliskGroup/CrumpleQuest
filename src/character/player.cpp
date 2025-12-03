@@ -2,13 +2,18 @@
 #include "weapon/weapon.h"
 
 
-Player::Player(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::unordered_map<std::string, Animation*>* animations)
+Player::Player(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::unordered_map<std::string, Animation*>* animations, Node2D* weaponNode)
     : Character(health, speed, node, side, weapon, "Ally")
 {
     this->accel = 30;
+    this->animations = animations;
+    this->weaponNode = weaponNode;
+    
     animator = new Animator(node->getEngine(), node, animations->at("player_idle"));
     animator->setFrameRate(6);
-    this->animations = animations;
+
+    weaponAnimator = new Animator(node->getEngine(), weaponNode, animations->at("pencil_run"));
+    weaponAnimator->setFrameRate(6);
 }
 
 void Player::onDamage(int damage) {
@@ -20,7 +25,8 @@ void Player::move(float dt) {
 
     // Update animations
     animator->update();
-    
+    weaponAnimator->update();
+
     // actual movement
     Keyboard* keys = node->getEngine()->getKeyboard();
 
@@ -37,15 +43,18 @@ void Player::move(float dt) {
     if (keys->getPressed(GLFW_KEY_D)) {
         node->setScale({-1, 1});
     }
-
+    
     moveDir = {
         keys->getPressed(GLFW_KEY_D) - keys->getPressed(GLFW_KEY_A),
         keys->getPressed(GLFW_KEY_W) - keys->getPressed(GLFW_KEY_S)
     };
-
+    
     Character::move(dt);
-
+    
     // attacking
+    weaponNode->setScale(node->getScale());
+    weaponNode->setPosition(node->getPosition());
+
     if (weapon == nullptr) return;
     Mouse* mouse = node->getEngine()->getMouse();
     if (mouse->getClicked() == false) return;

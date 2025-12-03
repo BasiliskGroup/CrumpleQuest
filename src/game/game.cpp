@@ -203,7 +203,8 @@ void Game::startGame() {
 
     // create player
     Node2D* playerNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("knight"), .scale={1, 1}, .collider=getCollider("quad") });
-    Player* player = new Player(3, 3, playerNode, getSide(), nullptr, &animations);
+    Node2D* weaponNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("knight"), .scale={1, 1}});
+    Player* player = new Player(3, 3, playerNode, getSide(), nullptr, &animations, weaponNode);
     setPlayer(player);
 
     // create weapons
