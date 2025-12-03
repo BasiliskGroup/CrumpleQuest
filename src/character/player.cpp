@@ -51,10 +51,10 @@ void Player::move(float dt) {
     }
 
     if (keys->getPressed(GLFW_KEY_A)) {
-        node->setScale({1, 1});
+        node->setScale({scale.x, scale.y});
     }
     if (keys->getPressed(GLFW_KEY_D)) {
-        node->setScale({-1, 1});
+        node->setScale({-scale.x, scale.y});
     }
     
     moveDir = {

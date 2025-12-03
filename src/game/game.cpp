@@ -225,8 +225,8 @@ void Game::startGame() {
     paper->regenerateWalls();
 
     // create player
-    Node2D* playerNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("knight"), .scale={1, 1}, .collider=getCollider("quad") });
-    Player* player = new Player(this, 3, 3, playerNode, getSide(), nullptr, 0.25, { 1.5, 1.5 }, menuManager);
+    Node2D* playerNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("knight"), .scale={1.5, 1.5}, .collider=getCollider("quad"), .colliderScale={0.5, 0.8} });
+    Player* player = new Player(this, 3, 3, playerNode, getSide(), nullptr, 0.25, playerNode->getScale(), menuManager);
     setPlayer(player);
 
     // create weapons

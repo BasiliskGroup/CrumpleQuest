@@ -10,7 +10,7 @@ void Enemy::generateTemplates(Game* game) {
 
     // notebook
     templates["glue"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.0, 1.0 }, .collider=side->getCollider("quad") });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.0, 1.0 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}});
         Enemy* enemy = new Enemy(game, 3, 1, node, side, nullptr, nullptr, 0.4, { 1.0, 1.0 });
         enemy->idleAnimation = game->getAnimation("glue_idle");
         enemy->runAnimation = game->getAnimation("glue_idle");
@@ -25,7 +25,7 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["staple"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.0, 1.0 }, .collider=side->getCollider("quad") });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.0, 1.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7} });
         Enemy* enemy = new Enemy(game, 3, 2, node, side, nullptr, nullptr, 0.5, { 1.0, 1.0 });
         enemy->idleAnimation = game->getAnimation("staple_idle");
         enemy->runAnimation = game->getAnimation("staple_idle");
@@ -40,7 +40,7 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["clipfly"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.0, 1.0 }, .collider=side->getCollider("quad"), .density=0.1 });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.0, 1.0 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.1 });
         Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.15, { 1.0, 1.0 });
         enemy->idleAnimation = game->getAnimation("clipfly_idle");
         enemy->runAnimation = game->getAnimation("clipfly_idle");
