@@ -387,7 +387,6 @@ void Paper::pushFold(Fold& newFold) {
 
     // Back side region: with overhangs disallowed, this is just the flipped clean region
     backCopy->region = cleanFlipped;
-    
     backCopy->pruneDups();
 
     // swap meshes with cut
@@ -402,8 +401,6 @@ void Paper::pushFold(Fold& newFold) {
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
-    paperMeshes.first->mergeAllRegions();
-    paperMeshes.second->mergeAllRegions();
     paperMeshes.first->regenerateNavmesh();
     paperMeshes.second->regenerateNavmesh();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
@@ -418,13 +415,40 @@ void Paper::pushFold(Fold& newFold) {
 }
 
 bool Paper::popFold() {
-    if (activeFold < 0 || activeFold >= folds.size()) return false;
+    if (activeFold < 0 || activeFold >= folds.size() || folds[activeFold].isCovered()) return false;
 
     // restore mesh from fold
     Fold& oldFold = folds[activeFold];
     PaperMesh* paperMesh = getPaperMesh();
     PaperMesh* backMesh = getBackPaperMesh();
+
+    // Find insertion point for original folded vertices
+    // We need to find where the crease start point is in the current region
+    auto regionCopy = paperMesh->region;
+    size_t insertPos = regionCopy.size(); // Default to end if not found
+    bool foundCrease = false;
     
+    for (size_t i = 0; i < regionCopy.size(); i++) {
+        // Check if this vertex matches the crease start point
+        if (glm::length2(oldFold.crease[0] - regionCopy[i]) < EPSILON) {
+            insertPos = i + 1; // Insert after the crease start point
+            foundCrease = true;
+            break;
+        }
+    }
+
+    if (!foundCrease) {
+        std::cout << "popFold: Failed to find crease start point in region" << std::endl;
+        return false;
+    }
+
+    // Insert original folded vertices after the crease start point
+    // Insert in reverse order - each insert shifts subsequent elements, so inserting from end to start
+    // maintains the correct final ordering
+    for (auto it = oldFold.originalFoldedVerts.rbegin(); it != oldFold.originalFoldedVerts.rend(); ++it) {
+        regionCopy.insert(regionCopy.begin() + insertPos, *it);
+    }
+
     // Remove cover region from front paper
     bool check = paperMesh->cut(*oldFold.cover);
     if (!check) {
@@ -452,17 +476,26 @@ bool Paper::popFold() {
             fold.holds.erase(activeFold);
         }
     }
-    
+
+    // apply copied region to paper mesh
+    paperMesh->region = regionCopy;
+    paperMesh->pruneDups();
+
+    auto flippedRegionCopy = regionCopy;
+    flipVecsHorizontal(flippedRegionCopy);
+    std::reverse(flippedRegionCopy.begin(), flippedRegionCopy.end());
+    ensureCCW(flippedRegionCopy);
+
+    // apply copied region to back mesh
+    backMesh->region = flippedRegionCopy;
+    backMesh->pruneDups();
+
     // Clear all holds that the removed fold had on other folds
     oldFold.holds.clear();
-
-    // active fold should be near to the back so this isn't the worst
     folds.erase(folds.begin() + activeFold);
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
-    paperMeshes.first->mergeAllRegions();
-    paperMeshes.second->mergeAllRegions();
     paperMeshes.first->regenerateNavmesh();
     paperMeshes.second->regenerateNavmesh();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);

@@ -43,6 +43,9 @@ bool Paper::Fold::initialize(PaperMeshPair meshes, const vec2& inCreasePos, cons
     
     crease = { foldStart, foldEnd };
 
+    // Store original vertices from indexBounds (these are the vertices that get folded)
+    meshes.first->addRangeInside(this->originalFoldedVerts, indexBounds);
+
     // create cut region
     this->cutVerts = { foldStart };
     meshes.first->addRangeInside(this->cutVerts, indexBounds);
@@ -103,7 +106,8 @@ Paper::Fold::Fold(const Fold& other) :
     creasePos(other.creasePos),
     creaseDir(other.creaseDir),
     cleanVerts(other.cleanVerts),
-    cutVerts(other.cutVerts)
+    cutVerts(other.cutVerts),
+    originalFoldedVerts(other.originalFoldedVerts)
 {}
 
 Paper::Fold::Fold(Fold&& other) noexcept :
@@ -117,7 +121,8 @@ Paper::Fold::Fold(Fold&& other) noexcept :
     creasePos(other.creasePos),
     creaseDir(other.creaseDir),
     cleanVerts(std::move(other.cleanVerts)),
-    cutVerts(std::move(other.cutVerts))
+    cutVerts(std::move(other.cutVerts)),
+    originalFoldedVerts(std::move(other.originalFoldedVerts))
 {
     other.underside = nullptr;
     other.backside = nullptr;
@@ -145,6 +150,7 @@ Paper::Fold& Paper::Fold::operator=(const Fold& other) {
     creaseDir = temp.creaseDir;
     cleanVerts = std::move(temp.cleanVerts);
     cutVerts = std::move(temp.cutVerts);
+    originalFoldedVerts = std::move(temp.originalFoldedVerts);
     
     temp.underside = nullptr;
     temp.backside = nullptr;
@@ -171,6 +177,7 @@ Paper::Fold& Paper::Fold::operator=(Fold&& other) noexcept {
     creaseDir = other.creaseDir;
     cleanVerts = std::move(other.cleanVerts);
     cutVerts = std::move(other.cutVerts);
+    originalFoldedVerts = std::move(other.originalFoldedVerts);
     
     other.underside = nullptr;
     other.backside = nullptr;

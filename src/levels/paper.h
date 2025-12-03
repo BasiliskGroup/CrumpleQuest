@@ -35,6 +35,7 @@ private:
         // cleaning
         std::vector<vec2> cleanVerts;
         std::vector<vec2> cutVerts;  // Original corner region being folded
+        std::vector<vec2> originalFoldedVerts;  // Original vertices from indexBounds that were folded
 
         Fold(const vec2& start, int side=0);
         ~Fold();
