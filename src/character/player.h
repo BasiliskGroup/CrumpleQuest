@@ -12,13 +12,13 @@ class Player : public Character {
 private:
     int money = 0;
     float attacking = 0;
+    unsigned int lastAttackFrame = 0;  // Track last frame of attack animation
     Animator* animator;
     Node2D* weaponNode;
     Animator* weaponAnimator;
-    MenuManager* menuManager;
 
 public:
-    Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, float radius, vec2 sacle, MenuManager* menuManager);
+    Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, float radius, vec2 sacle);
     ~Player() = default;
     
     void onDamage(int damage);

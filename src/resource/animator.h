@@ -21,6 +21,7 @@ class Animator {
         void setNode(Node2D* node) { this->node = node; }
         void setAnimation(Animation* animation);
         void setFrameRate(float frameRate) { timePerFrame = 1.0 / frameRate; }
+        unsigned int getCurrentFrame() const { return frame; }
 };
 
 #endif

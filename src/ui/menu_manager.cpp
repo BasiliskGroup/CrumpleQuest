@@ -3,31 +3,23 @@
 #include "ui/button.h"
 #include "ui/slider.h"
 #include "game/game.h"
-#include "audio/random_sound_container.h"
 #include <iostream>
 
-MenuManager::MenuManager(Game* game) : game(game) {
+MenuManager::MenuManager() : game(nullptr) {
     menuStack = new MenuStack();
-    
-    // Create random sound container for touch sounds with pitch variation
-    audio::RandomSoundContainerConfig config;
-    config.avoidRepeat = true;
-    config.pitchMin = 0.8f;  // Slight pitch variation for more natural sound
-    config.pitchMax = 1.2f;
-    config.group = game->getSFXGroup();
-    
-    touchSoundContainer = std::make_unique<audio::RandomSoundContainer>("MenuTouchSounds", config);
-    touchSoundContainer->LoadFromFolder("sounds/sfx/paper/touch_sounds");
 }
 
 MenuManager::~MenuManager() {
     delete menuStack;
 }
 
+MenuManager& MenuManager::Get() {
+    static MenuManager instance; // Meyers singleton - thread-safe in C++11+
+    return instance;
+}
+
 void MenuManager::playMenuTouchSound() {
-    if (touchSoundContainer) {
-        touchSoundContainer->Play();
-    }
+    audio::SFXPlayer::Get().Play("menu_touch");
 }
 
 void MenuManager::pushMainMenu() {
@@ -251,11 +243,12 @@ Menu* MenuManager::createSettingsMenu() {
         {sliderMaxX, sliderStartY - sliderSpacing * 2},
         {.pegMaterial = game->getMaterial("box")}
     );
-    sfxSlider->setProportion(game->getAudio().GetGroupVolume(game->getSFXGroup()));
+    sfxSlider->setProportion(game->getAudio().GetGroupVolume(game->getSFXGroup()) / 0.3f);
     sfxSlider->getBar()->setLayer(0.54f);
     sfxSlider->getPeg()->setLayer(0.56f);
     sfxSlider->setCallback([this](float proportion) {
-        this->game->getAudio().SetGroupVolume(this->game->getSFXGroup(), proportion);
+        // Scale slider to cap maximum volume at 30%
+        this->game->getAudio().SetGroupVolume(this->game->getSFXGroup(), proportion * 0.3f);
     });
     settingsMenu->addElement(sfxSlider);
 

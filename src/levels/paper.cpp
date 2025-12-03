@@ -1,5 +1,6 @@
 #include "levels/levels.h"
 #include "util/maths.h"
+#include "audio/sfx_player.h"
 
 Paper::Paper() : 
     curSide(0), 
@@ -123,6 +124,7 @@ Paper& Paper::operator=(Paper&& other) noexcept {
 
 void Paper::flip() {
     curSide = curSide == 0 ? 1 : 0;
+    audio::SFXPlayer::Get().Play("flip");
     dotData();
 }
 
@@ -151,7 +153,7 @@ Mesh* Paper::getMesh() {
     return curMesh->mesh;
 }
 
-void Paper::activateFold(const vec2& start) {
+bool Paper::activateFold(const vec2& start) {
     activeFold = NULL_FOLD;
 
     // we push_back like a stack so the first fold we find is the top
@@ -160,13 +162,18 @@ void Paper::activateFold(const vec2& start) {
 
         if (folds[i].cover->contains(start)) {
             activeFold = i;
-            return;
+            return true;
         }
     }
 
     // check if we're clicking the paper if we're not clicking a fold
     PaperMesh* paperMesh = getPaperMesh();
-    if (paperMesh->contains(start)) activeFold = PAPER_FOLD;
+    if (paperMesh->contains(start)) {
+        activeFold = PAPER_FOLD;
+        return true;
+    }
+    
+    return false;
 }
 
 void Paper::deactivateFold() {
@@ -225,13 +232,13 @@ Paper::FoldGeometry Paper::validateFoldGeometry(const vec2& start, const vec2& e
     return geom;
 }
 
-void Paper::fold(const vec2& start, const vec2& end) {
-    if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) return;
+bool Paper::fold(const vec2& start, const vec2& end) {
+    if (activeFold == NULL_FOLD || glm::length2(start - end) < EPSILON) return false;
     
     // Validate fold geometry and check if start/end are inside paper
     FoldGeometry geom = validateFoldGeometry(start, end);
     if (!geom.isValid) {
-        return;
+        return false;
     }
 
     // Paper is being folded directly
@@ -244,9 +251,9 @@ void Paper::fold(const vec2& start, const vec2& end) {
     );
 
     // stop fold if we run into trouble
-    if (!check) return;
+    if (!check) return false;
 
-    pushFold(fold);
+    return pushFold(fold);
 }
 
 bool Paper::unfold(const vec2& pos) {
@@ -259,7 +266,7 @@ bool Paper::unfold(const vec2& pos) {
     return check;
 }
 
-void Paper::pushFold(Fold& newFold) {
+bool Paper::pushFold(Fold& newFold) {
     std::set<int> seen; // TODO implement cover cache
     int insertIndex = folds.size();
 
@@ -292,14 +299,14 @@ void Paper::pushFold(Fold& newFold) {
     if (!check) {
         delete paperCopy; paperCopy = nullptr;
         folds.pop_back();
-        return;
+        return false;
     }
 
     check = paperCopy->paste(*newFold.cover);
     if (!check) {
         delete paperCopy; paperCopy = nullptr;
         folds.pop_back();
-        return;
+        return false;
     }
 
     // Handle back side
@@ -310,7 +317,7 @@ void Paper::pushFold(Fold& newFold) {
         delete paperCopy; paperCopy = nullptr;
         delete backCopy; backCopy = nullptr;
         folds.pop_back();
-        return;
+        return false;
     }
 
     // Calculate overhangs using the same method as previewFold:
@@ -370,7 +377,7 @@ void Paper::pushFold(Fold& newFold) {
         delete paperCopy; paperCopy = nullptr;
         delete backCopy;  backCopy  = nullptr;
         folds.pop_back();
-        return;
+        return false;
     }
 
     // Set front side region - no overhangs possible here anymore
@@ -412,6 +419,8 @@ void Paper::pushFold(Fold& newFold) {
 
     // DEBUG
     dotData();
+    
+    return true;
 }
 
 bool Paper::popFold() {

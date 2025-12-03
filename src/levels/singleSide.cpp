@@ -131,7 +131,9 @@ void SingleSide::update(const vec2& playerPos, float dt) {
         }
 
         // check collision
-        for (Enemy* enemy : enemies) {
+        for (int j = 0; j < enemies.size(); j++) {
+            Enemy* enemy = enemies[j];
+            if (enemy->isDead()) continue; // Skip already dead enemies
             if (glm::length2(enemy->getPosition() - zone->getPosition()) > (enemy->getRadius() + zone->getRadius())) continue;
             zone->hit(enemy);
         }
@@ -141,6 +143,15 @@ void SingleSide::update(const vec2& playerPos, float dt) {
     for (int i = 0; i < enemies.size(); i++) {
         Enemy* enemy = enemies[i];
         if (enemy->isDead() == false) continue;
+
+        // Remove all damage zones owned by this enemy before deleting it
+        for (int j = 0; j < damageZones.size(); j++) {
+            if (damageZones[j]->getOwner() == enemy) {
+                delete damageZones[j];
+                damageZones.erase(damageZones.begin() + j);
+                j--;
+            }
+        }
 
         enemy->onDeath();
         enemies.erase(enemies.begin() + i);

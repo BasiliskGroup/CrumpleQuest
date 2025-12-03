@@ -1,9 +1,10 @@
 #include "character/player.h"
 #include "weapon/weapon.h"
 #include "game/game.h"
+#include "audio/sfx_player.h"
 
-Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, float radius, vec2 scale, MenuManager* menuManager)
-    : Character(game, health, speed, node, side, weapon, "Ally", radius, scale), menuManager(menuManager)
+Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, float radius, vec2 scale)
+    : Character(game, health, speed, node, side, weapon, "Ally", radius, scale, "hit-player")
 {
     this->accel = 30;
     weaponNode = new Node2D(node, { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}});
@@ -23,7 +24,7 @@ void Player::onDamage(int damage) {
 
 void Player::move(float dt) {
     // if menu open, do nothing
-    if (menuManager && menuManager->hasActiveMenu()) {
+    if (MenuManager::Get().hasActiveMenu()) {
         return;
     }
 
@@ -37,9 +38,21 @@ void Player::move(float dt) {
     if (attacking > 0.0) {
         animator->setAnimation(game->getAnimation("player_attack"));
         weaponAnimator->setAnimation(game->getAnimation("pencil_attack"));
+        
+        unsigned int currentFrame = animator->getCurrentFrame();
+        
+        // Play sound on frame 0 when last frame was non-zero (loop) OR when we weren't attacking before (start)
+        if (currentFrame == 0 && (lastAttackFrame != 0 || lastAttackFrame == 0xFFFFFFFF)) {
+            audio::SFXPlayer::Get().Play("woosh");
+            lastAttackFrame = 0; // Mark as played for this loop
+        } else {
+            lastAttackFrame = currentFrame;
+        }
+        
         attacking -= node->getEngine()->getDeltaTime();
     }
     else {
+        lastAttackFrame = 0xFFFFFFFF; // Special value to indicate we're not attacking
         if (keys->getPressed(GLFW_KEY_W) || keys->getPressed(GLFW_KEY_D) || keys->getPressed(GLFW_KEY_A) || keys->getPressed(GLFW_KEY_S)) {
             animator->setAnimation(game->getAnimation("player_run"));
             weaponAnimator->setAnimation(game->getAnimation("pencil_run"));
