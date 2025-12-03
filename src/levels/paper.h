@@ -111,6 +111,7 @@ private:
         vec2 edgeIntersectPaper;
         vec2 nearEdgePointPaper;
         bool isValid;
+        bool playerInFold;
     };
     FoldGeometry validateFoldGeometry(const vec2& start, const vec2& end);
 
