@@ -1,10 +1,11 @@
 #include "character/enemy.h"
 #include "game/game.h"
 #include "weapon/weapon.h"
+#include "audio/sfx_player.h"
 
 
-Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale) 
-    : Character(game, health, speed, node, side, weapon, "Enemy", radius, scale), ai(ai), path() 
+Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale, std::string hitSound) 
+    : Character(game, health, speed, node, side, weapon, "Enemy", radius, scale, hitSound), ai(ai), path()
 {
     animator = new Animator(game->getEngine(), node, game->getAnimation("player_idle"));
     animator->setFrameRate(8);

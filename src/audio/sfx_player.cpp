@@ -49,6 +49,34 @@ void SFXPlayer::Initialize(GroupHandle sfx_group) {
     wooshConfig.pitchMin = 0.9f;
     wooshConfig.pitchMax = 1.1f;
     LoadCollection("woosh", "sounds/sfx/player/woosh-2", wooshConfig);
+    
+    // Load hit sounds
+    RandomSoundContainerConfig clipflyHitConfig;
+    clipflyHitConfig.avoidRepeat = true;
+    clipflyHitConfig.pitchMin = 1.0f;
+    clipflyHitConfig.pitchMax = 1.2f;
+    LoadCollection("hit-clipfly", "sounds/sfx/enemy/hit-metal-ring", clipflyHitConfig);
+
+    // Load hit sounds
+    RandomSoundContainerConfig stapleRemoverHitConfig;
+    stapleRemoverHitConfig.avoidRepeat = true;
+    stapleRemoverHitConfig.pitchMin = 0.8f;
+    stapleRemoverHitConfig.pitchMax = 1.0f;
+    LoadCollection("hit-staple-remover", "sounds/sfx/enemy/hit-metal-ring", stapleRemoverHitConfig);
+    
+    // Load hit sounds
+    RandomSoundContainerConfig glueHitConfig;
+    glueHitConfig.avoidRepeat = true;
+    glueHitConfig.pitchMin = 0.9f;
+    glueHitConfig.pitchMax = 1.1f;
+    LoadCollection("hit-glue", "sounds/sfx/enemy/hit-wood", glueHitConfig);
+    
+    // Load player hit sounds
+    RandomSoundContainerConfig playerHitConfig;
+    playerHitConfig.avoidRepeat = true;
+    playerHitConfig.pitchMin = 0.7f;
+    playerHitConfig.pitchMax = 0.9f;
+    LoadCollection("hit-player", "sounds/sfx/enemy/hit-metal-ring", playerHitConfig);
 }
 
 void SFXPlayer::LoadCollection(const std::string& name, 

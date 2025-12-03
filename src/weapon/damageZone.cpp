@@ -37,5 +37,6 @@ bool DamageZone::hit(Character* other) {
 
     if (onHit) onHit(other);
     other->onDamage(damage);
+    
     return true;
 }

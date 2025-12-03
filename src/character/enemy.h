@@ -24,7 +24,7 @@ private:
     float finishRadius = 0.2;
 
 public:
-    Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale);
+    Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale, std::string hitSound = "hit");
     ~Enemy() = default;
 
     void onDamage(int damage);

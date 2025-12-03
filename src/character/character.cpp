@@ -1,9 +1,10 @@
 #include "levels/levels.h"
 #include "weapon/weapon.h"
 #include "game/game.h"
+#include "audio/sfx_player.h"
 
 
-Character::Character(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team, float radius, vec2 scale) : 
+Character::Character(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team, float radius, vec2 scale, std::string damageSound) : 
     game(game),
     health(health), 
     speed(speed), 
@@ -12,7 +13,8 @@ Character::Character(Game* game, int health, float speed, Node2D* node, SingleSi
     weapon(weapon), 
     team(team),
     radius(radius),
-    scale(scale)
+    scale(scale),
+    damageSound(damageSound)
 {
     node->setManifoldMask(1, 1, 0);
 }
@@ -25,6 +27,12 @@ Character::~Character() {
 
 void Character::onDamage(int damage) {
     if (itime > 0) return;
+    
+    // Play damage sound
+    if (!damageSound.empty()) {
+        audio::SFXPlayer::Get().Play(damageSound);
+    }
+    
     health -= damage;
     itime = 0.2;
 }

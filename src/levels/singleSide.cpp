@@ -111,6 +111,7 @@ void SingleSide::update(const vec2& playerPos, float dt) {
 
         // check collision
         for (Enemy* enemy : enemies) {
+            if (enemy->isDead()) continue; // Skip already dead enemies
             if (glm::length2(enemy->getPosition() - zone->getPosition()) > (enemy->getRadius() + zone->getRadius())) continue;
             zone->hit(enemy);
         }

@@ -20,13 +20,14 @@ protected:
     Node2D* node;
     std::string team;
     vec2 scale;
+    std::string damageSound;
 
     // back reference pointers
     SingleSide* side;
     Game* game;
 
 public:
-    Character(Game* game, int maxHealth, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team, float radius, vec2 scale);
+    Character(Game* game, int maxHealth, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team, float radius, vec2 scale, std::string damageSound);
     ~Character();
 
     void onDamage(int damage);

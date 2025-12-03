@@ -1,9 +1,10 @@
 #include "character/player.h"
 #include "weapon/weapon.h"
 #include "game/game.h"
+#include "audio/sfx_player.h"
 
 Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, float radius, vec2 scale)
-    : Character(game, health, speed, node, side, weapon, "Ally", radius, scale)
+    : Character(game, health, speed, node, side, weapon, "Ally", radius, scale, "hit-player")
 {
     this->accel = 30;
     weaponNode = new Node2D(node, { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}});
