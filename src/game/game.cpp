@@ -205,7 +205,7 @@ void Game::startGame() {
     // create player
     Node2D* playerNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("knight"), .scale={1, 1}, .collider=getCollider("quad") });
     Node2D* weaponNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("knight"), .scale={1, 1}});
-    Player* player = new Player(3, 3, playerNode, getSide(), nullptr, &animations, weaponNode);
+    Player* player = new Player(this, 3, 3, playerNode, getSide(), nullptr, &animations, weaponNode);
     setPlayer(player);
 
     // create weapons
@@ -227,7 +227,7 @@ void Game::startGame() {
     // spawn enemy on click
     testButton->setOnUp([this]() {
         Node2D* enemyNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("man"), .position={3, 4}, .scale={0.7, 0.7}, .collider=getCollider("quad") });
-        addEnemy(new Enemy(3, 0.1, enemyNode, getSide(), nullptr, nullptr));
+        addEnemy(new Enemy(this, 3, 0.1, enemyNode, getSide(), nullptr, nullptr));
     });
 
     addUI(testButton);
