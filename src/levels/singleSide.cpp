@@ -2,7 +2,9 @@
 #include "weapon/meleeZone.h"
 
 
-SingleSide::SingleSide(Game* game, std::string mesh, std::string material) : scene(nullptr), camera(nullptr), background(nullptr) {
+SingleSide::SingleSide(Game* game, std::string mesh, std::string material) 
+    : scene(nullptr), camera(nullptr), background(nullptr), playerNode(nullptr)
+{
     scene = new Scene2D(game->getEngine());
     this->camera = new StaticCamera2D(game->getEngine());
     this->camera->setScale(12.0f); // should be 9.0f
@@ -10,6 +12,9 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material) : sce
     this->scene->getSolver()->setGravity(0);
 
     loadResources();
+
+    // create player node
+    playerNode = SingleSide::genPlayerNode(game, this);
 
     // create background node
     background = new Node2D(scene, { 
@@ -25,6 +30,8 @@ SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camer
     if (other.camera) camera = new StaticCamera2D(*other.camera);
     enemies = other.enemies;
     damageZones = other.damageZones;
+
+    loadResources();
     
     // find background - iterate both trees in parallel
     if (other.background) {
@@ -43,7 +50,21 @@ SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camer
         }
     }
     
-    loadResources();
+    if (other.playerNode) {
+        auto thisIt = scene->getRoot()->begin();
+        auto otherIt = other.scene->getRoot()->begin();
+        auto thisEnd = scene->getRoot()->end();
+        auto otherEnd = other.scene->getRoot()->end();
+        
+        while (otherIt != otherEnd && thisIt != thisEnd) {
+            if (*otherIt == other.playerNode) {
+                playerNode = *thisIt;
+                break;
+            }
+            ++otherIt;
+            ++thisIt;
+        }
+    }
 }
 
 SingleSide::SingleSide(SingleSide&& other) noexcept : 

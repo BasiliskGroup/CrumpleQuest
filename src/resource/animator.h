@@ -18,6 +18,7 @@ class Animator {
         Animator(bsk::Engine* engine, bsk::Node2D* node, Animation* animation): engine(engine), node(node), animation(animation) {}
 
         void update();
+        void setNode(Node2D* node) { this->node = node; }
         void setAnimation(Animation* animation);
         void setFrameRate(float frameRate) { timePerFrame = 1.0 / frameRate; }
         unsigned int getCurrentFrame() const { return frame; }

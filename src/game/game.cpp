@@ -122,11 +122,10 @@ void Game::update(float dt) {
     auto keys = this->engine->getKeyboard();
     if (keys->getPressed(GLFW_KEY_F) && kWasDown == false) {
         if (paper) {
-            paper->flip();
-            this->currentSide = paper->getSingleSide();
-            
-            // Play flip sound
-            audio::SFXPlayer::Get().Play("flip");
+            bool unfolded = paper->unfold(player->getPosition());
+            if (unfolded) {
+                setSideToPaperSide();
+            }
         }
     }
     kWasDown = keys->getPressed(GLFW_KEY_F);
@@ -241,7 +240,7 @@ void Game::startGame() {
     paper->regenerateWalls();
 
     // create player
-    Node2D* playerNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("knight"), .scale={1.5, 1.5}, .collider=getCollider("quad"), .colliderScale={0.5, 0.8} });
+    Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
     Player* player = new Player(this, 3, 3, playerNode, getSide(), nullptr, 1.25, playerNode->getScale());
     setPlayer(player);
 
@@ -263,4 +262,9 @@ void Game::addAnimation(std::string name, std::string folder, unsigned int nImag
 
     Animation* animation = new Animation(frames);
     animations[name] = animation;
+}
+
+void Game::setSideToPaperSide() {
+    this->currentSide = paper->getSingleSide();
+    this->player->setNode(this->currentSide->getPlayerNode());
 }

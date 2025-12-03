@@ -35,6 +35,7 @@ private:
         // cleaning
         std::vector<vec2> cleanVerts;
         std::vector<vec2> cutVerts;  // Original corner region being folded
+        std::vector<vec2> originalFoldedVerts;  // Original vertices from indexBounds that were folded
 
         Fold(const vec2& start, int side=0);
         ~Fold();
@@ -85,6 +86,7 @@ public:
     void flip();
     void open();
     bool fold(const vec2& start, const vec2& end);
+    bool unfold(const vec2& pos);
 
     bool activateFold(const vec2& start);
     void deactivateFold();
@@ -93,6 +95,7 @@ public:
 
     void setGame(Game* game) { this->game = game; }
     void previewFold(const vec2& start, const vec2& end);  // Preview fold cover without applying
+    void toData(std::vector<float>& out);
 
     // enemies
     void updatePathing(vec2 playerPos);
@@ -117,7 +120,7 @@ private:
     PaperMesh* getBackPaperMesh() { return curSide == 0 ? paperMeshes.second : paperMeshes.first; }
 
     bool pushFold(Fold& newFold);
-    void popFold(); // uses activeFold index
+    bool popFold(); // uses activeFold index
 };
 
 #endif

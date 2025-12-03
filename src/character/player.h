@@ -23,6 +23,13 @@ public:
     
     void onDamage(int damage);
     void move(float dt);
+
+    Node2D* getNode() { return node; }
+
+    void setNode(Node2D* node) { 
+        this->node = node; 
+        this->animator->setNode(node);
+    }
 };
 
 #endif

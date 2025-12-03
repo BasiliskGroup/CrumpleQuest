@@ -1,5 +1,6 @@
 #include "levels/levels.h"
 #include "util/maths.h"
+#include "audio/sfx_player.h"
 
 Paper::Paper() : 
     curSide(0), 
@@ -123,6 +124,7 @@ Paper& Paper::operator=(Paper&& other) noexcept {
 
 void Paper::flip() {
     curSide = curSide == 0 ? 1 : 0;
+    audio::SFXPlayer::Get().Play("flip");
     dotData();
 }
 
@@ -254,6 +256,16 @@ bool Paper::fold(const vec2& start, const vec2& end) {
     return pushFold(fold);
 }
 
+bool Paper::unfold(const vec2& pos) {
+    activateFold(pos);
+    bool check = popFold();
+    if (check) {
+        flip();
+    };
+    deactivateFold();
+    return check;
+}
+
 bool Paper::pushFold(Fold& newFold) {
     std::set<int> seen; // TODO implement cover cache
     int insertIndex = folds.size();
@@ -382,7 +394,6 @@ bool Paper::pushFold(Fold& newFold) {
 
     // Back side region: with overhangs disallowed, this is just the flipped clean region
     backCopy->region = cleanFlipped;
-    
     backCopy->pruneDups();
 
     // swap meshes with cut
@@ -397,8 +408,6 @@ bool Paper::pushFold(Fold& newFold) {
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
-    paperMeshes.first->mergeAllRegions();
-    paperMeshes.second->mergeAllRegions();
     paperMeshes.first->regenerateNavmesh();
     paperMeshes.second->regenerateNavmesh();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
@@ -414,33 +423,60 @@ bool Paper::pushFold(Fold& newFold) {
     return true;
 }
 
-void Paper::popFold() {
-    if (activeFold < 0 || activeFold >= folds.size()) return;
+bool Paper::popFold() {
+    if (activeFold < 0 || activeFold >= folds.size() || folds[activeFold].isCovered()) return false;
 
     // restore mesh from fold
     Fold& oldFold = folds[activeFold];
     PaperMesh* paperMesh = getPaperMesh();
     PaperMesh* backMesh = getBackPaperMesh();
+
+    // Find insertion point for original folded vertices
+    // We need to find where the crease start point is in the current region
+    auto regionCopy = paperMesh->region;
+    size_t insertPos = regionCopy.size(); // Default to end if not found
+    bool foundCrease = false;
     
+    for (size_t i = 0; i < regionCopy.size(); i++) {
+        // Check if this vertex matches the crease start point
+        if (glm::length2(oldFold.crease[0] - regionCopy[i]) < EPSILON) {
+            insertPos = i + 1; // Insert after the crease start point
+            foundCrease = true;
+            break;
+        }
+    }
+
+    if (!foundCrease) {
+        std::cout << "popFold: Failed to find crease start point in region" << std::endl;
+        return false;
+    }
+
+    // Insert original folded vertices after the crease start point
+    // Insert in reverse order - each insert shifts subsequent elements, so inserting from end to start
+    // maintains the correct final ordering
+    for (auto it = oldFold.originalFoldedVerts.rbegin(); it != oldFold.originalFoldedVerts.rend(); ++it) {
+        regionCopy.insert(regionCopy.begin() + insertPos, *it);
+    }
+
     // Remove cover region from front paper
     bool check = paperMesh->cut(*oldFold.cover);
     if (!check) {
         std::cout << "popFold: Failed to cut cover region" << std::endl;
-        return;
+        return false;
     }
     
     // Restore underside region to front paper
     check = paperMesh->paste(*oldFold.underside);
     if (!check) {
         std::cout << "popFold: Failed to paste underside region" << std::endl;
-        return;
+        return false;
     }
     
     // Restore backside region to back paper
     check = backMesh->paste(*oldFold.backside);
     if (!check) {
         std::cout << "popFold: Failed to paste backside region" << std::endl;
-        return;
+        return false;
     }
 
     // Remove references TO the activeFold from other folds' holds
@@ -449,17 +485,26 @@ void Paper::popFold() {
             fold.holds.erase(activeFold);
         }
     }
-    
+
+    // apply copied region to paper mesh
+    paperMesh->region = regionCopy;
+    paperMesh->pruneDups();
+
+    auto flippedRegionCopy = regionCopy;
+    flipVecsHorizontal(flippedRegionCopy);
+    std::reverse(flippedRegionCopy.begin(), flippedRegionCopy.end());
+    ensureCCW(flippedRegionCopy);
+
+    // apply copied region to back mesh
+    backMesh->region = flippedRegionCopy;
+    backMesh->pruneDups();
+
     // Clear all holds that the removed fold had on other folds
     oldFold.holds.clear();
-
-    // active fold should be near to the back so this isn't the worst
     folds.erase(folds.begin() + activeFold);
 
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
-    paperMeshes.first->mergeAllRegions();
-    paperMeshes.second->mergeAllRegions();
     paperMeshes.first->regenerateNavmesh();
     paperMeshes.second->regenerateNavmesh();
     sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
@@ -468,6 +513,8 @@ void Paper::popFold() {
 
     // DEBUG
     dotData();
+
+    return true;
 }
 
 void Paper::regenerateWalls() {
@@ -735,5 +782,34 @@ void Paper::updatePathing(vec2 playerPos) {
         std::vector<vec2> path;
         mesh->getPath(path, enemy->getPosition(), playerPos);
         enemy->setPath(path);
+    }
+}
+
+void Paper::toData(std::vector<float>& out) {
+    out.clear();
+
+    std::vector<float> pageData;
+    paperMeshes.first->toData(pageData);
+    int i = 0;
+    while (i < pageData.size()) {
+        out.insert(out.end(), pageData.begin() + i + 0, pageData.end() + i + 5);
+        out.push_back(0);
+        out.push_back(0);
+        out.push_back(1);
+
+        i += 5;
+    }
+
+    pageData.clear();
+    paperMeshes.second->toData(pageData);
+    i = 0;
+    while (i < pageData.size()) {
+        out.push_back(pageData[i]);
+        out.insert(out.end(), pageData.begin() + i + 1, pageData.end() + i + 5);
+        out.push_back(0);
+        out.push_back(0);
+        out.push_back(1);
+
+        i += 5;
     }
 }

@@ -94,6 +94,7 @@ public:
     // setters
     void setPlayer(Player* player) { this->player = player; }
     void setPaper(std::string str);
+    void setSideToPaperSide();
 
     // initialization
     void initMenus();
