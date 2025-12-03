@@ -8,6 +8,7 @@
 #include "audio/audio_manager.h"
 #include "ui/menu_manager.h"
 #include "resource/animator.h"
+#include "resource/animation.h"
 
 class Floor;
 class UIElement;
@@ -19,6 +20,7 @@ private:
 
     std::unordered_map<std::string, Image*> images;
     std::unordered_map<std::string, Material*> materials;
+    std::unordered_map<std::string, Animation*> animations;
     std::unordered_map<std::string, Mesh*> meshes;
 
     Player* player;
@@ -58,6 +60,7 @@ public:
 
     void addImage(std::string name, Image* image)          { this->images[name] = image; }
     void addMaterial(std::string name, Material* material) { this->materials[name] = material; }
+    void addAnimation(std::string name, std::string folder, unsigned int nImages);
     void addMesh(std::string name, Mesh* mesh)             { this->meshes[name] = mesh; }
     void addCollider(std::string name, Collider* collider) { this->currentSide->colliders[name] = collider; }
 
@@ -68,6 +71,7 @@ public:
     // getters
     Image* getImage(std::string name)       { return images[name]; }
     Material* getMaterial(std::string name) { return materials[name]; }
+    Animation* getAnimation(std::string name) { return animations[name]; }
     Mesh* getMesh(std::string name)         { return meshes[name]; }
     Collider* getCollider(std::string name) { return currentSide->colliders[name]; }
     audio::AudioManager& getAudio()         { return audioManager; }

@@ -10,12 +10,11 @@ void Animator::update() {
     }
 
     time += engine->getDeltaTime();
-
-    // std::cout << "Frame : " << frame << " out of " << animation->getNumberFrames() << std::endl;
     node->setMaterial(animation->getFrame(frame));
 }
 
 void Animator::setAnimation(Animation* animation) {
+    if (animation == this->animation) { return; }
     this->animation = animation;
     time = 0.0;
     frame = 0;

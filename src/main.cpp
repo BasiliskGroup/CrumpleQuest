@@ -26,6 +26,10 @@ int main() {
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
     }
 
+    game->addAnimation("player_idle", "art/sprites/player/idle/", 4);
+    game->addAnimation("player_run", "art/sprites/player/run/", 3);
+    game->addAnimation("player_attack", "art/sprites/player/attack/", 4);
+
     // mesh
     std::vector<std::string> meshNames = { "quad", "paper0", "paper1" };
     for (std::string& name : meshNames) game->addMesh(name, new Mesh("models/" + name + ".obj"));

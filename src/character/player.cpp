@@ -2,10 +2,13 @@
 #include "weapon/weapon.h"
 
 
-Player::Player(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon) 
+Player::Player(int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::unordered_map<std::string, Animation*>* animations)
     : Character(health, speed, node, side, weapon, "Ally")
 {
     this->accel = 30;
+    animator = new Animator(node->getEngine(), node, animations->at("player_idle"));
+    animator->setFrameRate(6);
+    this->animations = animations;
 }
 
 void Player::onDamage(int damage) {
@@ -14,8 +17,26 @@ void Player::onDamage(int damage) {
 }
 
 void Player::move(float dt) {
+
+    // Update animations
+    animator->update();
+    
     // actual movement
     Keyboard* keys = node->getEngine()->getKeyboard();
+
+    if (keys->getPressed(GLFW_KEY_W) || keys->getPressed(GLFW_KEY_D) || keys->getPressed(GLFW_KEY_A) || keys->getPressed(GLFW_KEY_S)) {
+        animator->setAnimation(animations->at("player_run"));
+    }
+    else {
+        animator->setAnimation(animations->at("player_idle"));
+    }
+
+    if (keys->getPressed(GLFW_KEY_A)) {
+        node->setScale({1, 1});
+    }
+    if (keys->getPressed(GLFW_KEY_D)) {
+        node->setScale({-1, 1});
+    }
 
     moveDir = {
         keys->getPressed(GLFW_KEY_D) - keys->getPressed(GLFW_KEY_A),

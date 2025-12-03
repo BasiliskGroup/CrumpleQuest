@@ -20,6 +20,7 @@ Game::Game() :
     sfxGroup(0)
 {
     this->engine = new Engine(800, 450, "Crumple Quest", false);
+    this->engine->setResolution(3200, 1800);
     
     // Initialize audio system
     if (!audioManager.Initialize()) {
@@ -151,11 +152,6 @@ void Game::update(float dt) {
         player->move(dt);
     }
 
-    // animator updates
-    if (playerAnimator) {
-        playerAnimator->update();
-    }
-
     // basilisk update
     engine->update();
     
@@ -200,7 +196,7 @@ void Game::startGame() {
 
     // create player
     Node2D* playerNode = new Node2D(getScene(), { .mesh=getMesh("quad"), .material=getMaterial("knight"), .scale={1, 1}, .collider=getCollider("quad") });
-    Player* player = new Player(3, 3, playerNode, getSide(), nullptr);
+    Player* player = new Player(3, 3, playerNode, getSide(), nullptr, &animations);
     setPlayer(player);
 
     // create weapons
@@ -209,10 +205,6 @@ void Game::startGame() {
     // ------------------------------------------
     // Testing
     // ------------------------------------------
-
-    Animation* animation = new Animation({getMaterial("box"), getMaterial("man"), getMaterial("knight")});
-    playerAnimator = new Animator(getEngine(), playerNode, animation);
-    playerAnimator->setFrameRate(1);
 
     // test add button
     Button* testButton = new Button(getScene(), this, { .mesh=getMesh("quad"), .material=getMaterial("box"), .position={-2, -2}, .scale={0.5, 0.5} }, { 
@@ -239,4 +231,20 @@ void Game::startGame() {
         }
     });
     addUI(testSlider);
+}
+
+void Game::addAnimation(std::string name, std::string folder, unsigned int nImages) {
+    
+    std::vector<Material*> frames;
+
+    for (unsigned int imageIndex = 1; imageIndex <= nImages; imageIndex++) {
+        std::string indivName = name + "_" + std::to_string(imageIndex);
+        addImage(indivName, new Image(folder + std::to_string(imageIndex) + ".PNG"));
+        addMaterial(indivName, new Material({ 1, 1, 1 }, getImage(indivName)));
+        frames.push_back(getMaterial(indivName));
+        std::cout << folder + std::to_string(imageIndex) + ".PNG" << std::endl;
+    }
+
+    Animation* animation = new Animation(frames);
+    animations[name] = animation;
 }
