@@ -4,13 +4,25 @@
 
 Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai) 
     : Character(game, health, speed, node, side, weapon, "Enemy"), ai(ai), path() 
-{}
+{
+    animator = new Animator(game->getEngine(), node, game->getAnimation("player_idle"));
+    animator->setFrameRate(8);
+}
 
 void Enemy::onDamage(int damage) {
     Character::onDamage(damage);
 }
 
 void Enemy::move(const vec2& playerPos, float dt) {
+    animator->update();
+
+    if (glm::length2(moveDir) < 0.01) {
+        animator->setAnimation(idleAnimation);
+    }
+    else {
+        animator->setAnimation(runAnimation);
+    }
+
     // no valid path, stay still TODO make idle behavior
     if (path.size() == 0) {
         moveDir = { 0, 0 };
