@@ -240,11 +240,12 @@ Menu* MenuManager::createSettingsMenu() {
         {sliderMaxX, sliderStartY - sliderSpacing * 2},
         {.pegMaterial = game->getMaterial("box")}
     );
-    sfxSlider->setProportion(game->getAudio().GetGroupVolume(game->getSFXGroup()));
+    sfxSlider->setProportion(game->getAudio().GetGroupVolume(game->getSFXGroup()) / 0.3f);
     sfxSlider->getBar()->setLayer(0.54f);
     sfxSlider->getPeg()->setLayer(0.56f);
     sfxSlider->setCallback([this](float proportion) {
-        this->game->getAudio().SetGroupVolume(this->game->getSFXGroup(), proportion);
+        // Scale slider to cap maximum volume at 30%
+        this->game->getAudio().SetGroupVolume(this->game->getSFXGroup(), proportion * 0.3f);
     });
     settingsMenu->addElement(sfxSlider);
 

@@ -35,7 +35,7 @@ Game::Game() :
     // Set initial volumes
     audioManager.SetMasterVolume(1.0f);
     audioManager.SetGroupVolume(musicGroup, 0.7f);
-    audioManager.SetGroupVolume(sfxGroup, 0.6f);
+    audioManager.SetGroupVolume(sfxGroup, 0.21f);  // 70% of max (0.7 * 0.3 = 0.21)
     
     // Create SFX player (loads all sound collections)
     sfxPlayer = std::make_unique<audio::SFXPlayer>(sfxGroup);

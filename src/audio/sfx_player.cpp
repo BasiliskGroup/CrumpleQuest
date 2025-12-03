@@ -33,6 +33,13 @@ SFXPlayer::SFXPlayer(GroupHandle sfx_group)
     menuTouchConfig.pitchMin = 0.8f;
     menuTouchConfig.pitchMax = 1.2f;
     LoadCollection("menu_touch", "sounds/sfx/paper/touch_sounds", menuTouchConfig);
+    
+    // Load player woosh/attack sounds
+    RandomSoundContainerConfig wooshConfig;
+    wooshConfig.avoidRepeat = true;
+    wooshConfig.pitchMin = 0.85f;
+    wooshConfig.pitchMax = 1.2f;
+    LoadCollection("woosh", "sounds/sfx/player/woosh-2", wooshConfig);
 }
 
 void SFXPlayer::LoadCollection(const std::string& name, 
