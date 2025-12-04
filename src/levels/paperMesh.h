@@ -28,8 +28,8 @@ struct PaperMesh : public DyMesh {
     void regenerateMesh();
     void regenerateNavmesh();
 
-    void getPath(std::vector<vec2>& path, vec2 start, vec2 dest) {
-        if (navmesh) navmesh->getPath(path, start, dest);
+    void getPath(std::vector<vec2>& path, vec2 start, vec2 dest, float padding = 0.0f) {
+        if (navmesh) navmesh->getPath(path, start, dest, padding);
     }
 
     std::pair<vec2, vec2> getAABB();

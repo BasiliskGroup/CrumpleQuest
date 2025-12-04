@@ -1047,7 +1047,9 @@ void Paper::updatePathing(vec2 playerPos) {
 
     for (Enemy* enemy : side->getEnemies()) {
         std::vector<vec2> path;
-        mesh->getPath(path, enemy->getPosition(), playerPos);
+        // Pass enemy radius + a bit extra for portal padding (1.2x radius for safety margin)
+        float padding = enemy->getRadius() * 1.2f;
+        mesh->getPath(path, enemy->getPosition(), playerPos, padding);
         
         // Add padding to corner waypoints so enemies don't get caught
         padCornerWaypoints(path, enemy->getRadius());

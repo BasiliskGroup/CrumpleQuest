@@ -9,6 +9,7 @@ Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side
 {
     animator = new Animator(game->getEngine(), node, game->getAnimation("player_idle"));
     animator->setFrameRate(8);
+    radius = glm::length(node->getScale() * node->getColliderScale());
 }
 
 void Enemy::onDamage(int damage) {

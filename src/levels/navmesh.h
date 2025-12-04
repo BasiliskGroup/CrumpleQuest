@@ -81,7 +81,7 @@ private:
     std::set<uint> closed;
     std::unordered_map<uint, uint> cameFrom;
 
-    // funnel variables
+    // portal variables (used for pathfinding)
     std::vector<Edge> portals;
 
 public:
@@ -95,7 +95,7 @@ public:
     
     void addObstacle(std::vector<vec2> obstacleMesh);
     void addMesh(std::vector<vec2> mesh);
-    void getPath(std::vector<vec2>& path, vec2 start, vec2 dest);
+    void getPath(std::vector<vec2>& path, vec2 start, vec2 dest, float padding = 0.0f);
     void generateNavmesh();
 
     static void earcut(const std::vector<std::vector<vec2>>& polygon, std::vector<uint>& indices);
@@ -113,8 +113,7 @@ private:
     int posToTriangle(const vec2& pos);
     void resetAlgoStructs();
     void AStar(const vec2& start, const vec2& dest, std::vector<uint>& path);
-    void getPortals(const std::vector<uint>& path);
-    void funnel(const vec2& start, const vec2& dest, std::vector<vec2>& path);
+    void getPortals(const std::vector<uint>& path, float padding = 0.0f);
 
     inline float sign(const vec2& a, const vec2& b, const vec2& c) {
         vec2 ab = b - a;

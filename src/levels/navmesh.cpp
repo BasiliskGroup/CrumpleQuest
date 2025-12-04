@@ -72,8 +72,6 @@ void Navmesh::earcut() {
  */
 void Navmesh::buildGraph() {
     std::unordered_map<Edge, std::pair<uint, ushort>, EdgeHash, EdgeEqual> edgeMap;
-    
-    // std::cout << "[Navmesh::buildGraph] Building graph for " << triangles.size() << " triangles" << std::endl;
 
     for (uint trindex = 0; trindex < triangles.size(); trindex++) {
         Triangle& triangle = triangles[trindex];
@@ -99,23 +97,6 @@ void Navmesh::buildGraph() {
             edgeMap.erase(other);
         }
     }
-    
-    // Count isolated triangles and edges without matches
-    int isolatedTriangles = 0;
-    int unmatchedEdges = edgeMap.size();
-    for (uint i = 0; i < triangles.size(); i++) {
-        if (triangles[i].adjacency.empty()) {
-            isolatedTriangles++;
-        }
-    }
-    
-    // std::cout << "[Navmesh::buildGraph] Graph built. Isolated triangles: " << isolatedTriangles 
-    //           << ", Unmatched edges: " << unmatchedEdges << std::endl;
-    // for (uint i = 0; i < triangles.size(); i++) {
-    //     if (triangles[i].adjacency.size() == 0) {
-    //         std::cout << "[Navmesh::buildGraph] WARNING: Triangle " << i << " has no adjacencies!" << std::endl;
-    //     }
-    // }
 }
 
 float Navmesh::heuristic(const vec2& cur, const vec2& dest) {
@@ -131,13 +112,11 @@ int Navmesh::posToTriangle(const vec2& pos) {
     for (int i = 0; i < triangles.size(); i++) {
         float dist = triangles[i].distance(pos);
         if (dist < 1e-6f) {
-            // std::cout << "[Navmesh::posToTriangle] Position (" << pos.x << ", " << pos.y 
-            //           << ") found in triangle " << i << " (distance: " << dist << ")" << std::endl;
             return i;
         }
     }
     
-    // Find closest triangle for debugging
+    // Find closest triangle for tolerance fallback
     if (!triangles.empty()) {
         int closestIdx = 0;
         float closestDist = triangles[0].distance(pos);
@@ -148,20 +127,11 @@ int Navmesh::posToTriangle(const vec2& pos) {
                 closestIdx = i;
             }
         }
-        // std::cout << "[Navmesh::posToTriangle] WARNING: Position (" << pos.x << ", " << pos.y 
-        //           << ") not in any triangle (using tighter epsilon). Closest triangle " << closestIdx 
-        //           << " at distance " << closestDist << std::endl;
-        // std::cout << "[Navmesh::posToTriangle] Closest triangle center: (" 
-        //           << triangles[closestIdx].center.x << ", " << triangles[closestIdx].center.y << ")" << std::endl;
         
         // If very close, use it anyway (tolerance for floating point errors)
         if (closestDist < 0.01f) {
-            // std::cout << "[Navmesh::posToTriangle] Using closest triangle due to small distance" << std::endl;
             return closestIdx;
         }
-    } else {
-        // std::cout << "[Navmesh::posToTriangle] ERROR: Position (" << pos.x << ", " << pos.y 
-        //           << ") - no triangles exist!" << std::endl;
     }
     
     return -1;
@@ -182,18 +152,12 @@ void Navmesh::resetAlgoStructs() {
 void Navmesh::clear() {
     resetAlgoStructs();
     mesh.clear();
-    rings.clear();  // This clears rings
+    rings.clear();
     triangles.clear();
-    
-    // std::cout << "[Navmesh::clear] Cleared all data" << std::endl;
 }
 
-void Navmesh::getPath(std::vector<vec2>& path, vec2 start, vec2 dest) {
+void Navmesh::getPath(std::vector<vec2>& path, vec2 start, vec2 dest, float padding) {
     path.clear();
-    
-    // std::cout << "[Navmesh::getPath] Starting path from (" << start.x << ", " << start.y 
-    //           << ") to (" << dest.x << ", " << dest.y << ")" << std::endl;
-    // std::cout << "[Navmesh::getPath] Total triangles: " << triangles.size() << std::endl;
     
     // Reset all algorithm structures to ensure clean state
     resetAlgoStructs();
@@ -203,28 +167,26 @@ void Navmesh::getPath(std::vector<vec2>& path, vec2 start, vec2 dest) {
     AStar(start, dest, trianglePath);
     
     if (trianglePath.empty()) {
-        // std::cout << "[Navmesh::getPath] No path found (trianglePath empty)" << std::endl;
         return; // No path found
     }
     
-    // std::cout << "[Navmesh::getPath] Triangle path found with " << trianglePath.size() 
-    //           << " triangles" << std::endl;
+    // Get portals from triangle path with padding
+    getPortals(trianglePath, padding);
     
-    // Get portals from triangle path
-    getPortals(trianglePath);
+    // Build path using portal centers as waypoints
+    path.clear();
+    path.push_back(start);
     
-    // std::cout << "[Navmesh::getPath] Generated " << portals.size() << " portals" << std::endl;
+    // Add center of each portal as a waypoint
+    for (const Edge& portal : portals) {
+        vec2 portalCenter = (portal.first + portal.second) * 0.5f;
+        path.push_back(portalCenter);
+    }
     
-    // Run funnel algorithm to smooth path
-    funnel(start, dest, path);
-    
-    // std::cout << "[Navmesh::getPath] Final path has " << path.size() << " waypoints" << std::endl;
-    // if (!path.empty()) {
-    //     std::cout << "[Navmesh::getPath] First waypoint: (" << path[0].x << ", " << path[0].y << ")" << std::endl;
-    //     if (path.size() > 1) {
-    //         std::cout << "[Navmesh::getPath] Last waypoint: (" << path.back().x << ", " << path.back().y << ")" << std::endl;
-    //     }
-    // }
+    // Always add destination
+    if (path.empty() || glm::length2(path.back() - dest) > 1e-6f) {
+        path.push_back(dest);
+    }
 }
 
 void Navmesh::AStar(const vec2& startPos, const vec2& destPos, std::vector<uint>& path) {
@@ -233,18 +195,13 @@ void Navmesh::AStar(const vec2& startPos, const vec2& destPos, std::vector<uint>
     int dest = posToTriangle(destPos);
     path.clear();
 
-    // std::cout << "[Navmesh::AStar] Start triangle: " << start << ", Dest triangle: " << dest << std::endl;
-
     // Check if we found valid pathing locations
     if (start < 0 || dest < 0) {
-        // std::cout << "[Navmesh::AStar] ERROR: Invalid triangle indices (start=" << start 
-        //           << ", dest=" << dest << ")" << std::endl;
         return;
     }
 
     // Same triangle optimization
     if (start == dest) {
-        // std::cout << "[Navmesh::AStar] Start and dest in same triangle" << std::endl;
         path.push_back(start);
         return;
     }
@@ -267,16 +224,12 @@ void Navmesh::AStar(const vec2& startPos, const vec2& destPos, std::vector<uint>
 
         // Check if we have found the goal, reconstruct path
         if (curIdx == dest) {
-            // std::cout << "[Navmesh::AStar] Found path! Reconstructing..." << std::endl;
             path.push_back(curIdx);
-            uint pathLength = 1;
             while (cameFrom.find(curIdx) != cameFrom.end()) {
                 curIdx = cameFrom[curIdx];
                 path.push_back(curIdx);
-                pathLength++;
             }
             std::reverse(path.begin(), path.end());
-            // std::cout << "[Navmesh::AStar] Path reconstructed with " << pathLength << " triangles" << std::endl;
             return;
         }
 
@@ -309,15 +262,6 @@ void Navmesh::AStar(const vec2& startPos, const vec2& destPos, std::vector<uint>
     }
 
     // No path found
-    // std::cout << "[Navmesh::AStar] ERROR: No path found! Open set exhausted. Closed set size: " 
-    //           << closed.size() << ", Triangles with no adjacency: ";
-    int isolatedCount = 0;
-    for (uint i = 0; i < triangles.size(); i++) {
-        if (triangles[i].adjacency.empty()) {
-            isolatedCount++;
-        }
-    }
-    // std::cout << isolatedCount << std::endl;
     path.clear();
 }
 
@@ -325,7 +269,7 @@ void Navmesh::AStar(const vec2& startPos, const vec2& destPos, std::vector<uint>
  * @brief Selects the edges of triangles connecting triangles along the A* path
  * @param path the indices of all triangles taken by A*
  */
-void Navmesh::getPortals(const std::vector<uint>& path) {
+void Navmesh::getPortals(const std::vector<uint>& path, float padding) {
     portals.clear();
 
     for (uint i = 0; i < path.size() - 1; i++) {
@@ -337,127 +281,52 @@ void Navmesh::getPortals(const std::vector<uint>& path) {
             ushort edgeIndex = it->second;
             Edge edge = triangle[edgeIndex];
             
-            // Store portal endpoints directly from edge (like Python reference: portals.append((a, b)))
-            // Just use the edge vertices in order - funnel will handle orientation
-            portals.push_back({edge.first, edge.second});
+            vec2 portalLeft = edge.first;
+            vec2 portalRight = edge.second;
             
-            // std::cout << "[Navmesh::getPortals] Portal " << i << " from triangle " << path[i] 
-            //           << " (center: " << triangle.center.x << ", " << triangle.center.y << ")"
-            //           << " to " << path[i+1] << " (center: " << nextTriangle.center.x << ", " << nextTriangle.center.y << ")"
-            //           << ": edge (" << edge.first.x << ", " << edge.first.y 
-            //           << ") -> (" << edge.second.x << ", " << edge.second.y << ")" << std::endl;
-        } else {
-            // std::cout << "[Navmesh::getPortals] ERROR: Triangle " << path[i] 
-            //           << " has no adjacency to triangle " << path[i + 1] << std::endl;
-        }
-    }
-    
-    // std::cout << "[Navmesh::getPortals] Generated " << portals.size() << " portals from " 
-    //           << path.size() << " triangles" << std::endl;
-}
-
-void Navmesh::funnel(const vec2& start, const vec2& dest, std::vector<vec2>& path) {
-    path.clear();
-    path.push_back(start);
-
-    // If we are in the same triangle, take the direct path
-    if (portals.empty()) {
-        path.push_back(dest);
-        return;
-    }
-
-    // Add dummy portals at start and end (like Python implementation)
-    // This ensures the funnel properly processes start and end constraints
-    std::vector<Edge> extendedPortals;
-    extendedPortals.reserve(portals.size() + 2);
-    extendedPortals.push_back({start, start});  // Dummy start portal
-    extendedPortals.insert(extendedPortals.end(), portals.begin(), portals.end());
-    extendedPortals.push_back({dest, dest});    // Dummy end portal
-
-    // Initialize funnel - portals should be (left, right) when viewed from start moving toward dest
-    uint apexIndex = 0;
-    uint leftIndex = 0;
-    uint rightIndex = 0;
-
-    vec2 apex = start;
-    vec2 left = extendedPortals[0].first;   // Start portal (left = right = start)
-    vec2 right = extendedPortals[0].second; // Start portal
-    
-    // std::cout << "[Navmesh::funnel] Starting funnel with " << portals.size() 
-    //           << " real portals (extended to " << extendedPortals.size() << ")" << std::endl;
-    // std::cout << "[Navmesh::funnel] Initial left: (" << left.x << ", " << left.y 
-    //           << "), right: (" << right.x << ", " << right.y << ")" << std::endl;
-
-    // Process all portals (starting from index 1, which is the first real portal)
-    for (uint i = 1; i < extendedPortals.size(); i++) {
-        vec2 newLeft = extendedPortals[i].first;
-        vec2 newRight = extendedPortals[i].second;
-
-        // Update right
-        if (sign(apex, right, newRight) <= 0) {
-            if (glm::length2(apex - right) < 1e-6f || sign(apex, left, newRight) > 0) {
-                right = newRight;
-                rightIndex = i;
-            } else {
-                // Move apex left
-                path.push_back(left);
-                apex = left;
-                apexIndex = leftIndex;
-                left = right = apex;
-                leftIndex = rightIndex = apexIndex;
-                i = apexIndex;
-                continue;
+            // Apply padding to push portal outward if padding > 0
+            if (padding > 0.0f) {
+                // Calculate portal edge direction
+                vec2 edgeDir = portalRight - portalLeft;
+                float edgeLen = glm::length(edgeDir);
+                
+                if (edgeLen > 1e-6f) {
+                    // Calculate edge normal (perpendicular, pointing from first triangle toward next)
+                    vec2 edgeNormal = vec2(-edgeDir.y, edgeDir.x) / edgeLen;  // Rotate 90 degrees counterclockwise
+                    
+                    // Determine which direction is "outward" - normal should point from triangle center toward next triangle center
+                    vec2 toNextCenter = glm::normalize(nextTriangle.center - triangle.center);
+                    float dot = glm::dot(edgeNormal, toNextCenter);
+                    
+                    // If normal points away from next triangle, flip it
+                    if (dot < 0.0f) {
+                        edgeNormal = -edgeNormal;
+                    }
+                    
+                    // Push both endpoints outward along the normal
+                    portalLeft += edgeNormal * padding;
+                    portalRight += edgeNormal * padding;
+                }
             }
-        }
-
-        // Update left
-        if (sign(apex, left, newLeft) >= 0) {
-            if (glm::length2(apex - left) < 1e-6f || sign(apex, right, newLeft) < 0) {
-                left = newLeft;
-                leftIndex = i;
-            } else {
-                // Apex moves right
-                path.push_back(right);
-                apex = right;
-                apexIndex = rightIndex;
-                left = right = apex;
-                leftIndex = rightIndex = apexIndex;
-                i = apexIndex;
-                continue;
-            }
+            
+            // Store portal endpoints
+            portals.push_back({portalLeft, portalRight});
         }
     }
-
-    // Always append destination (like Python implementation)
-    path.push_back(dest);
-    
-    // std::cout << "[Navmesh::funnel] Funnel complete. Final path points: " << path.size() << std::endl;
-    // for (size_t j = 0; j < path.size(); j++) {
-    //     std::cout << "  [" << j << "] (" << path[j].x << ", " << path[j].y << ")" << std::endl;
-    // }
 }
 
 void Navmesh::generateNavmesh() {
     if (mesh.empty()) {
-        // std::cout << "[Navmesh::generateNavmesh] WARNING: Mesh is empty!" << std::endl;
         return;
     }
-    
-    // std::cout << "[Navmesh::generateNavmesh] Generating navmesh with " << mesh.size() 
-    //           << " vertices and " << rings.size() << " rings" << std::endl;
     
     // Earcut the mesh
     earcut();
     
-    // std::cout << "[Navmesh::generateNavmesh] Earcut produced " << triangles.size() << " triangles" << std::endl;
-    
     if (triangles.empty()) {
-        // std::cout << "[Navmesh::generateNavmesh] ERROR: No triangles generated!" << std::endl;
         return;
     }
     
     // Build adjacency graph
     buildGraph();
-    
-    // std::cout << "[Navmesh::generateNavmesh] Navmesh generation complete" << std::endl;
 }
