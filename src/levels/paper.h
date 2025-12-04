@@ -128,6 +128,10 @@ private:
     bool popFold(); // uses activeFold index
     
     void padCornerWaypoints(std::vector<vec2>& path, float padding);
+    
+    // Helper functions for enemy pushing during folds
+    bool edgeFallsOnCrease(const vec2& edgeStart, const vec2& edgeEnd, const Vec2Pair& crease, float epsilon = 1e-4f);
+    vec2 findNearestPointOnNonCreaseEdges(const vec2& point, const std::vector<vec2>& coverRegion, const Vec2Pair& crease, size_t& outEdgeIndex);
 };
 
 #endif

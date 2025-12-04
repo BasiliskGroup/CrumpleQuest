@@ -377,6 +377,60 @@ bool Paper::pushFold(Fold& newFold) {
         }
     }
     
+    // Check for enemies on the current side that are in the fold underside region
+    // Push them to the nearest edge of the cover region (excluding crease line)
+    if (currentSide && newFold.underside != nullptr && newFold.cover != nullptr && newFold.crease.size() == 2) {
+        auto& enemies = currentSide->getEnemies();
+        for (Enemy* enemy : enemies) {
+            if (enemy == nullptr || enemy->isDead()) continue;
+            vec2 enemyPos = enemy->getPosition();
+            if (newFold.underside->contains(enemyPos)) {
+                // Find nearest point on non-crease edges of cover region
+                size_t edgeIndex = 0;
+                vec2 edgePoint = findNearestPointOnNonCreaseEdges(enemyPos, newFold.cover->region, newFold.crease, edgeIndex);
+                
+                // Calculate inward normal from the edge (pointing into the cover region)
+                // For CCW polygon, edge goes from region[i] to region[i+1]
+                // Inward normal is to the left: (-edgeDir.y, edgeDir.x) normalized
+                const vec2& edgeStart = newFold.cover->region[edgeIndex];
+                const vec2& edgeEnd = newFold.cover->region[(edgeIndex + 1) % newFold.cover->region.size()];
+                vec2 edgeDir = edgeEnd - edgeStart;
+                float edgeLen = glm::length(edgeDir);
+                if (edgeLen > EPSILON) {
+                    // Inward normal for CCW polygon (pointing left/into polygon)
+                    vec2 inwardNormal = vec2(-edgeDir.y, edgeDir.x) / edgeLen;
+                    
+                    // Move position 0.25 units inward from the edge
+                    vec2 newPos = edgePoint + inwardNormal * 0.25f;
+                    
+                    // Calculate direction vector for velocity
+                    vec2 pushDir = newPos - enemyPos;
+                    float pushDist = glm::length(pushDir);
+                    if (pushDist > EPSILON) {
+                        // Normalize and scale to ~10
+                        pushDir = glm::normalize(pushDir) * 10.0f;
+                        
+                        // Move enemy to new position (slightly inside the cover region)
+                        enemy->setPosition(newPos);
+                        
+                        // Set velocity in push direction
+                        enemy->setVelocity(vec3(pushDir.x, pushDir.y, 0.0f));
+                    }
+                } else {
+                    // Fallback if edge is degenerate
+                    vec2 newPos = edgePoint;
+                    vec2 pushDir = newPos - enemyPos;
+                    float pushDist = glm::length(pushDir);
+                    if (pushDist > EPSILON) {
+                        pushDir = glm::normalize(pushDir) * 10.0f;
+                        enemy->setPosition(newPos);
+                        enemy->setVelocity(vec3(pushDir.x, pushDir.y, 0.0f));
+                    }
+                }
+            }
+        }
+    }
+    
     // Before pushing the fold, check which enemies on the back side are in the fold backside region
     // We need to save this information before the fold is pushed (which modifies the meshes)
     std::vector<Enemy*> enemiesToMove;
@@ -1041,6 +1095,47 @@ void Paper::padCornerWaypoints(std::vector<vec2>& path, float padding) {
     }
 }
 
+bool Paper::edgeFallsOnCrease(const vec2& edgeStart, const vec2& edgeEnd, const Vec2Pair& crease, float epsilon) {
+    // Check if both endpoints of the edge are very close to the crease line segment
+    float distStart = distancePointToEdge(crease[0], crease[1], edgeStart);
+    float distEnd = distancePointToEdge(crease[0], crease[1], edgeEnd);
+    
+    return (distStart < epsilon && distEnd < epsilon);
+}
+
+vec2 Paper::findNearestPointOnNonCreaseEdges(const vec2& point, const std::vector<vec2>& coverRegion, const Vec2Pair& crease, size_t& outEdgeIndex) {
+    if (coverRegion.size() < 2) {
+        outEdgeIndex = 0;
+        return point;
+    }
+    
+    float bestDistSq = std::numeric_limits<float>::max();
+    vec2 bestPoint = point;
+    outEdgeIndex = 0;
+    
+    for (size_t i = 0; i < coverRegion.size(); i++) {
+        const vec2& edgeStart = coverRegion[i];
+        const vec2& edgeEnd = coverRegion[(i + 1) % coverRegion.size()];
+        
+        // Skip edges that fall on the crease line
+        if (edgeFallsOnCrease(edgeStart, edgeEnd, crease)) {
+            continue;
+        }
+        
+        // Find nearest point on this edge
+        vec2 candidate = nearestPointOnEdgeToPoint(edgeStart, edgeEnd, point);
+        float distSq = glm::length2(candidate - point);
+        
+        if (distSq < bestDistSq) {
+            bestDistSq = distSq;
+            bestPoint = candidate;
+            outEdgeIndex = i;
+        }
+    }
+    
+    return bestPoint;
+}
+
 void Paper::updatePathing(vec2 playerPos) {
     SingleSide* side = (curSide == 0) ? sides.first : sides.second;
     PaperMesh* mesh = (curSide == 0) ? paperMeshes.first : paperMeshes.second;
@@ -1077,20 +1172,23 @@ void Paper::toData(std::vector<float>& out) {
 
     std::vector<uint32_t> indices = mapbox::earcut<uint32_t>(polygon);
 
+    vec2 aabbMin = aabb.first;   // bottom-left
+    vec2 aabbMax = aabb.second;  // top-right
+    vec2 size = aabbMax - aabbMin;  // positive size vector
+
     // Generate triangles
     for (size_t i = 0; i + 2 < indices.size(); i += 3) {
         for (int j = 0; j < 3; j++) {
             uint32_t idx = indices[i + j];
             const vec2& pos = region[idx];
             
-            // interpolate uv in AABB
-            vec2 size = aabb.first - aabb.second;
-            vec2 uv = (pos - aabb.second) / size;
+            // Interpolate UV in AABB: normalize position to [0, 1] range
+            vec2 uv = (pos - aabbMin) / size;
 
             out.push_back(pos.x);
             out.push_back(-pos.y);
             out.push_back(0.0f);
-            out.push_back(uv.x * 0.5);
+            out.push_back(uv.x * 0.5f);  // Map to left half: [0, 0.5]
             out.push_back(-uv.y);
             out.push_back(0);
             out.push_back(0);
@@ -1099,7 +1197,7 @@ void Paper::toData(std::vector<float>& out) {
             out2.push_back(-pos.x);
             out2.push_back(-pos.y);
             out2.push_back(0.0f);
-            out2.push_back((2 - uv.x) * 0.5);
+            out2.push_back((2.0f - uv.x) * 0.5f);  // Map to right half: [0.5, 1]
             out2.push_back(-uv.y);
             out2.push_back(0);
             out2.push_back(0);
