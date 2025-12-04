@@ -7,7 +7,7 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material)
 {
     scene = new Scene2D(game->getEngine());
     this->camera = new StaticCamera2D(game->getEngine());
-    this->camera->setScale(12.0f); // should be 9.0f
+    this->camera->setScale(9.0f);
     this->scene->setCamera(this->camera);
     this->scene->getSolver()->setGravity(0);
 

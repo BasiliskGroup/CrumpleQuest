@@ -13,12 +13,15 @@ class Weapon {
 protected:
     Character* owner;
     std::function<DamageZone*(const vec2&, const vec2&)> damageZoneGen;
+    float cooldown = 0;
+    float maxCooldown;
 
 public:
-    Weapon(Character* owner, Node2D::Params node, DamageZone::Params params);
+    Weapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown);
     ~Weapon() = default;
 
-    void attack(const vec2& pos, const vec2& dir);
+    bool attack(const vec2& pos, const vec2& dir);
+    void update(float dt);
 
     // getters
     Character* getOwner() { return owner; }
@@ -39,12 +42,12 @@ public:
 
 class MeleeWeapon : public Weapon {
 public: 
-    MeleeWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float knockback=0);
+    MeleeWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, float knockback=0);
 };
 
 class ProjectileWeapon : public Weapon {
 public: 
-    ProjectileWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, int ricochet=0);
+    ProjectileWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, int ricochet=0);
 };
 
 #endif

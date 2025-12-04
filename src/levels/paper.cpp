@@ -945,29 +945,52 @@ void Paper::updatePathing(vec2 playerPos) {
 
 void Paper::toData(std::vector<float>& out) {
     out.clear();
+    std::vector<float> out2;
 
     std::vector<float> pageData;
-    paperMeshes.first->toData(pageData);
-    int i = 0;
-    while (i < pageData.size()) {
-        out.insert(out.end(), pageData.begin() + i + 0, pageData.end() + i + 5);
-        out.push_back(0);
-        out.push_back(0);
-        out.push_back(1);
+    std::vector<vec2> region = paperMeshes.first->region;
+    std::pair<vec2, vec2> aabb = paperMeshes.first->getAABB();
+    
+    // Triangulate region
+    std::vector<std::vector<std::array<double, 2>>> polygon;
+    polygon.emplace_back();
+    polygon[0].reserve(region.size());
 
-        i += 5;
+    for (const vec2& v : region) {
+        polygon[0].push_back({{static_cast<double>(v.x), static_cast<double>(v.y)}});
     }
 
-    pageData.clear();
-    paperMeshes.second->toData(pageData);
-    i = 0;
-    while (i < pageData.size()) {
-        out.push_back(-pageData[i]); // reverse x to flip side of page, TODO reverse UVs or no? 
-        out.insert(out.end(), pageData.begin() + i + 1, pageData.end() + i + 5);
-        out.push_back(0);
-        out.push_back(0);
-        out.push_back(-1);
+    std::vector<uint32_t> indices = mapbox::earcut<uint32_t>(polygon);
 
-        i += 5;
+    // Generate triangles
+    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+        for (int j = 0; j < 3; j++) {
+            uint32_t idx = indices[i + j];
+            const vec2& pos = region[idx];
+            
+            // interpolate uv in AABB
+            vec2 size = aabb.first - aabb.second;
+            vec2 uv = (pos - aabb.second) / size;
+
+            out.push_back(pos.x);
+            out.push_back(-pos.y);
+            out.push_back(0.0f);
+            out.push_back(uv.x * 0.5);
+            out.push_back(-uv.y);
+            out.push_back(0);
+            out.push_back(0);
+            out.push_back(1);
+
+            out2.push_back(-pos.x);
+            out2.push_back(-pos.y);
+            out2.push_back(0.0f);
+            out2.push_back((2 - uv.x) * 0.5);
+            out2.push_back(-uv.y);
+            out2.push_back(0);
+            out2.push_back(0);
+            out2.push_back(-1);
+        }
     }
+
+    out.insert(out.begin(), out2.begin(), out2.end());
 }
