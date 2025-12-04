@@ -82,6 +82,7 @@ public:
     // getters
     Mesh* getMesh();
     SingleSide* getSingleSide() { return curSide == 0 ? sides.first : sides.second; }
+    SingleSide* getBackSide() { return curSide == 0 ? sides.second : sides.first; }
 
     SingleSide* getFirstSide() { return sides.first; }
     SingleSide* getSecondSide() { return sides.second; }

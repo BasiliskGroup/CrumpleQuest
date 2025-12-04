@@ -215,8 +215,10 @@ void Game::update(float dt) {
         if (!MenuManager::Get().hasActiveMenu()) {
             if (player != nullptr) {
                 currentSide->update(player->getPosition(), dt);
+                paper->getBackSide()->update({-100, -100}, dt); // player isn't on that side
             } else {
                 currentSide->update({0, 0}, dt);
+                paper->getBackSide()->update({-100, -100}, dt);
             }
         }
         // Game scene is paused if menus are active, but still rendered
@@ -226,7 +228,6 @@ void Game::update(float dt) {
         paper->getFirstSide()->getScene()->render();
         glViewport(1200, 0, 1200, 900);
         paper->getSecondSide()->getScene()->render();
-        currentSide->getScene()->render();
         
         engine->getFrame()->use();
         paperFrame->render();
