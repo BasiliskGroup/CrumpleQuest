@@ -141,3 +141,33 @@ std::pair<vec2, vec2> PaperMesh::getAABB() {
 
     return { bl, tr };
 }
+
+void PaperMesh::updateObstacleUVs(std::vector<UVRegion>& obstacles) {
+    for (UVRegion& obstacle : obstacles) {
+        if (!obstacle.isObstacle || obstacle.positions.empty()) continue;
+        
+        // Find the closest non-obstacle region to sample UVs from
+        const UVRegion* closestRegion = nullptr;
+        float minDistance = std::numeric_limits<float>::max();
+        
+        for (const UVRegion& uvReg : regions) {
+            if (uvReg.isObstacle) continue;  // Skip obstacles
+            
+            // Calculate distance from obstacle's first vertex to this region
+            float dist = uvReg.distance(obstacle.positions[0]);
+            if (dist < minDistance) {
+                minDistance = dist;
+                closestRegion = &uvReg;
+            }
+        }
+        
+        if (closestRegion) {
+            // Update obstacle's basis to match the closest region
+            obstacle.basis = closestRegion->basis;
+            
+            // Calculate the new originUV by sampling from the closest region
+            // at the obstacle's origin position
+            obstacle.originUV = closestRegion->sampleUV(obstacle.positions[0]);
+        }
+    }
+}
