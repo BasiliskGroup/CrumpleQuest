@@ -35,6 +35,7 @@ private:
     Shader* paper3DShader;
     VBO* paperVBO;
     VAO* paperVAO;
+    Camera* paperCamera;
 
     // menu scene (separate from game scene)
     Scene2D* menuScene;

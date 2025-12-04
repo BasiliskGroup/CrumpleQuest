@@ -50,6 +50,14 @@ Game::Game() :
     paperFrame = new Frame(engine, 2400, 900);
     paper3DShader = new Shader("shaders/default.vert", "shaders/default.frag");
     paper3DShader->bind("uTexture", paperFrame->getFBO(), 5);
+
+    paperCamera = new Camera(engine);
+    paperCamera->use(paper3DShader);
+    paperCamera->setX(0.0);
+    paperCamera->setZ(15.0);
+    paperCamera->setYaw(-90.0);
+    glm::mat4 model = glm::mat4(1);
+    paper3DShader->setUniform("uModel", model);
 }
 
 Game::~Game() {
@@ -225,7 +233,7 @@ void Game::update(float dt) {
         }
         // Game scene is paused if menus are active, but still rendered
         paperFrame->use();
-        paperFrame->clear(1.0, 0.5, 0.0, 1.0);
+        paperFrame->clear(0.0, 1.0, 0.0, 1.0);
 
         GLint viewport[4];
         glGetIntegerv(GL_VIEWPORT, viewport);
@@ -233,13 +241,16 @@ void Game::update(float dt) {
         glViewport(0, 0, 1200, 900);
         paper->getFirstSide()->getScene()->render();
         glViewport(1200, 0, 1200, 900);
-        paper->getFirstSide()->getScene()->render();
+        paper->getSecondSide()->getScene()->render();
 
         glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
         
         engine->getFrame()->use();
-        paperFrame->render(viewport[0], viewport[1], viewport[2], viewport[3]);
-
+        // paperFrame->render(viewport[0], viewport[1], viewport[2], viewport[3]);
+        
+        // paperCamera->update();
+        paperCamera->use(paper3DShader);
+        paper3DShader->use();
         paperVAO->render();
     }
     
@@ -271,6 +282,10 @@ void Game::startGame() {
     std::vector<float> paperData;
     paper->toData(paperData);
     paperVBO = new VBO(paperData);
+
+    // Mesh* mesh = new Mesh("models/sphere.obj");
+    // VBO* vbo = new VBO(mesh->getVertices());
+    // EBO* ebo = new EBO(mesh->getIndices());
     paperVAO = new VAO(paper3DShader, paperVBO);
 
     // create player
