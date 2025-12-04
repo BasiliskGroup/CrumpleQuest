@@ -91,12 +91,23 @@ void PaperMesh::regenerateNavmesh() {
     navmesh->clear();
     navmesh->addMesh(region);
     
+    std::cout << "[PaperMesh::regenerateNavmesh] Total regions: " << regions.size() << std::endl;
+    
     // Add only UV regions marked as obstacles
-    for (const auto& uvRegion : regions) {
+    int obstacleCount = 0;
+    for (size_t i = 0; i < regions.size(); i++) {
+        const auto& uvRegion = regions[i];
+        std::cout << "[PaperMesh::regenerateNavmesh] Region " << i 
+                  << ": isObstacle=" << uvRegion.isObstacle 
+                  << ", positions=" << uvRegion.positions.size() << std::endl;
         if (uvRegion.isObstacle) {
+            obstacleCount++;
+            std::cout << "[PaperMesh::regenerateNavmesh] Adding obstacle " << obstacleCount 
+                      << " with " << uvRegion.positions.size() << " vertices" << std::endl;
             navmesh->addObstacle(uvRegion.positions);
         }
     }
     
+    std::cout << "[PaperMesh::regenerateNavmesh] Found " << obstacleCount << " obstacles" << std::endl;
     navmesh->generateNavmesh();
 }

@@ -20,11 +20,18 @@ Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pai
 {
     paperMeshes.first  = new PaperMesh(region, mesh0);
     auto obst = PaperMesh::obstacleTemplates[obstacleNames.first]();
+    std::cout << "[Paper::Paper] Created " << obst.size() << " obstacles from template '" << obstacleNames.first << "'" << std::endl;
+    for (size_t i = 0; i < obst.size(); i++) {
+        std::cout << "[Paper::Paper] Obstacle " << i << " has isObstacle=" << obst[i].isObstacle << std::endl;
+    }
     paperMeshes.first->regions.insert(paperMeshes.first->regions.begin(), obst.begin(), obst.end());
+    std::cout << "[Paper::Paper] After insertion, paperMeshes.first has " << paperMeshes.first->regions.size() << " regions" << std::endl;
+    paperMeshes.first->regenerateNavmesh();  // Regenerate after adding obstacles
 
     paperMeshes.second = new PaperMesh(region, mesh1);
     obst = PaperMesh::obstacleTemplates[obstacleNames.second]();
     paperMeshes.second->regions.insert(paperMeshes.second->regions.begin(), obst.begin(), obst.end());
+    paperMeshes.second->regenerateNavmesh();  // Regenerate after adding obstacles
 
     sides.first  = SingleSide::templates[sideNames.first]();
     sides.second = SingleSide::templates[sideNames.second]();
@@ -179,6 +186,8 @@ bool Paper::activateFold(const vec2& start) {
 
 void Paper::deactivateFold() {
     activeFold = NULL_FOLD;
+    // Clear preview outline by restoring debug visualization
+    dotData();
 }
 
 Paper::FoldGeometry Paper::validateFoldGeometry(const vec2& start, const vec2& end) {
@@ -881,6 +890,44 @@ void Paper::previewFold(const vec2& start, const vec2& end) {
     }
 }
 
+void Paper::padCornerWaypoints(std::vector<vec2>& path, float padding) {
+    if (path.size() < 3) return; // Need at least start, corner, end
+    
+    // Process corner waypoints (skip first and last)
+    for (size_t i = 1; i < path.size() - 1; i++) {
+        vec2& corner = path[i];
+        const vec2& prev = path[i - 1];
+        const vec2& next = path[i + 1];
+        
+        // Calculate directions from corner to previous and next waypoints
+        vec2 toPrev = prev - corner;
+        vec2 toNext = next - corner;
+        
+        float lenToPrev = glm::length(toPrev);
+        float lenToNext = glm::length(toNext);
+        
+        // Skip if directions are degenerate
+        if (lenToPrev < EPSILON || lenToNext < EPSILON) continue;
+        
+        // Normalize directions
+        toPrev /= lenToPrev;
+        toNext /= lenToNext;
+        
+        // Calculate the angle bisector - average of the two normalized directions
+        // This points away from the corner, opening up the turn
+        vec2 bisector = toPrev + toNext;
+        float bisectorLen = glm::length(bisector);
+        
+        // If the two directions are opposite (collinear path), skip padding
+        if (bisectorLen < EPSILON) continue;
+        
+        bisector /= bisectorLen;
+        
+        // Offset the corner waypoint outward along the bisector by the padding distance
+        corner += bisector * padding;
+    }
+}
+
 void Paper::updatePathing(vec2 playerPos) {
     SingleSide* side = (curSide == 0) ? sides.first : sides.second;
     PaperMesh* mesh = (curSide == 0) ? paperMeshes.first : paperMeshes.second;
@@ -888,6 +935,10 @@ void Paper::updatePathing(vec2 playerPos) {
     for (Enemy* enemy : side->getEnemies()) {
         std::vector<vec2> path;
         mesh->getPath(path, enemy->getPosition(), playerPos);
+        
+        // Add padding to corner waypoints so enemies don't get caught
+        padCornerWaypoints(path, enemy->getRadius());
+        
         enemy->setPath(path);
     }
 }

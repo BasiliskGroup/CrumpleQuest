@@ -102,7 +102,39 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
     // Process each UV region
     std::vector<UVRegion> newRegions;
     
+    // Helper function to check if point is inside polygon
+    auto pointInPolygon = [](const vec2& p, const std::vector<vec2>& polygon) -> bool {
+        if (polygon.size() < 3) return false;
+        bool inside = false;
+        for (size_t i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
+            const vec2& a = polygon[i];
+            const vec2& b = polygon[j];
+            bool intersect = ((a.y > p.y) != (b.y > p.y)) &&
+                            (p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y + 1e-12f) + a.x);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    };
+    
     for (const UVRegion& uvReg : snapshot.regions) {
+        // Obstacles should be preserved if they're still within the new paper boundary
+        // Check if obstacle is completely inside the new region
+        if (uvReg.isObstacle) {
+            bool obstacleInside = true;
+            for (const vec2& pos : uvReg.positions) {
+                if (!pointInPolygon(pos, newRegion)) {
+                    obstacleInside = false;
+                    break;
+                }
+            }
+            if (obstacleInside) {
+                // Preserve obstacle as-is if it's inside the new boundary
+                newRegions.push_back(uvReg);
+                continue;
+            }
+            // If obstacle is partially or completely outside, clip it
+        }
+        
         Paths64 subj = makePaths64FromRegion(uvReg.positions);
         Paths64 clipPaths = makePaths64FromRegion(clipRegion);
         Paths64 regionSol;

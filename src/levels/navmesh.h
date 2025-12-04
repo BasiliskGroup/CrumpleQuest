@@ -24,10 +24,15 @@ private:
         }
     };
 
-    // Optional: custom equality (only needed if float comparison tolerance required)
+    // Custom equality with epsilon tolerance for floating point comparison
     struct EdgeEqual {
         bool operator()(const Edge& a, const Edge& b) const noexcept {
-            return a.first == b.first && a.second == b.second;
+            // Check if endpoints match (in either order) with tolerance
+            bool match1 = glm::length2(a.first - b.first) < EPSILON * EPSILON &&
+                         glm::length2(a.second - b.second) < EPSILON * EPSILON;
+            bool match2 = glm::length2(a.first - b.second) < EPSILON * EPSILON &&
+                         glm::length2(a.second - b.first) < EPSILON * EPSILON;
+            return match1 || match2;
         }
     };
 

@@ -122,6 +122,8 @@ private:
 
     bool pushFold(Fold& newFold);
     bool popFold(); // uses activeFold index
+    
+    void padCornerWaypoints(std::vector<vec2>& path, float padding);
 };
 
 #endif
