@@ -10,6 +10,7 @@
 #include "ui/menu_manager.h"
 #include "resource/animator.h"
 #include "resource/animation.h"
+#include "game/paperView.h"
 #include <memory>
 
 class Floor;
@@ -31,11 +32,7 @@ private:
     // rendering paper
     SingleSide* currentSide;
     Paper* paper;
-    Frame* paperFrame;
-    Shader* paper3DShader;
-    VBO* paperVBO;
-    VAO* paperVAO;
-    Camera* paperCamera;
+    PaperView* paperView;
 
     // menu scene (separate from game scene)
     Scene2D* menuScene;
@@ -106,6 +103,7 @@ public:
     void setSideToPaperSide();
 
     // initialization
+    void initPaperView();
     void initMenus();
     void processReturnToMainMenu(); // Internal method to actually process the return
 

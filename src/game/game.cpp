@@ -46,19 +46,6 @@ Game::Game() :
     menuCamera->setScale(9.0f);
     menuScene->setCamera(menuCamera);
     menuScene->getSolver()->setGravity(0);
-
-    paperFrame = new Frame(engine, 2400, 900);
-    paper3DShader = new Shader("shaders/default.vert", "shaders/default.frag");
-    paper3DShader->bind("uTexture", paperFrame->getFBO(), 5);
-
-    paperCamera = new Camera(engine);
-    paperCamera->use(paper3DShader);
-    paperCamera->setX(0.0);
-    paperCamera->setZ(0.9);
-    paperCamera->setYaw(-90.0);
-    paperCamera->setAspect(16.0 / 9.0);
-    glm::mat4 model = glm::mat4(1);
-    paper3DShader->setUniform("uModel", model);
 }
 
 Game::~Game() {
@@ -233,25 +220,13 @@ void Game::update(float dt) {
             }
         }
         // Game scene is paused if menus are active, but still rendered
-        paperFrame->use();
-        paperFrame->clear(0.0, 1.0, 0.0, 1.0);
 
-        GLint viewport[4];
-        glGetIntegerv(GL_VIEWPORT, viewport);
-        
-        glViewport(0, 0, 1200, 900);
-        paper->getFirstSide()->getScene()->render();
-        glViewport(1200, 0, 1200, 900);
-        paper->getSecondSide()->getScene()->render();
-
-        glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-        
+        // Render the level onto the paper fbo
+        paperView->renderLevelFBO(paper);
+        // Render the 3d view to the screen
         engine->getFrame()->use();
-        
-        // paperCamera->update();
-        paperCamera->use(paper3DShader);
-        paper3DShader->use();
-        paperVAO->render();
+        paperView->update();
+        paperView->render();
     }
     
     if (MenuManager::Get().hasActiveMenu()) {
@@ -273,42 +248,16 @@ void Game::initMenus() {
     MenuManager::Get().pushMainMenu();
 }
 
+void Game::initPaperView() {
+    // Create paper scene
+    paperView = new PaperView(this);
+}
+
 // Spawn in player, enemies, etc
 void Game::startGame() {
     // Create the game paper and switch to it
     setPaper("empty");
     paper->regenerateWalls();
-
-    std::vector<float> paperData;
-    paper->toData(paperData);
-    paperVBO = new VBO(paperData);
-
-    // Mesh* mesh = new Mesh("models/sphere.obj");
-    // VBO* vbo = new VBO(mesh->getVertices());
-    // EBO* ebo = new EBO(mesh->getIndices());
-
-    std::vector<float> quadVertices = {
-        // Front face (normal +Z, UV x: 0 -> 0.5)
-        -0.6f, -0.45f,  0.001f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-         0.6f, -0.45f,  0.001f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-         0.6f,  0.45f,  0.001f,  0.5f, 1.0f,  0.0f, 0.0f, 1.0f, // top-right
-
-         0.6f,  0.45f,  0.001f,  0.5f, 1.0f,  0.0f, 0.0f, 1.0f, // top-right
-        -0.6f,  0.45f,  0.001f,  0.0f, 1.0f,  0.0f, 0.0f, 1.0f, // top-left
-        -0.6f, -0.45f,  0.001f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-
-        // Back face (normal -Z, UV x: 0.5 -> 1.0)
-        -0.6f, -0.45f, -0.001f,  1.0f, 0.0f,  0.0f, 0.0f, -1.0f, // bottom-left
-         0.6f,  0.45f, -0.001f,  0.5f, 1.0f,  0.0f, 0.0f, -1.0f, // top-right
-         0.6f, -0.45f, -0.001f,  0.5f, 0.0f,  0.0f, 0.0f, -1.0f, // bottom-right
-
-         0.6f,  0.45f, -0.001f,  0.5f, 1.0f,  0.0f, 0.0f, -1.0f, // top-right
-        -0.6f, -0.45f, -0.001f,  1.0f, 0.0f,  0.0f, 0.0f, -1.0f, // bottom-left
-        -0.6f,  0.45f, -0.001f,  1.0f, 1.0f,  0.0f, 0.0f, -1.0f  // top-left
-    };
-
-    VBO* vbo = new VBO(quadVertices);
-    paperVAO = new VAO(paper3DShader, vbo);
 
     // create player
     Node2D* playerNode = paper->getSingleSide()->getPlayerNode();

@@ -55,7 +55,7 @@ int main() {
     game->addAnimation("pi_attack", "art/sprites/enemies/ranged/grid_pi/attack/", 7);
 
     // mesh
-    std::vector<std::string> meshNames = { "quad", "paper0", "paper1" };
+    std::vector<std::string> meshNames = { "quad", "paper0", "paper1", "quad3D" };
     for (std::string& name : meshNames) game->addMesh(name, new Mesh("models/" + name + ".obj"));
 
     // ------------------------------------------
@@ -78,6 +78,7 @@ int main() {
     Paper::generateTemplates(game);
 
     // initialize menus (menu scene is ready)
+    game->initPaperView();
     game->initMenus();
 
     while (game->getEngine()->isRunning()) {

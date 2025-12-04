@@ -8,7 +8,7 @@ uniform sampler2D uTexture;
 out vec4 fragColor;
 
 void main() {
-    vec3 globalLight = normalize(vec3(.5, 1, .25));
+    vec3 globalLight = normalize(vec3(.5, .25, 1));
     float brightness = (dot(normal, globalLight) + 1) / 2;
 
     vec4 textureValue = texture(uTexture, uv);
