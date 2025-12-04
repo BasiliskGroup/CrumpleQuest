@@ -10,7 +10,7 @@ void Enemy::generateTemplates(Game* game) {
 
     // notebook
     templates["glue"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01 });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 1, node, side, nullptr, nullptr, 0.4, node->getScale(), "hit-glue");
         enemy->idleAnimation = game->getAnimation("glue_idle");
         enemy->runAnimation = game->getAnimation("glue_idle");
@@ -22,11 +22,27 @@ void Enemy::generateTemplates(Game* game) {
             3,
             0 // ricochet
         ));
+
+        enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
+            // If can attack, stay and attack (stationary)
+            if (enemy->canAttackStatus() && enemy->hasLineOfSightStatus()) {
+                return BehaviorRegistry::getBehavior("Stationary");
+            }
+            // If have line of sight but can't attack, run away
+            else if (enemy->hasLineOfSightStatus()) {
+                return BehaviorRegistry::getBehavior("Runaway");
+            }
+            // No line of sight, chase to get in range
+            else {
+                return BehaviorRegistry::getBehavior("ChasePlayer");
+            }
+        };
+
         return enemy;
     };
 
     templates["staple"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01 });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 2, node, side, nullptr, nullptr, 0.5, node->getScale(), "hit-staple-remover");
         enemy->idleAnimation = game->getAnimation("staple_idle");
         enemy->runAnimation = game->getAnimation("staple_idle");
@@ -38,11 +54,20 @@ void Enemy::generateTemplates(Game* game) {
             2,
             50.0f // knockback
         ));
+
+        enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
+            if (enemy->weaponReadyStatus() || enemy->isAttackingStatus()) {
+                return BehaviorRegistry::getBehavior("ChasePlayer");
+            } else {
+                return BehaviorRegistry::getBehavior("Runaway");
+            }
+        };
+
         return enemy;
     };
 
     templates["clipfly"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01 });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.15, node->getScale(), "hit-clipfly");
         enemy->idleAnimation = game->getAnimation("clipfly_idle");
         enemy->runAnimation = game->getAnimation("clipfly_idle");
@@ -56,7 +81,7 @@ void Enemy::generateTemplates(Game* game) {
         ));
 
         enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
-            if (enemy->weaponReadyStatus()) {
+            if (enemy->weaponReadyStatus() || enemy->isAttackingStatus()) {
                 return BehaviorRegistry::getBehavior("ChasePlayer");
             } else {
                 return BehaviorRegistry::getBehavior("Runaway");
@@ -67,7 +92,7 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["integral"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01 });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.15, node->getScale(), "hit-clipfly");
         enemy->idleAnimation = game->getAnimation("integral_idle");
         enemy->runAnimation = game->getAnimation("integral_idle");
@@ -76,14 +101,22 @@ void Enemy::generateTemplates(Game* game) {
             enemy, 
             { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
             { .damage=1, .life=5.0f, .radius=0.25 },
-            0.5f,
+            7.0f,
             50.0f // knockback
         ));
+
+        enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
+            if (enemy->weaponReadyStatus() || enemy->isAttackingStatus()) {
+                return BehaviorRegistry::getBehavior("ChasePlayer");
+            } else {
+                return BehaviorRegistry::getBehavior("Runaway");
+            }
+        };
         return enemy;
     };
 
     templates["sigma"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01 });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 2, node, side, nullptr, nullptr, 0.5, node->getScale(), "hit-staple-remover");
         enemy->idleAnimation = game->getAnimation("sigma_idle");
         enemy->runAnimation = game->getAnimation("sigma_idle");
@@ -95,11 +128,19 @@ void Enemy::generateTemplates(Game* game) {
             2.0f,
             50.0f // knockback
         ));
+
+        enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
+            if (enemy->weaponReadyStatus() || enemy->isAttackingStatus()) {
+                return BehaviorRegistry::getBehavior("ChasePlayer");
+            } else {
+                return BehaviorRegistry::getBehavior("Runaway");
+            }
+        };
         return enemy;
     };
 
     templates["pi"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01 });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 1, node, side, nullptr, nullptr, 0.4, node->getScale(), "hit-glue");
         enemy->idleAnimation = game->getAnimation("pi_idle");
         enemy->runAnimation = game->getAnimation("pi_idle");
@@ -111,6 +152,21 @@ void Enemy::generateTemplates(Game* game) {
             2.0f,
             0 // ricochet
         ));
+
+        enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
+            // If can attack, stay and attack (stationary)
+            if (enemy->canAttackStatus() && enemy->hasLineOfSightStatus()) {
+                return BehaviorRegistry::getBehavior("Stationary");
+            }
+            // If have line of sight but can't attack, run away
+            else if (enemy->hasLineOfSightStatus()) {
+                return BehaviorRegistry::getBehavior("Runaway");
+            }
+            // No line of sight, chase to get in range
+            else {
+                return BehaviorRegistry::getBehavior("ChasePlayer");
+            }
+        };
         return enemy;
     };
 
