@@ -18,7 +18,8 @@ void Enemy::generateTemplates(Game* game) {
         enemy->setWeapon(new ProjectileWeapon(
             enemy, 
             { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
-            { .damage=1, .life=5.0f, .radius=0.25 },
+            { .damage=1, .life=5.0f, .speed=10, .radius=0.25 },
+            3,
             0 // ricochet
         ));
         return enemy;
@@ -34,6 +35,7 @@ void Enemy::generateTemplates(Game* game) {
             enemy, 
             { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
             { .damage=1, .life=5.0f, .radius=0.25 },
+            2,
             50.0f // knockback
         ));
         return enemy;

@@ -13,6 +13,7 @@ struct PaperMesh : public DyMesh {
     static void generateTemplates(Game* game);
 
     Mesh* mesh;
+    std::vector<vec2> startingRegion;
     Navmesh* navmesh;
 
     PaperMesh(const std::vector<vec2> verts, Mesh* mesh);
@@ -30,6 +31,8 @@ struct PaperMesh : public DyMesh {
     void getPath(std::vector<vec2>& path, vec2 start, vec2 dest) {
         if (navmesh) navmesh->getPath(path, start, dest);
     }
+
+    std::pair<vec2, vec2> getAABB();
 };
 
 #endif

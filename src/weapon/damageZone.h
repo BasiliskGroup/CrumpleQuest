@@ -17,7 +17,7 @@ public:
         std::function<void(Character*)> onHit = [](Character* hit){};
     };
 
-private:
+protected:
     Character* owner;
 
     int damage;
@@ -30,7 +30,7 @@ private:
 
     std::function<void()> onExpire;
     std::function<void(Character*)> onHit;
-    
+
 public:
     DamageZone(Character* owner, Node2D::Params node, Params params, const vec2& pos, const vec2& dir);
     virtual ~DamageZone() = default;

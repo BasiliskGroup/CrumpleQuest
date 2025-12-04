@@ -22,6 +22,8 @@ bool DamageZone::update(float dt) {
     life -= dt;
     if (life > 0) return true;
 
+    setPosition(getPosition() + vel * dt);
+
     if (onExpire) onExpire();
     return false;
 }
