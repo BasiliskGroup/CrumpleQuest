@@ -8,7 +8,7 @@ void SingleSide::generateTemplates(Game* game) {
 
     // empty level
     templates["empty0"] = [game]() {
-        SingleSide* side = new SingleSide(game, "paper0", "paper");
+        SingleSide* side = new SingleSide(game, "paper0", "tutorial_tutorialLevel");
         side->addEnemy(Enemy::templates["clipfly"]({ -5, 3 }, side));
         side->addEnemy(Enemy::templates["glue"]({ 0, 3 }, side));
         side->addEnemy(Enemy::templates["staple"]({ 5, 3 }, side));
@@ -19,7 +19,7 @@ void SingleSide::generateTemplates(Game* game) {
     };
 
     templates["empty1"] = [game]() {
-        SingleSide* side = new SingleSide(game, "paper1", "paper");
+        SingleSide* side = new SingleSide(game, "paper1", "tutorial_tutorialLevel");
         return side;
     };
 }

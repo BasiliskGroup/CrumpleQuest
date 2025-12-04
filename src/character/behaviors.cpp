@@ -106,3 +106,63 @@ void StationaryBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) {
     }
 }
 
+void WanderBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) {
+    // Get the paper mesh for pathfinding
+    PaperMesh* paperMesh = enemy->getPaperMeshForSide();
+    if (!paperMesh) {
+        enemy->getMoveDir() = vec2(0, 0);
+        return;
+    }
+    
+    std::vector<vec2>& path = enemy->getPath();
+    float finishRadius = enemy->getFinishRadius();
+    vec2 enemyPos = enemy->getPosition();
+    
+    // Remove waypoints we've already passed
+    while (path.size() > 0 && glm::length2(path[0] - enemyPos) < finishRadius * finishRadius) {
+        path.erase(path.begin());
+    }
+    
+    // If we have no path or reached the destination, pick a new random target
+    // Only recalculate if we truly have no path (not just empty waypoints)
+    if (path.empty()) {
+        // Get a random non-obstacle position (NOT the player position)
+        vec2 targetPos = paperMesh->getRandomNonObstaclePosition();
+        std::cout << "[Wander] Generated random position: (" << targetPos.x << ", " << targetPos.y << ")" << std::endl;
+        
+        // Ensure we're not targeting the player's position
+        float distToPlayer = glm::length(targetPos - playerPos);
+        if (distToPlayer < 1.0f) {
+            // If random position is too close to player, try again
+            targetPos = paperMesh->getRandomNonObstaclePosition();
+            std::cout << "[Wander] Regenerated random position (too close to player): (" << targetPos.x << ", " << targetPos.y << ")" << std::endl;
+        }
+        
+        // Calculate path to the target
+        float padding = enemy->getRadius() * 1.2f;
+        paperMesh->getPath(path, enemyPos, targetPos, padding);
+        
+        // If pathfinding failed, try one more time with a different random position
+        if (path.empty()) {
+            targetPos = paperMesh->getRandomNonObstaclePosition();
+            std::cout << "[Wander] Regenerated random position (pathfinding failed): (" << targetPos.x << ", " << targetPos.y << ")" << std::endl;
+            paperMesh->getPath(path, enemyPos, targetPos, padding);
+        }
+        
+        std::cout << "[Wander] Enemy at (" << enemyPos.x << ", " << enemyPos.y << ") targeting (" << targetPos.x << ", " << targetPos.y << "), path size: " << path.size() << std::endl;
+    }
+    
+    // Set movement direction towards next waypoint
+    if (path.size() > 0) {
+        vec2 direction = path[0] - enemyPos;
+        enemy->getMoveDir() = direction;
+    } else {
+        enemy->getMoveDir() = vec2(0, 0);
+    }
+    
+    // Attack if we can attack (weapon ready, in range, and have line of sight)
+    if (enemy->canAttackStatus() && enemy->hasLineOfSightStatus()) {
+        enemy->attack(playerPos, dt);
+    }
+}
+

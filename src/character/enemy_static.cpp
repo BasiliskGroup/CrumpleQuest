@@ -80,12 +80,9 @@ void Enemy::generateTemplates(Game* game) {
             50.0f // knockback
         ));
 
-        enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
-            if (enemy->weaponReadyStatus() || enemy->isAttackingStatus()) {
-                return BehaviorRegistry::getBehavior("ChasePlayer");
-            } else {
-                return BehaviorRegistry::getBehavior("Runaway");
-            }
+        enemy->getBehaviorSelector() = [](const vec2&, float) -> Behavior* {
+            // Test: Use only wander behavior
+            return BehaviorRegistry::getBehavior("Wander");
         };
 
         return enemy;

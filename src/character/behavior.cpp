@@ -22,6 +22,7 @@ void BehaviorRegistry::initialize() {
     registerBehavior("Runaway", new RunawayBehavior());
     registerBehavior("Idle", new IdleBehavior());
     registerBehavior("Stationary", new StationaryBehavior());
+    registerBehavior("Wander", new WanderBehavior());
 }
 
 void BehaviorRegistry::cleanup() {
