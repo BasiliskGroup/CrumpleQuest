@@ -217,8 +217,10 @@ void Game::update(float dt) {
         if (!MenuManager::Get().hasActiveMenu()) {
             if (player != nullptr) {
                 currentSide->update(player->getPosition(), dt);
+                paper->getBackSide()->update({-100, -100}, dt); // player isn't on that side
             } else {
                 currentSide->update({0, 0}, dt);
+                paper->getBackSide()->update({-100, -100}, dt);
             }
         }
         // Game scene is paused if menus are active, but still rendered
@@ -328,5 +330,7 @@ void Game::addAnimation(std::string name, std::string folder, unsigned int nImag
 
 void Game::setSideToPaperSide() {
     this->currentSide = paper->getSingleSide();
-    this->player->setNode(this->currentSide->getPlayerNode());
+    this->player->getNode()->setMaterial(getMaterial("empty"));
+    this->player->getWeaponNode()->setMaterial(getMaterial("empty"));
+    this->player->setNodes(this->currentSide->getPlayerNode(), this->currentSide->getWeaponNode());
 }

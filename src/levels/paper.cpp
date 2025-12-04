@@ -293,13 +293,73 @@ bool Paper::fold(const vec2& start, const vec2& end) {
 
 bool Paper::unfold(const vec2& pos) {
     activateFold(pos);
+    
+    // Before popping the fold, check which enemies are in the fold underside region
+    // We need to save this information before popFold() erases the fold
+    std::vector<Enemy*> enemiesToMove;
+    SingleSide* currentSide = getSingleSide();
+    SingleSide* otherSide = getBackSide();
+    
+    // Save crease information before the fold is popped
+    vec2 creaseStart, creaseEnd;
+    bool hasCrease = false;
+    
+    if (activeFold >= 0 && activeFold < folds.size()) {
+        Fold& activeFoldRef = folds[activeFold];
+        if (activeFoldRef.underside != nullptr) {
+            // Check all enemies on the current side
+            auto& enemies = currentSide->getEnemies();
+            for (Enemy* enemy : enemies) {
+                if (enemy == nullptr || enemy->isDead()) continue;
+                vec2 enemyPos = enemy->getPosition();
+                if (activeFoldRef.underside->contains(enemyPos)) {
+                    enemiesToMove.push_back(enemy);
+                }
+            }
+        }
+        
+        // Save crease information
+        if (activeFoldRef.crease.size() == 2) {
+            creaseStart = activeFoldRef.crease[0];
+            creaseEnd = activeFoldRef.crease[1];
+            hasCrease = true;
+        }
+    }
+    
     bool check = popFold();
     if (check) {
+        // Move player (player position is already reflected in popFold)
         vec2 playerPos = getSingleSide()->getPlayerNode()->getPosition();
         flip();
         playerPos = { -playerPos.x, playerPos.y };
         getSingleSide()->getPlayerNode()->setPosition(playerPos);
-    };
+        
+        // Move enemies that were in the fold
+        for (Enemy* enemy : enemiesToMove) {
+            if (enemy == nullptr || enemy->isDead()) continue;
+            
+            // Get the enemy's position before adopting (since adoptEnemy will delete the old node)
+            vec2 enemyPos = enemy->getPosition();
+            
+            // Reflect the position over the crease line (same as player in popFold)
+            // This undoes the reflection that happened when the fold was created
+            vec2 reflectedPos = enemyPos;
+            if (hasCrease) {
+                vec2 creaseDir = creaseEnd - creaseStart;
+                float creaseLen = glm::length(creaseDir);
+                if (creaseLen > EPSILON) {
+                    reflectedPos = reflectPointOverLine(creaseStart, creaseDir, enemyPos);
+                }
+            }
+            
+            // Adopt the enemy to the other side
+            otherSide->adoptEnemy(enemy, currentSide);
+            
+            // Flip the position to the other side (same as player transformation after flip())
+            vec2 newPos = { -reflectedPos.x, reflectedPos.y };
+            enemy->setPosition(newPos);
+        }
+    }
     deactivateFold();
     return check;
 }
@@ -307,11 +367,30 @@ bool Paper::unfold(const vec2& pos) {
 bool Paper::pushFold(Fold& newFold) {
     // Safety check: reject fold if player is in the fold underside region (the part that gets folded underneath)
     SingleSide* currentSide = getSingleSide();
+    SingleSide* backSide = getBackSide();
+    
     if (currentSide && currentSide->getPlayerNode() && newFold.underside != nullptr) {
         vec2 playerPos = currentSide->getPlayerNode()->getPosition();
         if (newFold.underside->contains(playerPos)) {
             std::cout << "pushFold: rejecting fold - player is in fold underside region" << std::endl;
             return false;
+        }
+    }
+    
+    // Before pushing the fold, check which enemies on the back side are in the fold backside region
+    // We need to save this information before the fold is pushed (which modifies the meshes)
+    std::vector<Enemy*> enemiesToMove;
+    if (backSide && newFold.backside != nullptr) {
+        // Check all enemies on the back side
+        auto& enemies = backSide->getEnemies();
+        for (Enemy* enemy : enemies) {
+            if (enemy == nullptr || enemy->isDead()) continue;
+            vec2 enemyPos = enemy->getPosition();
+            // The backside region is in the back side's coordinate system (x is negated)
+            // So we can check directly if the enemy position is in the backside region
+            if (newFold.backside->contains(enemyPos)) {
+                enemiesToMove.push_back(enemy);
+            }
         }
     }
     
@@ -466,6 +545,40 @@ bool Paper::pushFold(Fold& newFold) {
 
     // update active fold to be what we just made so we can hold onto it
     activeFold = folds.size() - 1;
+
+    // Move enemies that were on the back side in the fold region to the current side
+    for (Enemy* enemy : enemiesToMove) {
+        if (enemy == nullptr || enemy->isDead()) continue;
+        
+        // Get the enemy's position before adopting (since adoptEnemy will delete the old node)
+        vec2 enemyPos = enemy->getPosition();
+        
+        // Adopt the enemy to the current side (where the player is)
+        currentSide->adoptEnemy(enemy, backSide);
+        
+        // Reflect the position over the crease line
+        vec2 newPos;
+        if (newFold.crease.size() == 2) {
+            vec2 creaseStart = newFold.crease[0];
+            vec2 creaseEnd = newFold.crease[1];
+            vec2 creaseDir = creaseEnd - creaseStart;
+            float creaseLen = glm::length(creaseDir);
+            
+            if (creaseLen > EPSILON) {
+                // First flip to the front side
+                vec2 flippedPos = { -enemyPos.x, enemyPos.y };
+                // Then reflect over the crease line
+                newPos = reflectPointOverLine(creaseStart, creaseDir, flippedPos);
+            } else {
+                // Fallback to simple flip if crease is invalid
+                newPos = { -enemyPos.x, enemyPos.y };
+            }
+        } else {
+            // Fallback to simple flip if no crease information
+            newPos = { -enemyPos.x, enemyPos.y };
+        }
+        enemy->setPosition(newPos);
+    }
 
     // DEBUG
     dotData();

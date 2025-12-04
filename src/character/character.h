@@ -57,6 +57,8 @@ public:
 
     void setVelocity(const vec3& velocity) { this->node->setVelocity(velocity); }
     void setPosition(const vec2& position) { this->node->setPosition(position); }
+    void setNode(Node2D* node) { this->node = node; }
+    void setSide(SingleSide* side) { this->side = side; }
 
     void move(float dt);
 };

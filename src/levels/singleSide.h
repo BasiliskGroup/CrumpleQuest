@@ -23,6 +23,7 @@ private:
 
     Node2D* background;
     Node2D* playerNode;
+    Node2D* weaponNode;
 
     // point to nodes in scene so no need to delete
     std::vector<Node2D*> walls; 
@@ -42,6 +43,7 @@ public:
     Collider* getCollider(std::string name) { return colliders[name]; }
     Node2D* getBackground() { return background; }
     Node2D* getPlayerNode() { return playerNode; }
+    Node2D* getWeaponNode() { return weaponNode; }
 
     void addEnemy(Enemy* enemy) { this->enemies.push_back(enemy); }
     void addWall(Node2D* wall) { this->walls.push_back(wall); }
@@ -52,6 +54,7 @@ public:
     void update(const vec2& playerPos, float dt);
     void clearWalls();
     void loadResources();
+    void adoptEnemy(Enemy* enemy, SingleSide* fromSide);
 
 private:
     void clear();

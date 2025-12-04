@@ -3,7 +3,7 @@
 
 
 SingleSide::SingleSide(Game* game, std::string mesh, std::string material) 
-    : scene(nullptr), camera(nullptr), background(nullptr), playerNode(nullptr)
+    : scene(nullptr), camera(nullptr), background(nullptr), playerNode(nullptr), weaponNode(nullptr)
 {
     scene = new Scene2D(game->getEngine());
     this->camera = new StaticCamera2D(game->getEngine());
@@ -15,6 +15,7 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material)
 
     // create player node
     playerNode = SingleSide::genPlayerNode(game, this);
+    weaponNode = new Node2D(playerNode, { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={1, 1} });
 
     // create background node
     background = new Node2D(scene, { 
@@ -25,7 +26,9 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material)
     background->setLayer(-0.7);
 }
 
-SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camera(nullptr), background(nullptr) {
+SingleSide::SingleSide(const SingleSide& other) noexcept 
+    : scene(nullptr), camera(nullptr), background(nullptr), playerNode(nullptr), weaponNode(nullptr)
+{
     if (other.scene) scene = new Scene2D(*other.scene);
     if (other.camera) camera = new StaticCamera2D(*other.camera);
     enemies = other.enemies;
@@ -65,6 +68,22 @@ SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camer
             ++thisIt;
         }
     }
+
+    if (other.weaponNode) {
+        auto thisIt = scene->getRoot()->begin();
+        auto otherIt = other.scene->getRoot()->begin();
+        auto thisEnd = scene->getRoot()->end();
+        auto otherEnd = other.scene->getRoot()->end();
+        
+        while (otherIt != otherEnd && thisIt != thisEnd) {
+            if (*otherIt == other.weaponNode) {
+                weaponNode = *thisIt;
+                break;
+            }
+            ++otherIt;
+            ++thisIt;
+        }
+    }
 }
 
 SingleSide::SingleSide(SingleSide&& other) noexcept : 
@@ -72,11 +91,16 @@ SingleSide::SingleSide(SingleSide&& other) noexcept :
     camera(other.camera),
     enemies(std::move(other.enemies)),
     damageZones(std::move(other.damageZones)), 
-    background(std::move(other.background))
+    background(nullptr),
+    playerNode(nullptr),
+    weaponNode(nullptr)
+    // TODO copy over player and weapon node
 {
     other.scene = nullptr;
     other.camera = nullptr;
-    other.background = nullptr;
+    // other.background = nullptr;
+    // other.playerNode = nullptr;
+    // other.weaponNode = nullptr;
 
     loadResources();
 }
@@ -187,4 +211,66 @@ void SingleSide::clearWalls() {
 
 void SingleSide::loadResources() {
     addCollider("quad", new Collider(scene->getSolver(), {{0.5f, 0.5f}, {-0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, -0.5f}}));
+}
+
+void SingleSide::adoptEnemy(Enemy* enemy, SingleSide* fromSide) {
+    if (enemy == nullptr || fromSide == nullptr) return;
+    if (fromSide == this) return; // Already in this side
+    
+    Node2D* oldNode = enemy->getNode();
+    if (oldNode == nullptr) return;
+    
+    // Save all properties from the old node
+    // Properties we currently have getters for:
+    vec2 position = oldNode->getPosition();
+    vec2 scale = oldNode->getScale();
+    vec3 velocity = oldNode->getVelocity();
+    Mesh* mesh = oldNode->getMesh();
+    Material* material = oldNode->getMaterial();
+    Collider* collider = getCollider("quad");
+    vec2 colliderScale = oldNode->getColliderScale();
+    float density = oldNode->getDensity();
+    float rotation = oldNode->getRotation();
+    float layer = oldNode->getLayer();
+    
+    // Remove enemy from old side's enemies list
+    auto& oldEnemies = fromSide->getEnemies();
+    for (auto it = oldEnemies.begin(); it != oldEnemies.end(); ++it) {
+        if (*it == enemy) {
+            oldEnemies.erase(it);
+            break;
+        }
+    }
+    
+    // Delete the old node from the old scene
+    delete oldNode;
+    
+    // Create a new node in this side's scene with the same properties
+    Node2D* newNode = new Node2D(scene, {
+        .mesh = mesh,
+        .material = material,
+        .position = position,
+        .rotation = rotation,
+        .scale = scale,
+        .collider = collider,
+        .colliderScale = colliderScale,
+        .density = density
+    });
+    
+    // Restore additional properties
+    newNode->setVelocity(velocity);
+    if (layer != 0.0f) { // Only set layer if it was non-zero (assuming 0 is default)
+        newNode->setLayer(layer);
+    }
+    
+    // Set manifold mask (as done in Character constructor)
+    newNode->setManifoldMask(1, 1, 0);
+    
+    // Update enemy's node and side pointers
+    // Use updateNode to also update the animator's node reference
+    enemy->updateNode(newNode);
+    enemy->setSide(this);
+    
+    // Add enemy to this side's enemies list
+    addEnemy(enemy);
 }
