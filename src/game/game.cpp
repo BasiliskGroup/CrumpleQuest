@@ -131,6 +131,7 @@ void Game::update(float dt) {
         if (paper) {
             bool unfolded = paper->unfold(player->getPosition());
             if (unfolded) {
+                paperView->regenerateMesh();
                 setSideToPaperSide();
             }
         }
@@ -174,6 +175,7 @@ void Game::update(float dt) {
         } else if (rightWasDown && !rightIsDown) { // we just let go
             if (paper) {
                 bool foldSucceeded = paper->fold(rightStartDown, mousePos);
+                paperView->regenerateMesh();
                 paper->deactivateFold();
                 
                 // Play fold end sound only if the fold was valid and successful
