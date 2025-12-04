@@ -15,9 +15,10 @@ protected:
     std::function<DamageZone*(const vec2&, const vec2&)> damageZoneGen;
     float cooldown = 0;
     float maxCooldown;
+    float range;
 
 public:
-    Weapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown);
+    Weapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, float range);
     ~Weapon() = default;
 
     bool attack(const vec2& pos, const vec2& dir);
@@ -26,6 +27,9 @@ public:
     // getters
     Character* getOwner() { return owner; }
     Scene2D* getScene() { return owner->getNode()->getScene(); }
+    float getCooldown() const { return cooldown; }
+    bool isReady() const { return cooldown <= 0.0f; }  // Check if weapon can attack
+    float getRange() const { return range; }
 
     // setters
     void setOwner(Character* owner) { this->owner = owner; }

@@ -1,4 +1,5 @@
 #include "levels/levels.h"
+#include "levels/paperMesh.h"
 #include "weapon/weapon.h"
 #include "game/game.h"
 #include "audio/sfx_player.h"
@@ -68,4 +69,53 @@ void Character::move(float dt) {
 
     // Apply only the allowed delta
     node->setVelocity(current + accelVec);
+}
+
+bool Character::hasLineOfSight(const vec2& start, const vec2& end) const {
+    // Get paper from game
+    if (game == nullptr) {
+        return true; // No game reference, assume line of sight (shouldn't happen)
+    }
+    
+    Paper* paper = game->getPaper();
+    if (paper == nullptr) {
+        return true; // No paper, assume line of sight (shouldn't happen)
+    }
+    
+    // Determine which PaperMesh corresponds to this character's side
+    PaperMesh* paperMesh = nullptr;
+    if (side == paper->getFirstSide()) {
+        paperMesh = paper->paperMeshes.first;
+    } else if (side == paper->getSecondSide()) {
+        paperMesh = paper->paperMeshes.second;
+    }
+    
+    // If we couldn't find the matching mesh, assume no line of sight to be safe
+    if (paperMesh == nullptr) {
+        return false;
+    }
+    
+    // Use the PaperMesh's hasLineOfSight function
+    return paperMesh->hasLineOfSight(start, end);
+}
+
+PaperMesh* Character::getPaperMeshForSide() const {
+    // Get paper from game
+    if (game == nullptr) {
+        return nullptr;
+    }
+    
+    Paper* paper = game->getPaper();
+    if (paper == nullptr) {
+        return nullptr;
+    }
+    
+    // Determine which PaperMesh corresponds to this character's side
+    if (side == paper->getFirstSide()) {
+        return paper->paperMeshes.first;
+    } else if (side == paper->getSecondSide()) {
+        return paper->paperMeshes.second;
+    }
+    
+    return nullptr;
 }

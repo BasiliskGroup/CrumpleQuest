@@ -2,6 +2,7 @@
 #include "game/game.h"
 #include "ui/ui.h"
 #include "levels/levels.h"
+#include "character/behavior.h"
 #include "audio/audio_manager.h"
 #include "ui/menu_manager.h"
 #include "resource/animation.h"
@@ -67,6 +68,9 @@ int main() {
     game->getAudio().SetLayerVolume(parchment_track, "parchment", 1.0f);
     game->getAudio().PlayTrack(parchment_track);
 
+    // Initialize behavior system
+    BehaviorRegistry::initialize();
+    
     // load levels
     Enemy::generateTemplates(game);
     SingleSide::generateTemplates(game);

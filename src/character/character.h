@@ -6,6 +6,7 @@
 class SingleSide;
 class Weapon;
 class Game;
+struct PaperMesh;
 
 class Character {
 protected:
@@ -47,6 +48,7 @@ public:
     vec2 getPosition() { return node->getPosition(); }
     vec3 getVelocity() { return node->getVelocity(); }
     float getRadius() { return radius; }
+    vec2& getMoveDir() { return moveDir; }
 
     // setters
     void setMaxMealth(int maxHealth) { this->maxHealth = maxHealth; }
@@ -61,6 +63,12 @@ public:
     void setSide(SingleSide* side) { this->side = side; }
 
     void move(float dt);
+    
+    // Line of sight helper
+    bool hasLineOfSight(const vec2& start, const vec2& end) const;
+    
+    // Get PaperMesh for this character's side
+    PaperMesh* getPaperMeshForSide() const;
 };
 
 #endif

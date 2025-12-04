@@ -1,8 +1,8 @@
 #include "weapon/weapon.h"
 #include "levels/levels.h"
 
-Weapon::Weapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown) 
-    : owner(owner), maxCooldown(maxCooldown) 
+Weapon::Weapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, float range) 
+    : owner(owner), maxCooldown(maxCooldown), range(range) 
 {}
 
 bool Weapon::attack(const vec2& pos, const vec2& dir) {
@@ -24,19 +24,19 @@ void Weapon::update(float dt) {
 // Weapon subclasses
 // --------------------------
 
-ContactWeapon::ContactWeapon(Character* owner, Node2D::Params node, DamageZone::Params params) : Weapon(owner, node, params, 0) {
+ContactWeapon::ContactWeapon(Character* owner, Node2D::Params node, DamageZone::Params params) : Weapon(owner, node, params, 0, 1.0f) {
     damageZoneGen = [owner, node, params](const vec2& pos, const vec2& dir) {
         return new ContactZone(owner, node, params, pos);
     };
 }
 
-MeleeWeapon::MeleeWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, float knockback) : Weapon(owner, node, params, maxCooldown) {
+MeleeWeapon::MeleeWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, float knockback) : Weapon(owner, node, params, maxCooldown, 2.0f) {
     damageZoneGen = [owner, node, params, knockback](const vec2& pos, const vec2& dir) {
         return new MeleeZone(owner, node, params, pos, dir, knockback);
     };
 }
 
-ProjectileWeapon::ProjectileWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, int ricochet) : Weapon(owner, node, params, maxCooldown) {
+ProjectileWeapon::ProjectileWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, int ricochet) : Weapon(owner, node, params, maxCooldown, 100.0f) {
     damageZoneGen = [owner, node, params, ricochet](const vec2& pos, const vec2& dir) {
         return new ProjectileZone(owner, node, params, pos, dir, ricochet);
     };

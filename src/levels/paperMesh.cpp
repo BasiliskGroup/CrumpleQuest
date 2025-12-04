@@ -96,25 +96,36 @@ void PaperMesh::regenerateNavmesh() {
     navmesh->clear();
     navmesh->addMesh(region);
     
-    std::cout << "[PaperMesh::regenerateNavmesh] Total regions: " << regions.size() << std::endl;
-    
     // Add only UV regions marked as obstacles
-    int obstacleCount = 0;
-    for (size_t i = 0; i < regions.size(); i++) {
-        const auto& uvRegion = regions[i];
-        std::cout << "[PaperMesh::regenerateNavmesh] Region " << i 
-                  << ": isObstacle=" << uvRegion.isObstacle 
-                  << ", positions=" << uvRegion.positions.size() << std::endl;
+    for (const auto& uvRegion : regions) {
         if (uvRegion.isObstacle) {
-            obstacleCount++;
-            std::cout << "[PaperMesh::regenerateNavmesh] Adding obstacle " << obstacleCount 
-                      << " with " << uvRegion.positions.size() << " vertices" << std::endl;
             navmesh->addObstacle(uvRegion.positions);
         }
     }
     
-    std::cout << "[PaperMesh::regenerateNavmesh] Found " << obstacleCount << " obstacles" << std::endl;
     navmesh->generateNavmesh();
+}
+
+bool PaperMesh::hasLineOfSight(const vec2& start, const vec2& end) const {
+    // Check if the line segment intersects any obstacle edge
+    for (const auto& uvRegion : regions) {
+        // Only check regions marked as obstacles
+        if (!uvRegion.isObstacle) {
+            continue;
+        }
+        
+        // Skip regions with insufficient vertices
+        if (uvRegion.positions.size() < 3) {
+            continue;
+        }
+        
+        // Check if line segment intersects this obstacle polygon
+        if (lineSegmentIntersectsPolygon(start, end, uvRegion.positions)) {
+            return false; // Line of sight blocked
+        }
+    }
+    
+    return true; // No obstacles blocking the line
 }
 
 std::pair<vec2, vec2> PaperMesh::getAABB() {

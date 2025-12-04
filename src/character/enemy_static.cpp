@@ -51,9 +51,18 @@ void Enemy::generateTemplates(Game* game) {
             enemy, 
             { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
             { .damage=1, .life=5.0f, .radius=0.25 },
-            0.5f,
+            4.0f,
             50.0f // knockback
         ));
+
+        enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
+            if (enemy->weaponReadyStatus()) {
+                return BehaviorRegistry::getBehavior("ChasePlayer");
+            } else {
+                return BehaviorRegistry::getBehavior("Runaway");
+            }
+        };
+
         return enemy;
     };
 

@@ -185,6 +185,7 @@ void SingleSide::update(const vec2& playerPos, float dt) {
 
     // update all enemies
     for (Enemy* enemy : enemies) {
+        enemy->updateStatus(playerPos);
         enemy->move(playerPos, dt);
     }
 

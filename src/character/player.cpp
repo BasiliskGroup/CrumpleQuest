@@ -31,13 +31,31 @@ void Player::move(float dt) {
     // Update animations
     animator->update();
     weaponAnimator->update();
+    
+    // Update weapon cooldown
+    if (weapon != nullptr) {
+        weapon->update(dt);
+    }
+    
+    // Update attack animation timer
+    if (attacking > 0.0f) {
+        attacking -= dt;
+    }
 
     // actual movement
     Keyboard* keys = node->getEngine()->getKeyboard();
 
-    if (attacking > 0.0) {
-        animator->setAnimation(game->getAnimation("player_attack"));
-        weaponAnimator->setAnimation(game->getAnimation("pencil_attack"));
+    // Set animation based on state: attack > movement
+    if (attacking > 0.0f) {
+        Animation* attackAnim = game->getAnimation("player_attack");
+        Animation* weaponAttackAnim = game->getAnimation("pencil_attack");
+        
+        if (attackAnim != nullptr) {
+            animator->setAnimation(attackAnim);
+        }
+        if (weaponAttackAnim != nullptr) {
+            weaponAnimator->setAnimation(weaponAttackAnim);
+        }
         
         unsigned int currentFrame = animator->getCurrentFrame();
         
@@ -48,8 +66,6 @@ void Player::move(float dt) {
         } else {
             lastAttackFrame = currentFrame;
         }
-        
-        attacking -= node->getEngine()->getDeltaTime();
     }
     else {
         lastAttackFrame = 0xFFFFFFFF; // Special value to indicate we're not attacking
@@ -77,10 +93,11 @@ void Player::move(float dt) {
     
     Character::move(dt);
     
-    // attacking
+    // Update weapon node position and scale
     weaponNode->setScale(node->getScale());
     weaponNode->setPosition(node->getPosition());
 
+    // Handle attack input
     if (weapon == nullptr) return;
     Mouse* mouse = node->getEngine()->getMouse();
     if (mouse->getClicked() == false) return;
@@ -95,8 +112,20 @@ void Player::move(float dt) {
 
     dir = glm::normalize(dir);
     vec2 offset = radius / 2 * dir + getPosition();
-    weapon->attack(offset, dir);
-    attacking = 1.0 / 8.0 * 4.0;
+    
+    bool attackSuccessful = weapon->attack(offset, dir);
+    
+    // If attack was successful (weapon was off cooldown), set attack animation duration
+    if (attackSuccessful) {
+        Animation* attackAnim = game->getAnimation("player_attack");
+        if (attackAnim != nullptr) {
+            // Calculate attack animation duration: number of frames * time per frame
+            // Animator frame rate is 8 fps, so timePerFrame = 1.0 / 8 = 0.125
+            float timePerFrame = 1.0f / 8.0f;  // Match the animator's frame rate
+            unsigned int numFrames = attackAnim->getNumberFrames();
+            attacking = numFrames * timePerFrame;
+        }
+    }
 }
 
 void Player::setNodes(Node2D* node, Node2D* weapon) { 

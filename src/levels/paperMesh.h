@@ -32,6 +32,8 @@ struct PaperMesh : public DyMesh {
         if (navmesh) navmesh->getPath(path, start, dest, padding);
     }
 
+    bool hasLineOfSight(const vec2& start, const vec2& end) const;
+
     std::pair<vec2, vec2> getAABB();
 };
 
