@@ -1175,33 +1175,42 @@ void Paper::toData(std::vector<float>& out) {
     vec2 aabbMin = aabb.first;   // bottom-left
     vec2 aabbMax = aabb.second;  // top-right
     vec2 size = aabbMax - aabbMin;  // positive size vector
+    
+    // Guard against division by zero
+    if (size.x < EPSILON || size.y < EPSILON || region.size() < 3) {
+        // Return empty mesh if region is degenerate
+        return;
+    }
 
     // Generate triangles
     for (size_t i = 0; i + 2 < indices.size(); i += 3) {
         for (int j = 0; j < 3; j++) {
             uint32_t idx = indices[i + j];
+            if (idx >= region.size()) continue; // Safety check
             const vec2& pos = region[idx];
             
             // Interpolate UV in AABB: normalize position to [0, 1] range
             vec2 uv = (pos - aabbMin) / size;
 
-            out.push_back(pos.x);
-            out.push_back(-pos.y);
-            out.push_back(0.0f);
+            // First side: left half of framebuffer [0, 0.5] x [0, 1]
+            out.push_back(pos.x / 10.0f);
+            out.push_back(pos.y / 10.0f);
+            out.push_back(0.001f);
             out.push_back(uv.x * 0.5f);  // Map to left half: [0, 0.5]
-            out.push_back(-uv.y);
-            out.push_back(0);
-            out.push_back(0);
-            out.push_back(1);
+            out.push_back(uv.y);
+            out.push_back(0.0f);
+            out.push_back(0.0f);
+            out.push_back(1.0f);
 
-            out2.push_back(-pos.x);
-            out2.push_back(-pos.y);
+            // Second side: right half of framebuffer [0.5, 1] x [0, 1]
+            out2.push_back(-pos.x / 10.0f);
+            out2.push_back(pos.y / 10.0f);
+            out2.push_back(-0.001f);
+            out2.push_back((1.0f + uv.x) * 0.5f);  // Map to right half: [0.5, 1]
+            out2.push_back(uv.y);
             out2.push_back(0.0f);
-            out2.push_back((2.0f - uv.x) * 0.5f);  // Map to right half: [0.5, 1]
-            out2.push_back(-uv.y);
-            out2.push_back(0);
-            out2.push_back(0);
-            out2.push_back(-1);
+            out2.push_back(0.0f);
+            out2.push_back(1.0f);
         }
     }
 

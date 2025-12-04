@@ -1,5 +1,6 @@
 #include "game/paperView.h"
 #include "game/game.h"
+#include <iostream>
 
 PaperView::PaperView(Game* game): game(game) {
     engine = game->getEngine();
@@ -12,27 +13,8 @@ PaperView::PaperView(Game* game): game(game) {
     paperShader = new Shader("shaders/default.vert", "shaders/default.frag");
     paperShader->bind("uTexture", frame->getFBO(), 5);
     
-    // Set up VAO for paper
-    std::vector<float> quadVertices = {
-        // Front face (normal +Z, UV x: 0 -> 0.5)
-        -0.6f, -0.45f,  0.001f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-         0.6f, -0.45f,  0.001f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-         0.6f,  0.45f,  0.001f,  0.5f, 1.0f,  0.0f, 0.0f, 1.0f, // top-right
-
-         0.6f,  0.45f,  0.001f,  0.5f, 1.0f,  0.0f, 0.0f, 1.0f, // top-right
-        -0.6f,  0.45f,  0.001f,  0.0f, 1.0f,  0.0f, 0.0f, 1.0f, // top-left
-        -0.6f, -0.45f,  0.001f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-
-        // Back face (normal -Z, UV x: 0.5 -> 1.0)
-        -0.6f, -0.45f, -0.001f,  1.0f, 0.0f,  0.0f, 0.0f, -1.0f, // bottom-left
-         0.6f,  0.45f, -0.001f,  0.5f, 1.0f,  0.0f, 0.0f, -1.0f, // top-right
-         0.6f, -0.45f, -0.001f,  0.5f, 0.0f,  0.0f, 0.0f, -1.0f, // bottom-right
-
-         0.6f,  0.45f, -0.001f,  0.5f, 1.0f,  0.0f, 0.0f, -1.0f, // top-right
-        -0.6f, -0.45f, -0.001f,  1.0f, 0.0f,  0.0f, 0.0f, -1.0f, // bottom-left
-        -0.6f,  0.45f, -0.001f,  1.0f, 1.0f,  0.0f, 0.0f, -1.0f  // top-left
-    };
-
+    // Set up VAO for paper (will be initialized with empty data, regenerated when paper is created)
+    std::vector<float> quadVertices; // Start with empty - will be populated when paper exists
     paperVBO = new VBO(quadVertices);
     paperVAO = new VAO(paperShader, paperVBO);
 
@@ -159,5 +141,28 @@ void PaperView::update() {
     glm::mat4 paperModel = glm::toMat4(combinedRotation);
 
     paperShader->setUniform("uModel", paperModel);
+}
+
+void PaperView::regenerateMesh() {
+    Paper* paper = game->getPaper();
+    if (paper == nullptr) {
+        // Paper doesn't exist yet, use empty mesh
+        std::vector<float> emptyVertices;
+        delete paperVBO;
+        delete paperVAO;
+        paperVBO = new VBO(emptyVertices);
+        paperVAO = new VAO(paperShader, paperVBO);
+        return;
+    }
+    
+    // Generate mesh data from paper
+    std::vector<float> quadVertices;
+    paper->toData(quadVertices);
+    
+    // Replace VBO and VAO with new data
+    delete paperVBO;
+    delete paperVAO;
+    paperVBO = new VBO(quadVertices);
+    paperVAO = new VAO(paperShader, paperVBO);
 }
 

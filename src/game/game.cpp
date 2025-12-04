@@ -242,6 +242,11 @@ void Game::setPaper(std::string str) {
     this->paper = Paper::templates[str]();
     this->currentSide = this->paper->getSingleSide();
     this->paper->setGame(this);
+    
+    // Regenerate PaperView mesh now that paper exists
+    if (paperView) {
+        paperView->regenerateMesh();
+    }
 }
 
 void Game::initMenus() {
