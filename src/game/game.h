@@ -31,6 +31,10 @@ private:
     // rendering paper
     SingleSide* currentSide;
     Paper* paper;
+    Frame* paperFrame;
+    Shader* paper3DShader;
+    VBO* paperVBO;
+    VAO* paperVAO;
 
     // menu scene (separate from game scene)
     Scene2D* menuScene;

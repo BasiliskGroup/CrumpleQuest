@@ -46,6 +46,8 @@ Game::Game() :
     menuCamera->setScale(9.0f);
     menuScene->setCamera(menuCamera);
     menuScene->getSolver()->setGravity(0);
+
+    paperFrame = new Frame(engine, 2400, 900);
 }
 
 Game::~Game() {
@@ -218,7 +220,18 @@ void Game::update(float dt) {
             }
         }
         // Game scene is paused if menus are active, but still rendered
+        paperFrame->use();
+        paperFrame->clear();
+        glViewport(0, 0, 1200, 900);
+        paper->getFirstSide()->getScene()->render();
+        glViewport(1200, 0, 1200, 900);
+        paper->getSecondSide()->getScene()->render();
         currentSide->getScene()->render();
+        
+        engine->getFrame()->use();
+        paperFrame->render();
+
+        // paperVAO->render();
     }
     
     if (MenuManager::Get().hasActiveMenu()) {
@@ -245,6 +258,12 @@ void Game::startGame() {
     // Create the game paper and switch to it
     setPaper("empty");
     paper->regenerateWalls();
+
+    // paper3DShader = new Shader("shaders/default.vert", "shaders/default.frag");
+    // std::vector<float> paperData;
+    // paper->toData(paperData);
+    // paperVBO = new VBO(paperData);
+    // paperVAO = new VAO(paper3DShader, paperVBO);
 
     // create player
     Node2D* playerNode = paper->getSingleSide()->getPlayerNode();

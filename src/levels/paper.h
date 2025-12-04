@@ -83,6 +83,9 @@ public:
     Mesh* getMesh();
     SingleSide* getSingleSide() { return curSide == 0 ? sides.first : sides.second; }
 
+    SingleSide* getFirstSide() { return sides.first; }
+    SingleSide* getSecondSide() { return sides.second; }
+
     void flip();
     void open();
     bool fold(const vec2& start, const vec2& end);
