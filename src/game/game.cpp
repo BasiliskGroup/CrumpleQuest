@@ -225,7 +225,7 @@ void Game::update(float dt) {
         paperView->renderLevelFBO(paper);
         // Render the 3d view to the screen
         engine->getFrame()->use();
-        paperView->update();
+        paperView->update(paper);
         paperView->render();
     }
     

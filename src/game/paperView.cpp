@@ -21,7 +21,7 @@ PaperView::PaperView(Game* game): game(game) {
     // Set up camera
     camera->use(paperShader);
     camera->setX(0.0);
-    camera->setZ(0.9);
+    camera->setZ(1.2);
     camera->setYaw(-90.0);
     camera->setAspect(16.0 / 9.0);
     scene->setCamera(camera);
@@ -33,6 +33,7 @@ PaperView::PaperView(Game* game): game(game) {
     // Set up rotation data
     lastRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
     currentRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+    targetRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
     // Set up table
     Node* table = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("table"), .position={0.0, 0.0, -1.0}, .scale={5.0, 5.0, 1.0}});
@@ -105,17 +106,28 @@ glm::vec3 mapToSphere(float x, float y, float width, float height) {
  * @brief 
  * 
  */
-void PaperView::update() {
+void PaperView::update(Paper* paper) {
     
     scene->update();
 
     Mouse* mouse = engine->getMouse();
-    float width = (float)engine->getWindow()->getWidth();
-    float height = (float)engine->getWindow()->getHeight();
+    float width = (float)engine->getWindow()->getWidth() * engine->getWindow()->getWindowScaleX();
+    float height = (float)engine->getWindow()->getHeight() * engine->getWindow()->getWindowScaleY();
+    float deltaTime = engine->getDeltaTime();
+
+    glm::quat defaultPosition = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+    if (paper->getCurrentSide()) {
+        defaultPosition = glm::angleAxis(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    }
+
+    std::cout << paper->getCurrentSide() << std::endl;
+    std::cout << defaultPosition.x << ", " << defaultPosition.y << ", " << defaultPosition.z << ", " << defaultPosition.w << ", " << std::endl;
 
     if (mouse->getLeftClicked()) {
         mouseStart = glm::vec2(mouse->getX(), mouse->getY());
         mouseStartVector = mapToSphere(mouseStart.x, mouseStart.y, width, height);
+        // Bake current rotation into lastRotation when starting a new drag
+        lastRotation = currentRotation;
     }
     else if (mouse->getLeftDown()) {
         glm::vec2 mouseCurrent = glm::vec2(mouse->getX(), mouse->getY());
@@ -123,22 +135,32 @@ void PaperView::update() {
         
         glm::vec3 rotationAxis = glm::cross(mouseStartVector, mouseCurrentVector);
         float angle = glm::acos(glm::dot(mouseStartVector, mouseCurrentVector));
+
+        float sensitivity = 2.5f;
+        angle *= sensitivity;
         
         // Check for small axis vector to prevent crash on normalization
         if (glm::length2(rotationAxis) > 1e-6f) {
-            currentRotation = glm::angleAxis(angle, glm::normalize(rotationAxis));
+            targetRotation = glm::angleAxis(angle, glm::normalize(rotationAxis)) * lastRotation;
         } else {
-            currentRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); // Identity
+            targetRotation = lastRotation;
         }
     }
     else if (mouse->getLeftReleased()) {
-        // Accumulate rotation using quaternion multiplication (new * old)
-        lastRotation = currentRotation * lastRotation;
-        currentRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); // Reset temporary drag rotation
+        // Set target back to default
+        targetRotation = defaultPosition;
+        lastRotation = defaultPosition;
+    }
+    else {
+        targetRotation = defaultPosition;
     }
 
-    glm::quat combinedRotation = currentRotation * lastRotation;
-    glm::mat4 paperModel = glm::toMat4(combinedRotation);
+    // Smooth interpolation using slerp (spherical linear interpolation)
+    float smoothingFactor = 5.0f;
+    float t = glm::clamp(smoothingFactor * deltaTime, 0.0f, 1.0f);
+    currentRotation = glm::slerp(currentRotation, targetRotation, t);
+
+    glm::mat4 paperModel = glm::toMat4(currentRotation);
 
     paperShader->setUniform("uModel", paperModel);
 }

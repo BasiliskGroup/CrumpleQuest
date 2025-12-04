@@ -87,6 +87,8 @@ public:
     SingleSide* getFirstSide() { return sides.first; }
     SingleSide* getSecondSide() { return sides.second; }
 
+    int getCurrentSide() { return curSide; }
+
     void flip();
     void open();
     bool fold(const vec2& start, const vec2& end);

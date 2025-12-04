@@ -26,13 +26,14 @@ class PaperView {
         glm::vec3 mouseStartVector;
         glm::quat currentRotation;
         glm::quat lastRotation;
+        glm::quat targetRotation;
 
 
     public:
         PaperView(Game* game);
         ~PaperView();
         
-        void update();
+        void update(Paper* paper);
         void render();
         void renderLevelFBO(Paper* paper);
         void regenerateMesh(); // Regenerate mesh data from current paper
