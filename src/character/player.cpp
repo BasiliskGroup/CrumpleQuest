@@ -7,7 +7,7 @@ Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* si
     : Character(game, health, speed, node, side, weapon, "Ally", radius, scale, "hit-player")
 {
     this->accel = 30;
-    weaponNode = new Node2D(node, { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={1, 1}});
+    weaponNode = side->getWeaponNode();
     weaponNode->setLayer(0.1f);
 
     animator = new Animator(node->getEngine(), node, game->getAnimation("player_idle"));
@@ -97,4 +97,12 @@ void Player::move(float dt) {
     vec2 offset = radius / 2 * dir + getPosition();
     weapon->attack(offset, dir);
     attacking = 1.0 / 8.0 * 4.0;
+}
+
+void Player::setNodes(Node2D* node, Node2D* weapon) { 
+    this->node = node; 
+    this->animator->setNode(node);
+
+    this->weaponNode = weapon;
+    this->weaponAnimator->setNode(weapon);
 }

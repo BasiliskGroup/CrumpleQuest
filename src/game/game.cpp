@@ -323,5 +323,7 @@ void Game::addAnimation(std::string name, std::string folder, unsigned int nImag
 
 void Game::setSideToPaperSide() {
     this->currentSide = paper->getSingleSide();
-    this->player->setNode(this->currentSide->getPlayerNode());
+    this->player->getNode()->setMaterial(getMaterial("empty"));
+    this->player->getWeaponNode()->setMaterial(getMaterial("empty"));
+    this->player->setNodes(this->currentSide->getPlayerNode(), this->currentSide->getWeaponNode());
 }

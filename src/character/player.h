@@ -25,11 +25,9 @@ public:
     void move(float dt);
 
     Node2D* getNode() { return node; }
+    Node2D* getWeaponNode() { return weaponNode; }
 
-    void setNode(Node2D* node) { 
-        this->node = node; 
-        this->animator->setNode(node);
-    }
+    void setNodes(Node2D* node, Node2D* weapon);
 };
 
 #endif

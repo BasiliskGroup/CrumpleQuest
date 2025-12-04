@@ -27,7 +27,7 @@ void SingleSide::generateTemplates(Game* game) {
 Node2D* SingleSide::genPlayerNode(Game* game, SingleSide* side) {
     Node2D* node = new Node2D(side->getScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("knight"),
+        .material = game->getMaterial("empty"),
         .position = { 0, -3 },
         .rotation = 0,
         .scale = { 1.5, 1.5 },

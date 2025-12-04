@@ -3,7 +3,7 @@
 
 
 SingleSide::SingleSide(Game* game, std::string mesh, std::string material) 
-    : scene(nullptr), camera(nullptr), background(nullptr), playerNode(nullptr)
+    : scene(nullptr), camera(nullptr), background(nullptr), playerNode(nullptr), weaponNode(nullptr)
 {
     scene = new Scene2D(game->getEngine());
     this->camera = new StaticCamera2D(game->getEngine());
@@ -15,6 +15,7 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material)
 
     // create player node
     playerNode = SingleSide::genPlayerNode(game, this);
+    weaponNode = new Node2D(playerNode, { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={1, 1} });
 
     // create background node
     background = new Node2D(scene, { 
@@ -25,7 +26,9 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material)
     background->setLayer(-0.7);
 }
 
-SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camera(nullptr), background(nullptr) {
+SingleSide::SingleSide(const SingleSide& other) noexcept 
+    : scene(nullptr), camera(nullptr), background(nullptr), playerNode(nullptr), weaponNode(nullptr)
+{
     if (other.scene) scene = new Scene2D(*other.scene);
     if (other.camera) camera = new StaticCamera2D(*other.camera);
     enemies = other.enemies;
@@ -65,6 +68,22 @@ SingleSide::SingleSide(const SingleSide& other) noexcept : scene(nullptr), camer
             ++thisIt;
         }
     }
+
+    if (other.weaponNode) {
+        auto thisIt = scene->getRoot()->begin();
+        auto otherIt = other.scene->getRoot()->begin();
+        auto thisEnd = scene->getRoot()->end();
+        auto otherEnd = other.scene->getRoot()->end();
+        
+        while (otherIt != otherEnd && thisIt != thisEnd) {
+            if (*otherIt == other.weaponNode) {
+                weaponNode = *thisIt;
+                break;
+            }
+            ++otherIt;
+            ++thisIt;
+        }
+    }
 }
 
 SingleSide::SingleSide(SingleSide&& other) noexcept : 
@@ -72,11 +91,16 @@ SingleSide::SingleSide(SingleSide&& other) noexcept :
     camera(other.camera),
     enemies(std::move(other.enemies)),
     damageZones(std::move(other.damageZones)), 
-    background(std::move(other.background))
+    background(nullptr),
+    playerNode(nullptr),
+    weaponNode(nullptr)
+    // TODO copy over player and weapon node
 {
     other.scene = nullptr;
     other.camera = nullptr;
-    other.background = nullptr;
+    // other.background = nullptr;
+    // other.playerNode = nullptr;
+    // other.weaponNode = nullptr;
 
     loadResources();
 }
