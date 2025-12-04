@@ -815,42 +815,6 @@ void Paper::dotData() {
     regionNodes.clear();
 
     PaperMesh* paperMesh = getPaperMesh();
-    
-    // Render outer boundary
-    std::vector<vec2>& outerRegion = paperMesh->region;
-    for (int i = 0; i < outerRegion.size(); i++) {
-        auto& r = outerRegion[i];
-        Node2D* n = new Node2D(game->getScene(), { 
-            .mesh = game->getMesh("quad"), 
-            .material = game->getMaterial("man"), 
-            .position = r, 
-            .scale = {0.1 + 0.025 * i, 0.1 + 0.025 * i} 
-        });
-        n->setLayer(0.9);
-        regionNodes.push_back(n);
-    }
-
-    // Render each UV region's boundary as walls/edges
-    for (size_t regionIdx = 0; regionIdx < paperMesh->regions.size(); regionIdx++) {
-        const UVRegion& uvRegion = paperMesh->regions[regionIdx];
-        const std::vector<vec2>& regionVerts = uvRegion.positions;
-        
-        // Create walls for this region's boundary
-        for (int i = 0; i < regionVerts.size(); i++) {
-            int j = (i + 1) % regionVerts.size();
-            auto data = connectSquare(regionVerts[i], regionVerts[j], 0.025);
-            
-            Node2D* wall = new Node2D(game->getScene(), { 
-                .mesh = game->getMesh("quad"), 
-                .material = game->getMaterial("lightGrey"),  // Or use a different material per region
-                .position = vec2{data.first.x, data.first.y}, 
-                .rotation = data.first.z, 
-                .scale = data.second
-            });
-            wall->setLayer(0.85);
-            regionNodes.push_back(wall);
-        }
-    }
 }
 
 void Paper::previewFold(const vec2& start, const vec2& end) {
