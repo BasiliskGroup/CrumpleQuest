@@ -54,8 +54,9 @@ Game::Game() :
     paperCamera = new Camera(engine);
     paperCamera->use(paper3DShader);
     paperCamera->setX(0.0);
-    paperCamera->setZ(15.0);
+    paperCamera->setZ(0.9);
     paperCamera->setYaw(-90.0);
+    paperCamera->setAspect(16.0 / 9.0);
     glm::mat4 model = glm::mat4(1);
     paper3DShader->setUniform("uModel", model);
 }
@@ -246,7 +247,6 @@ void Game::update(float dt) {
         glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
         
         engine->getFrame()->use();
-        // paperFrame->render(viewport[0], viewport[1], viewport[2], viewport[3]);
         
         // paperCamera->update();
         paperCamera->use(paper3DShader);
@@ -286,7 +286,29 @@ void Game::startGame() {
     // Mesh* mesh = new Mesh("models/sphere.obj");
     // VBO* vbo = new VBO(mesh->getVertices());
     // EBO* ebo = new EBO(mesh->getIndices());
-    paperVAO = new VAO(paper3DShader, paperVBO);
+
+    std::vector<float> quadVertices = {
+        // Front face (normal +Z, UV x: 0 -> 0.5)
+        -0.6f, -0.45f,  0.001f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+         0.6f, -0.45f,  0.001f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+         0.6f,  0.45f,  0.001f,  0.5f, 1.0f,  0.0f, 0.0f, 1.0f, // top-right
+
+         0.6f,  0.45f,  0.001f,  0.5f, 1.0f,  0.0f, 0.0f, 1.0f, // top-right
+        -0.6f,  0.45f,  0.001f,  0.0f, 1.0f,  0.0f, 0.0f, 1.0f, // top-left
+        -0.6f, -0.45f,  0.001f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+
+        // Back face (normal -Z, UV x: 0.5 -> 1.0)
+        -0.6f, -0.45f, -0.001f,  1.0f, 0.0f,  0.0f, 0.0f, -1.0f, // bottom-left
+         0.6f,  0.45f, -0.001f,  0.5f, 1.0f,  0.0f, 0.0f, -1.0f, // top-right
+         0.6f, -0.45f, -0.001f,  0.5f, 0.0f,  0.0f, 0.0f, -1.0f, // bottom-right
+
+         0.6f,  0.45f, -0.001f,  0.5f, 1.0f,  0.0f, 0.0f, -1.0f, // top-right
+        -0.6f, -0.45f, -0.001f,  1.0f, 0.0f,  0.0f, 0.0f, -1.0f, // bottom-left
+        -0.6f,  0.45f, -0.001f,  1.0f, 1.0f,  0.0f, 0.0f, -1.0f  // top-left
+    };
+
+    VBO* vbo = new VBO(quadVertices);
+    paperVAO = new VAO(paper3DShader, vbo);
 
     // create player
     Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
