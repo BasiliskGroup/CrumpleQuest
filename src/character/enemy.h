@@ -32,6 +32,7 @@ public:
     void attack(const vec2& playerPos, float dt);
 
     void setPath(std::vector<vec2> path) { this->path = path; }
+    void updateNode(Node2D* newNode); // Update both the Character's node and the animator's node
 };
 
 #endif

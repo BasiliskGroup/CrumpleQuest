@@ -71,3 +71,10 @@ void Enemy::attack(const vec2& playerPos, float dt) {
     vec2 offset = radius / 2 * dir + getPosition();
     weapon->attack(offset, dir);
 }
+
+void Enemy::updateNode(Node2D* newNode) {
+    setNode(newNode);
+    if (animator != nullptr) {
+        animator->setNode(newNode);
+    }
+}

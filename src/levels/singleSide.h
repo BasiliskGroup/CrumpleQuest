@@ -54,6 +54,7 @@ public:
     void update(const vec2& playerPos, float dt);
     void clearWalls();
     void loadResources();
+    void adoptEnemy(Enemy* enemy, SingleSide* fromSide);
 
 private:
     void clear();
