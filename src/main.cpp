@@ -43,6 +43,15 @@ int main() {
     // Glue
     game->addAnimation("glue_idle", "art/sprites/enemies/ranged/notebook_glue/idle/", 6);
     game->addAnimation("glue_attack", "art/sprites/enemies/ranged/notebook_glue/attack/", 7);
+    // Integral
+    game->addAnimation("integral_idle", "art/sprites/enemies/contact/grid_integral/idle/", 4);
+    game->addAnimation("integral_attack", "art/sprites/enemies/contact/grid_integral/attack/", 9);
+    // Sigma
+    game->addAnimation("sigma_idle", "art/sprites/enemies/melee/grid_sigma/idle/", 5);
+    game->addAnimation("sigma_attack", "art/sprites/enemies/melee/grid_sigma/attack/", 6);
+    // Pi
+    game->addAnimation("pi_idle", "art/sprites/enemies/ranged/grid_pi/idle/", 6);
+    game->addAnimation("pi_attack", "art/sprites/enemies/ranged/grid_pi/attack/", 7);
 
     // mesh
     std::vector<std::string> meshNames = { "quad", "paper0", "paper1" };
