@@ -48,6 +48,8 @@ Game::Game() :
     menuScene->getSolver()->setGravity(0);
 
     paperFrame = new Frame(engine, 2400, 900);
+    paper3DShader = new Shader("shaders/default.vert", "shaders/default.frag");
+    paper3DShader->bind("uTexture", paperFrame->getFBO(), 5);
 }
 
 Game::~Game() {
@@ -221,17 +223,22 @@ void Game::update(float dt) {
         }
         // Game scene is paused if menus are active, but still rendered
         paperFrame->use();
-        paperFrame->clear();
+        paperFrame->clear(1.0, 0.5, 0.0, 1.0);
+
+        GLint viewport[4];
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        
         glViewport(0, 0, 1200, 900);
         paper->getFirstSide()->getScene()->render();
         glViewport(1200, 0, 1200, 900);
-        paper->getSecondSide()->getScene()->render();
-        currentSide->getScene()->render();
+        paper->getFirstSide()->getScene()->render();
+
+        glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
         
         engine->getFrame()->use();
-        paperFrame->render();
+        paperFrame->render(viewport[0], viewport[1], viewport[2], viewport[3]);
 
-        // paperVAO->render();
+        paperVAO->render();
     }
     
     if (MenuManager::Get().hasActiveMenu()) {
@@ -259,11 +266,10 @@ void Game::startGame() {
     setPaper("empty");
     paper->regenerateWalls();
 
-    // paper3DShader = new Shader("shaders/default.vert", "shaders/default.frag");
-    // std::vector<float> paperData;
-    // paper->toData(paperData);
-    // paperVBO = new VBO(paperData);
-    // paperVAO = new VAO(paper3DShader, paperVBO);
+    std::vector<float> paperData;
+    paper->toData(paperData);
+    paperVBO = new VBO(paperData);
+    paperVAO = new VAO(paper3DShader, paperVBO);
 
     // create player
     Node2D* playerNode = paper->getSingleSide()->getPlayerNode();

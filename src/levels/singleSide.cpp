@@ -7,8 +7,8 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material)
 {
     scene = new Scene2D(game->getEngine());
     this->camera = new StaticCamera2D(game->getEngine());
-    this->camera->setScale(9.0f);
     this->scene->setCamera(this->camera);
+    this->camera->setScale(12.0f, 9.0f);
     this->scene->getSolver()->setGravity(0);
 
     loadResources();
@@ -165,7 +165,6 @@ void SingleSide::update(const vec2& playerPos, float dt) {
     }
 
     scene->update();
-    scene->render();
 }
 
 void SingleSide::clear() {
