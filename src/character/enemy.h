@@ -22,6 +22,7 @@ private:
     Animator* animator;
     std::vector<vec2> path;
     float finishRadius = 0.2;
+    float attacking = 0.0f;  // Timer for attack animation
 
 public:
     Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale, std::string hitSound = "hit");

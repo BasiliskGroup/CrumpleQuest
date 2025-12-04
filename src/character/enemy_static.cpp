@@ -47,10 +47,12 @@ void Enemy::generateTemplates(Game* game) {
         enemy->idleAnimation = game->getAnimation("clipfly_idle");
         enemy->runAnimation = game->getAnimation("clipfly_idle");
         enemy->attackAnimation = game->getAnimation("clipfly_attack");
-        enemy->setWeapon(new ContactWeapon(
+        enemy->setWeapon(new MeleeWeapon(
             enemy, 
             { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
-            { .damage=1, .life=5.0f, .radius=0.25 }
+            { .damage=1, .life=5.0f, .radius=0.25 },
+            0.5f,
+            50.0f // knockback
         ));
         return enemy;
     };
@@ -61,10 +63,12 @@ void Enemy::generateTemplates(Game* game) {
         enemy->idleAnimation = game->getAnimation("integral_idle");
         enemy->runAnimation = game->getAnimation("integral_idle");
         enemy->attackAnimation = game->getAnimation("integral_attack");
-        enemy->setWeapon(new ContactWeapon(
+        enemy->setWeapon(new MeleeWeapon(
             enemy, 
             { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
-            { .damage=1, .life=5.0f, .radius=0.25 }
+            { .damage=1, .life=5.0f, .radius=0.25 },
+            0.5f,
+            50.0f // knockback
         ));
         return enemy;
     };
@@ -79,6 +83,7 @@ void Enemy::generateTemplates(Game* game) {
             enemy, 
             { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
             { .damage=1, .life=5.0f, .radius=0.25 },
+            2.0f,
             50.0f // knockback
         ));
         return enemy;
@@ -93,7 +98,8 @@ void Enemy::generateTemplates(Game* game) {
         enemy->setWeapon(new ProjectileWeapon(
             enemy, 
             { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
-            { .damage=1, .life=5.0f, .radius=0.25 },
+            { .damage=1, .life=5.0f, .speed=10, .radius=0.25 },
+            2.0f,
             0 // ricochet
         ));
         return enemy;

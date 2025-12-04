@@ -17,8 +17,22 @@ void Enemy::onDamage(int damage) {
 
 void Enemy::move(const vec2& playerPos, float dt) {
     animator->update();
+    
+    // Update weapon cooldown
+    if (weapon != nullptr) {
+        weapon->update(dt);
+    }
+    
+    // Update attack animation timer
+    if (attacking > 0.0f) {
+        attacking -= dt;
+    }
 
-    if (glm::length2(moveDir) < 0.01) {
+    // Set animation based on state: attack > movement
+    if (attacking > 0.0f && attackAnimation != nullptr) {
+        animator->setAnimation(attackAnimation);
+    }
+    else if (glm::length2(moveDir) < 0.01) {
         animator->setAnimation(idleAnimation);
     }
     else {
@@ -50,8 +64,22 @@ void Enemy::move(const vec2& playerPos, float dt) {
         }
     }
 
-    // we have direct line of sight
-    if (path.size() == 1) {
+    // we have direct line of sight if there are exactly 2 unique waypoints
+    // (enemy position -> waypoint -> player position)
+    bool hasLineOfSight = false;
+    if (path.size() >= 2) {
+        // Check if the first two waypoints are unique (not the same position)
+        vec2 firstWaypoint = path[0];
+        vec2 secondWaypoint = path[1];
+        float epsilon = 1e-6f;
+        if (glm::length2(firstWaypoint - secondWaypoint) > epsilon * epsilon) {
+            hasLineOfSight = true;
+        }
+    } else {
+        hasLineOfSight = true;
+    }
+    
+    if (hasLineOfSight) {
         attack(playerPos, dt); 
     }
 
@@ -69,7 +97,16 @@ void Enemy::attack(const vec2& playerPos, float dt) {
     dir = glm::normalize(dir);
 
     vec2 offset = radius / 2 * dir + getPosition();
-    weapon->attack(offset, dir);
+    bool attackSuccessful = weapon->attack(offset, dir);
+    
+    // If attack was successful (weapon was off cooldown), set attack animation duration
+    if (attackSuccessful && attackAnimation != nullptr) {
+        // Calculate attack animation duration: number of frames * time per frame
+        // Animator frame rate is 8 fps, so timePerFrame = 1.0 / 8 = 0.125
+        float timePerFrame = 1.0f / 8.0f;  // Match the animator's frame rate
+        unsigned int numFrames = attackAnimation->getNumberFrames();
+        attacking = numFrames * timePerFrame;
+    }
 }
 
 void Enemy::updateNode(Node2D* newNode) {
