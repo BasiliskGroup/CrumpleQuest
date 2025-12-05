@@ -24,12 +24,16 @@ Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pai
     for (size_t i = 0; i < obst.size(); i++) {
         std::cout << "[Paper::Paper] Obstacle " << i << " has isObstacle=" << obst[i].isObstacle << std::endl;
     }
+    // Update obstacle UVs to match surrounding paperMesh regions
+    paperMeshes.first->updateObstacleUVs(obst);
     paperMeshes.first->regions.insert(paperMeshes.first->regions.begin(), obst.begin(), obst.end());
     std::cout << "[Paper::Paper] After insertion, paperMeshes.first has " << paperMeshes.first->regions.size() << " regions" << std::endl;
     paperMeshes.first->regenerateNavmesh();  // Regenerate after adding obstacles
 
     paperMeshes.second = new PaperMesh(region, mesh1);
     obst = PaperMesh::obstacleTemplates[obstacleNames.second]();
+    // Update obstacle UVs to match surrounding paperMesh regions
+    paperMeshes.second->updateObstacleUVs(obst);
     paperMeshes.second->regions.insert(paperMeshes.second->regions.begin(), obst.begin(), obst.end());
     paperMeshes.second->regenerateNavmesh();  // Regenerate after adding obstacles
 
@@ -777,7 +781,7 @@ void Paper::regenerateWalls(int side) {
         auto data = connectSquare(region[i], region[j]);
         selectedSide->addWall(new Node2D(selectedSide->getScene(), { 
             .mesh = game->getMesh("quad"), 
-            .material = game->getMaterial("knight"), 
+            .material = game->getMaterial("empty"), 
             .position = vec2{data.first.x, data.first.y}, 
             .rotation = data.first.z, 
             .scale = data.second,
@@ -929,11 +933,6 @@ void Paper::previewFold(const vec2& start, const vec2& end) {
             nonDegenerateOverhangs.push_back(std::move(pts));
         }
 
-        // Choose base material:
-        //  - no overhangs, within extent, player not in fold -> green (valid)
-        //  - no overhangs, too far      -> red (invalid extent)
-        //  - player in fold              -> yellow (invalid - would fold over player, but show yellow with red square)
-        //  - any overhangs              -> yellow for contained part (with red overlays below)
         const char* baseMatName = nullptr;
         if (hasOverhang) {
             baseMatName = "yellow";
@@ -1156,21 +1155,23 @@ void Paper::toData(std::vector<float>& out) {
             // Interpolate UV in AABB: normalize position to [0, 1] range
             vec2 uv = (pos - aabbMin) / size;
 
+            float uvx = uv.x * 0.5f;
+
             // First side: left half of framebuffer [0, 0.5] x [0, 1]
             out.push_back(pos.x / 10.0f);
             out.push_back(pos.y / 10.0f);
             out.push_back(0.001f);
-            out.push_back(uv.x * 0.5f);  // Map to left half: [0, 0.5]
+            out.push_back(uvx);  // Map to left half: [0, 0.5]
             out.push_back(uv.y);
             out.push_back(0.0f);
             out.push_back(0.0f);
             out.push_back(1.0f);
 
             // Second side: right half of framebuffer [0.5, 1] x [0, 1]
-            out2.push_back(-pos.x / 10.0f);
+            out2.push_back(pos.x / 10.0f);
             out2.push_back(pos.y / 10.0f);
             out2.push_back(-0.001f);
-            out2.push_back((1.0f + uv.x) * 0.5f);  // Map to right half: [0.5, 1]
+            out2.push_back(1.0f - uvx);  // Map to right half: [0.5, 1]
             out2.push_back(uv.y);
             out2.push_back(0.0f);
             out2.push_back(0.0f);

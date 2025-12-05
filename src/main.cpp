@@ -26,6 +26,17 @@ int main() {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
     }
+    
+    std::unordered_map<std::string, std::vector<std::string>> levelNames = {
+        { "notebook", { "level1" } },
+        {"tutorial", { "tutorialLevel" } }
+    };
+    for (auto& [name, levels] : levelNames) {
+        for (std::string& level : levels) {
+            game->addImage(name + "_" + level, new Image("art/maps/" + name + "/" + level + ".png"));
+            game->addMaterial(name + "_" + level, new Material({ 1, 1, 1 }, game->getImage(name + "_" + level)));
+        }
+    }
 
     // Player
     game->addAnimation("player_idle", "art/sprites/player/idle/", 4);

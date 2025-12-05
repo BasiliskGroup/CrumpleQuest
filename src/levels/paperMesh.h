@@ -34,7 +34,13 @@ struct PaperMesh : public DyMesh {
 
     bool hasLineOfSight(const vec2& start, const vec2& end) const;
 
-    std::pair<vec2, vec2> getAABB();
+    std::pair<vec2, vec2> getAABB() const;
+
+    // Update obstacle UVs to match surrounding paperMesh regions
+    void updateObstacleUVs(std::vector<UVRegion>& obstacles);
+
+    // Select a random position that is not in any UVregion marked as isObstacle
+    vec2 getRandomNonObstaclePosition(int maxAttempts = 1000) const;
 };
 
 #endif

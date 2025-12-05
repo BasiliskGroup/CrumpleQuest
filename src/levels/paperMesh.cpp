@@ -1,4 +1,5 @@
 #include "levels/levels.h"
+#include "util/random.h"
 
 PaperMesh::PaperMesh(const std::vector<vec2> verts, Mesh* mesh) 
     : DyMesh(verts, mesh), mesh(nullptr), navmesh(nullptr)
@@ -128,7 +129,7 @@ bool PaperMesh::hasLineOfSight(const vec2& start, const vec2& end) const {
     return true; // No obstacles blocking the line
 }
 
-std::pair<vec2, vec2> PaperMesh::getAABB() {
+std::pair<vec2, vec2> PaperMesh::getAABB() const {
     vec2 bl = vec2{ std::numeric_limits<float>::infinity() };
     vec2 tr = vec2{ -std::numeric_limits<float>::infinity() };
 
@@ -140,4 +141,69 @@ std::pair<vec2, vec2> PaperMesh::getAABB() {
     }
 
     return { bl, tr };
+}
+
+void PaperMesh::updateObstacleUVs(std::vector<UVRegion>& obstacles) {
+    for (UVRegion& obstacle : obstacles) {
+        if (!obstacle.isObstacle || obstacle.positions.empty()) continue;
+        
+        // Find the closest non-obstacle region to sample UVs from
+        const UVRegion* closestRegion = nullptr;
+        float minDistance = std::numeric_limits<float>::max();
+        
+        for (const UVRegion& uvReg : regions) {
+            if (uvReg.isObstacle) continue;  // Skip obstacles
+            
+            // Calculate distance from obstacle's first vertex to this region
+            float dist = uvReg.distance(obstacle.positions[0]);
+            if (dist < minDistance) {
+                minDistance = dist;
+                closestRegion = &uvReg;
+            }
+        }
+        
+        if (closestRegion) {
+            // Update obstacle's basis to match the closest region
+            obstacle.basis = closestRegion->basis;
+            
+            // Calculate the new originUV by sampling from the closest region
+            // at the obstacle's origin position
+            obstacle.originUV = closestRegion->sampleUV(obstacle.positions[0]);
+        }
+    }
+}
+
+vec2 PaperMesh::getRandomNonObstaclePosition(int maxAttempts) const {
+    // Get the bounding box of the mesh
+    auto [bl, tr] = getAABB();
+    
+    // Generate random positions within the AABB and check if they're valid
+    for (int attempt = 0; attempt < maxAttempts; ++attempt) {
+        // Generate a random position within the bounding box
+        vec2 pos = vec2{
+            uniform(bl.x, tr.x),
+            uniform(bl.y, tr.y)
+        };
+        
+        // Check if position is inside the main region
+        if (isPointOutside(pos)) {
+            continue;  // Outside the main region, try again
+        }
+        
+        // Check if position is NOT in any obstacle region
+        bool inObstacle = false;
+        for (const auto& uvRegion : regions) {
+            if (uvRegion.isObstacle && uvRegion.contains(pos)) {
+                inObstacle = true;
+                break;
+            }
+        }
+        
+        if (!inObstacle) {
+            return pos;  // Found a valid position
+        }
+    }
+    
+    // If we couldn't find a valid position after maxAttempts, return center of AABB as fallback
+    return (bl + tr) * 0.5f;
 }
