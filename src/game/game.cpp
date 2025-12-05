@@ -120,8 +120,11 @@ void Game::update(float dt) {
             engine->getMouse()->getWorldX(getScene()->getCamera()), 
             engine->getMouse()->getWorldY(getScene()->getCamera()) 
         };
-    }
+        mousePos.x *= 8.0 / 4.6153;
+        mousePos.y *= 4.5 / 3.492;
+    }    
 
+    
     // update menu events
     MenuManager::Get().handleEvent(mousePos, leftIsDown);
 
