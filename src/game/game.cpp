@@ -19,6 +19,7 @@ Game::Game() :
     musicGroup(0),
     sfxGroup(0)
 {
+    // Floor will be created in startGame() after Paper templates are generated
     this->engine = new Engine(800, 450, "Crumple Quest", false);
     this->engine->setResolution(3200, 1800);
     
@@ -50,7 +51,11 @@ Game::Game() :
 
 Game::~Game() {
     delete player; player = nullptr;
+    // Floor owns all Paper instances, so delete floor first
     delete floor; floor = nullptr;
+    // Paper is now deleted by floor's destructor
+    paper = nullptr;
+    currentSide = nullptr;
 
     // shutdown audio system
     audioManager.Shutdown();
@@ -74,9 +79,6 @@ Game::~Game() {
         delete mesh;
     }
     meshes.clear();
-
-    delete paper; paper = nullptr;
-    currentSide = nullptr;
 
     // Clean up menu scene
     delete menuCamera; menuCamera = nullptr;
@@ -159,6 +161,45 @@ void Game::update(float dt) {
         }
     }
     escapeWasDown = keys->getPressed(GLFW_KEY_ESCAPE);
+
+    // arrow key navigation between rooms
+    if (floor && paper && player && !MenuManager::Get().hasActiveMenu()) {
+        // Up arrow (north, -y)
+        if (keys->getPressed(GLFW_KEY_UP) && !upArrowWasDown) {
+            Paper* adjacentRoom = floor->getAdjacentRoom(0, -1);
+            if (adjacentRoom) {
+                switchToRoom(adjacentRoom, 0, -1);
+            }
+        }
+        upArrowWasDown = keys->getPressed(GLFW_KEY_UP);
+        
+        // Down arrow (south, +y)
+        if (keys->getPressed(GLFW_KEY_DOWN) && !downArrowWasDown) {
+            Paper* adjacentRoom = floor->getAdjacentRoom(0, 1);
+            if (adjacentRoom) {
+                switchToRoom(adjacentRoom, 0, 1);
+            }
+        }
+        downArrowWasDown = keys->getPressed(GLFW_KEY_DOWN);
+        
+        // Left arrow (west, -x)
+        if (keys->getPressed(GLFW_KEY_LEFT) && !leftArrowWasDown) {
+            Paper* adjacentRoom = floor->getAdjacentRoom(-1, 0);
+            if (adjacentRoom) {
+                switchToRoom(adjacentRoom, -1, 0);
+            }
+        }
+        leftArrowWasDown = keys->getPressed(GLFW_KEY_LEFT);
+        
+        // Right arrow (east, +x)
+        if (keys->getPressed(GLFW_KEY_RIGHT) && !rightArrowWasDown) {
+            Paper* adjacentRoom = floor->getAdjacentRoom(1, 0);
+            if (adjacentRoom) {
+                switchToRoom(adjacentRoom, 1, 0);
+            }
+        }
+        rightArrowWasDown = keys->getPressed(GLFW_KEY_RIGHT);
+    }
 
     // folding
     if (!MenuManager::Get().hasActiveMenu())
@@ -265,9 +306,26 @@ void Game::initPaperView() {
 
 // Spawn in player, enemies, etc
 void Game::startGame() {
-    // Create the game paper and switch to it
-    setPaper("empty");
-    paper->regenerateWalls();
+    // Create the floor (this will generate rooms and create Paper instances)
+    if (floor) {
+        delete floor;
+    }
+    floor = new Floor(this);
+    
+    // Get the center room (spawn room) and set it as the current paper
+    Paper* centerPaper = floor->getCenterRoom();
+    if (!centerPaper) {
+        std::cerr << "Error: Center room not found in floor!" << std::endl;
+        return;
+    }
+    
+    this->paper = centerPaper;
+    this->currentSide = this->paper->getSingleSide();
+    
+    // Regenerate PaperView mesh now that paper exists
+    if (paperView) {
+        paperView->regenerateMesh();
+    }
 
     // create player
     Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
@@ -276,6 +334,36 @@ void Game::startGame() {
 
     // create weapons
     player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("sword"), .scale={0.75, 0.75}}, { .damage=1, .life=0.2f, .radius=0.75 }, 0.5f, 60.0f));
+}
+
+void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
+    if (!newPaper || !floor || !player) {
+        return;
+    }
+    
+    // Update floor's current position
+    int currentX = floor->getCurrentX();
+    int currentY = floor->getCurrentY();
+    floor->setCurrentPosition(currentX + dx, currentY + dy);
+    
+    // Switch to the new paper
+    this->paper = newPaper;
+    this->currentSide = this->paper->getSingleSide();
+    
+    // Regenerate PaperView mesh
+    if (paperView) {
+        paperView->regenerateMesh();
+    }
+    
+    // Update player nodes to the new room's nodes and update side reference
+    setSideToPaperSide();
+    player->setSide(this->currentSide);
+    
+    // Reset player position to spawn point in new room
+    Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
+    if (playerNode) {
+        player->setPosition(playerNode->getPosition());
+    }
 }
 
 void Game::returnToMainMenu() {
@@ -290,12 +378,14 @@ void Game::processReturnToMainMenu() {
         player = nullptr;
     }
     
-    // Destroy the game scene
-    if (paper) {
-        delete paper;
-        paper = nullptr;
+    // Destroy the floor (this will delete all Paper instances)
+    if (floor) {
+        delete floor;
+        floor = nullptr;
     }
     
+    // Paper is owned by floor, so it's already deleted
+    paper = nullptr;
     currentSide = nullptr;
     
     // Clear all menus and return to main menu
