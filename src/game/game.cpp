@@ -44,7 +44,7 @@ Game::Game() :
     // Create menu scene
     menuScene = new Scene2D(engine);
     menuCamera = new StaticCamera2D(engine);
-    menuCamera->setScale(9.0f);
+    menuCamera->setScale(12.0f, 9.0f);
     menuScene->setCamera(menuCamera);
     menuScene->getSolver()->setGravity(0);
 }

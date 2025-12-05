@@ -21,11 +21,15 @@ int main() {
     // ------------------------------------------
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug", "john", "blue", "darkred" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug", "john", "blue", "darkred", "notebook" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
     }
+    
+    // Load notebook background from art/assets
+    game->addImage("notebook", new Image("art/assets/notebook.PNG"));
+    game->addMaterial("notebook", new Material({ 1, 1, 1 }, game->getImage("notebook")));
     
     std::unordered_map<std::string, std::vector<std::string>> levelNames = {
         { "notebook", { "level1" } },

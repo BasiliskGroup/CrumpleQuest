@@ -75,8 +75,8 @@ Menu* MenuManager::createMainMenu() {
     // Create background (clickable to play paper touch sound)
     Button* background = new Button(game->getMenuScene(), game, {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("paper"),
-        .scale = {16, 9}
+        .material = game->getMaterial("notebook"),
+        .scale = {12, 9}
     },
     {
         .onDown = [this]() {
@@ -90,15 +90,15 @@ Menu* MenuManager::createMainMenu() {
     Node2D* title = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
         .material = game->getMaterial("paper"),
-        .position = {0, 3},
-        .scale = {6, 2}
+        .position = {0, 3.0},
+        .scale = {5, 1.5}
     });
     title->setLayer(0.2f);
     mainMenu->addNode(title);
 
     // Button layout
-    float buttonY = 0.5f;
-    float buttonSpacing = 3.0f;
+    float buttonY = 0.0f;
+    float buttonSpacing = 2.5f;
     float buttonWidth = 2.0f;
     float buttonHeight = 1.0f;
 
@@ -166,8 +166,8 @@ Menu* MenuManager::createSettingsMenu() {
     // Create background (clickable to play paper touch sound)
     Button* background = new Button(game->getMenuScene(), game, {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("box"),
-        .scale = {16, 9}
+        .material = game->getMaterial("notebook"),
+        .scale = {12, 9}
     },
     {
         .onDown = [this]() {
@@ -181,19 +181,19 @@ Menu* MenuManager::createSettingsMenu() {
     Node2D* title = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
         .material = game->getMaterial("lightGrey"),
-        .position = {0, 3},
+        .position = {0, 3.5},
         .scale = {4, 1.5}
     });
     title->setLayer(0.5f);
     settingsMenu->addNode(title);
 
     // Sliders layout
-    float sliderStartY = 1.5f;
+    float sliderStartY = 2.0f;
     float sliderSpacing = 1.2f;
-    float iconX = -3.5f;
-    float sliderMinX = -2.5f;
-    float sliderMaxX = 2.5f;
-    float iconSize = 0.4f;
+    float iconX = -4.5f;
+    float sliderMinX = -3.5f;
+    float sliderMaxX = 3.5f;
+    float iconSize = 0.5f;
     
     // Master volume slider
     Node2D* masterIcon = new Node2D(game->getMenuScene(), {
@@ -271,8 +271,8 @@ Menu* MenuManager::createSettingsMenu() {
             {
                 .mesh = game->getMesh("quad"),
                 .material = game->getMaterial("lightGrey"),
-                .position = {0, -2},
-                .scale = {3, 1}
+                .position = {0, -2.0},
+                .scale = {3.5, 1.0}
             },
             {
                 .onUp = [this]() {
@@ -289,8 +289,8 @@ Menu* MenuManager::createSettingsMenu() {
         {
             .mesh = game->getMesh("quad"),
             .material = game->getMaterial("box"),
-            .position = {0, game->getPaper() != nullptr ? -3.5f : -3},
-            .scale = {2, 1}
+            .position = {0, game->getPaper() != nullptr ? -3.5f : -3.0},
+            .scale = {2.5, 1.0}
         },
         {
             .onUp = [this]() {
