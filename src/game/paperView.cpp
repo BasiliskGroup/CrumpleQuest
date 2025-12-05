@@ -163,12 +163,19 @@ void PaperView::update(Paper* paper) {
 
     // Paper transtions
     if (transitionTimer > 0.0f) {
+        // Play outgoing paper sound at the start of transition
+        if (transitionTimer >= transitionDuration - engine->getDeltaTime()) {
+            audio::SFXPlayer::Get().Play("slide");
+        }
+        
         transitionTimer -= engine->getDeltaTime();
         if (transitionTimer < 0.0f) {
             std::cout << "[PaperView] Transition complete: dx=" << transitionDirection.x << ", dy=" << transitionDirection.y << std::endl;
             // Just update visual position - room switch already happened
             paperPosition = glm::vec3(0.0 - transitionDirection.x * transitionDistance, -1.0, 0.544 - transitionDirection.y * transitionDistance);
             transitionTarget = glm::vec3(0.0, 0.1386, 0.544);
+            // Play incoming paper sound when new paper starts moving in
+            audio::SFXPlayer::Get().Play("pickup");
             // Don't call switchToRoom again - it was already called immediately
         }        
     }
@@ -347,9 +354,6 @@ void PaperView::regenerateMesh() {
 
 void PaperView::switchToRoom(Paper* paper, int dx, int dy) {
     std::cout << "[PaperView] switchToRoom called: dx=" << dx << ", dy=" << dy << std::endl;
-    
-    // Play paper slide sound for transition
-    audio::SFXPlayer::Get().Play("slide");
     
     // Store transition info but don't switch room yet - wait for transition
     transitionDirection = {dx, dy};
