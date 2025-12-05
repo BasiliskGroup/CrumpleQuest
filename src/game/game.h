@@ -45,6 +45,10 @@ private:
 
     bool kWasDown = false;
     bool escapeWasDown = false;
+    bool upArrowWasDown = false;
+    bool downArrowWasDown = false;
+    bool leftArrowWasDown = false;
+    bool rightArrowWasDown = false;
 
     // Mouse tracking for velocity-based sounds
     vec2 lastFoldMousePos;
@@ -115,6 +119,7 @@ public:
     // game flow
     void startGame();
     void returnToMainMenu();
+    void switchToRoom(Paper* newPaper, int dx, int dy);
 
     void update(float dt);
 };

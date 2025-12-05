@@ -11,13 +11,14 @@ void Paper::generateTemplates(Game* game) {
 
     templates["empty"] = [game]() {
         return new Paper(game->getMesh("paper0"), game->getMesh("paper1"), 
-        {
-            vec2{ 6.0,  4.5}, 
-            vec2{-6.0,  4.5}, 
-            vec2{-6.0, -4.5}, 
-            vec2{ 6.0, -4.5}
-        }, 
-        { "empty0", "empty1" }, { "squareMiddle", "empty" });
+        {vec2{ 6.0,  4.5},vec2{-6.0,  4.5},vec2{-6.0, -4.5},vec2{ 6.0, -4.5} }, 
+        { "empty0", "empty1" }, { "empty", "empty" });
+    };
+
+    templates["squareMiddle"] = [game]() {
+        return new Paper(game->getMesh("paper0"), game->getMesh("paper1"), 
+        {vec2{ 6.0,  4.5},vec2{-6.0,  4.5},vec2{-6.0, -4.5},vec2{ 6.0, -4.5} }, 
+        { "empty0", "empty1" }, { "squareMiddle", "squareMiddle" });
     };
 
     // ---------------------
@@ -29,10 +30,10 @@ void Paper::generateTemplates(Game* game) {
             "empty"
         }},
         {BASIC_ROOM, {
-
+            "squareMiddle"
         }},
         {BOSS_ROOM, {
-
+            "squareMiddle"
         }}
     };
 }
