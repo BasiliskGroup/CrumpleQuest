@@ -62,6 +62,13 @@ public:
     void Play();
     
     /**
+     * @brief Play a random sound with specific volume
+     * 
+     * @param volume Volume level (0.0 to 1.0)
+     */
+    void PlayWithVolume(float volume);
+    
+    /**
      * @brief Stop all currently playing sounds from this container
      */
     void StopAll();

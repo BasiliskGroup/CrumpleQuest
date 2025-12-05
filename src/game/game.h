@@ -51,6 +51,11 @@ private:
     bool leftArrowWasDown = false;
     bool rightArrowWasDown = false;
 
+    // Mouse tracking for velocity-based sounds
+    vec2 lastFoldMousePos;
+    float lastFoldSoundTime = 0.0f;
+    float elapsedTime = 0.0f;
+
     // menu management
     bool pendingReturnToMainMenu = false;
 

@@ -28,6 +28,13 @@ void SFXPlayer::Initialize(GroupHandle sfx_group) {
     foldEndConfig.pitchMin = 0.9f;
     foldEndConfig.pitchMax = 1.1f;
     LoadCollection("fold_end", "sounds/sfx/paper/move_sounds", foldEndConfig);
+
+    // Load fold end sounds
+    RandomSoundContainerConfig rotateConfig;
+    rotateConfig.avoidRepeat = true;
+    rotateConfig.pitchMin = 0.9f;
+    rotateConfig.pitchMax = 1.1f;
+    LoadCollection("rotate", "sounds/sfx/paper/move_sounds", rotateConfig);
     
     // Load flip sounds
     RandomSoundContainerConfig flipConfig;
@@ -93,6 +100,10 @@ void SFXPlayer::LoadCollection(const std::string& name,
 }
 
 void SFXPlayer::Play(const std::string& name) {
+    PlayWithVolume(name, 1.0f); // Default full volume
+}
+
+void SFXPlayer::PlayWithVolume(const std::string& name, float volume) {
     if (!initialized_) {
         std::cerr << "SFXPlayer: Not initialized! Call Initialize() first." << std::endl;
         return;
@@ -100,7 +111,7 @@ void SFXPlayer::Play(const std::string& name) {
     
     auto it = containers_.find(name);
     if (it != containers_.end()) {
-        it->second->Play();
+        it->second->PlayWithVolume(volume);
     } else {
         std::cerr << "SFXPlayer: Sound effect '" << name << "' not found" << std::endl;
     }

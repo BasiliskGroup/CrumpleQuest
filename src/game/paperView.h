@@ -28,6 +28,11 @@ class PaperView {
         glm::quat currentRotation;
         glm::quat lastRotation;
         glm::quat targetRotation;
+        
+        // For velocity-based rotation sounds
+        glm::vec2 lastMousePos;
+        float lastSoundTime = 0.0f;
+        float elapsedTime = 0.0f;
 
 
     public:

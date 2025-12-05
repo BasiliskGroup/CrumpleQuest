@@ -49,6 +49,13 @@ public:
      * @param sfx_name Name of the SFX to play (e.g., "fold", "flip", "menu_touch")
      */
     void Play(const std::string& sfx_name);
+    
+    /**
+     * @brief Play a sound effect with specific volume
+     * @param sfx_name Name of the SFX to play
+     * @param volume Volume level (0.0 to 1.0)
+     */
+    void PlayWithVolume(const std::string& sfx_name, float volume);
 };
 
 } // namespace audio
