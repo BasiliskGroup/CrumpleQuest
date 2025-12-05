@@ -21,10 +21,21 @@ int main() {
     // ------------------------------------------
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
+    }
+    
+    std::unordered_map<std::string, std::vector<std::string>> levelNames = {
+        { "notebook", { "level1" } },
+        {"tutorial", { "tutorialLevel" } }
+    };
+    for (auto& [name, levels] : levelNames) {
+        for (std::string& level : levels) {
+            game->addImage(name + "_" + level, new Image("art/maps/" + name + "/" + level + ".PNG"));
+            game->addMaterial(name + "_" + level, new Material({ 1, 1, 1 }, game->getImage(name + "_" + level)));
+        }
     }
 
     // Player
@@ -55,7 +66,7 @@ int main() {
     game->addAnimation("pi_attack", "art/sprites/enemies/ranged/grid_pi/attack/", 7);
 
     // mesh
-    std::vector<std::string> meshNames = { "quad", "paper0", "paper1", "quad3D" };
+    std::vector<std::string> meshNames = { "quad", "paper0", "paper1", "quad3D", "cube"};
     for (std::string& name : meshNames) game->addMesh(name, new Mesh("models/" + name + ".obj"));
 
     // ------------------------------------------

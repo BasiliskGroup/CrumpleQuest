@@ -38,5 +38,12 @@ private:
     float attackRange = 3.0f;  // Range at which to attack
 };
 
+// Wander behavior - moves to random non-obstacle positions
+class WanderBehavior : public Behavior {
+public:
+    void update(Enemy* enemy, const vec2& playerPos, float dt) override;
+    std::string getName() const override { return "Wander"; }
+};
+
 #endif
 
