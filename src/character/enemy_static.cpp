@@ -15,11 +15,15 @@ void Enemy::generateTemplates(Game* game) {
         enemy->idleAnimation = game->getAnimation("glue_idle");
         enemy->runAnimation = game->getAnimation("glue_idle");
         enemy->attackAnimation = game->getAnimation("glue_attack");
+
+        float projectileRadius = 0.5f;
+
         enemy->setWeapon(new ProjectileWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
-            { .damage=1, .life=5.0f, .speed=10, .radius=0.25 },
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ projectileRadius, 2.0f * projectileRadius } }, 
+            { .damage=1, .life=5.0f, .speed=7.0f, .radius=projectileRadius / 2.0f },
             3,
+            { "glueProjectile" },
             0 // ricochet
         ));
 
@@ -47,10 +51,11 @@ void Enemy::generateTemplates(Game* game) {
         enemy->idleAnimation = game->getAnimation("staple_idle");
         enemy->runAnimation = game->getAnimation("staple_idle");
         enemy->attackAnimation = game->getAnimation("staple_attack");
+
         enemy->setWeapon(new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
-            { .damage=1, .life=5.0f, .radius=0.25 },
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ enemy->getRadius(), enemy->getRadius() } }, 
+            { .damage=1, .life=5.0f, .radius=enemy->getRadius() },
             2,
             50.0f // knockback
         ));
@@ -72,10 +77,11 @@ void Enemy::generateTemplates(Game* game) {
         enemy->idleAnimation = game->getAnimation("clipfly_idle");
         enemy->runAnimation = game->getAnimation("clipfly_idle");
         enemy->attackAnimation = game->getAnimation("clipfly_attack");
+
         enemy->setWeapon(new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
-            { .damage=1, .life=5.0f, .radius=0.25 },
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ enemy->getRadius(), enemy->getRadius() } }, 
+            { .damage=1, .life=5.0f, .radius=enemy->getRadius() },
             4.0f,
             50.0f // knockback
         ));
@@ -94,10 +100,11 @@ void Enemy::generateTemplates(Game* game) {
         enemy->idleAnimation = game->getAnimation("integral_idle");
         enemy->runAnimation = game->getAnimation("integral_idle");
         enemy->attackAnimation = game->getAnimation("integral_attack");
+
         enemy->setWeapon(new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
-            { .damage=1, .life=5.0f, .radius=0.25 },
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ enemy->getRadius(), enemy->getRadius() } }, 
+            { .damage=1, .life=5.0f, .radius=enemy->getRadius() },
             7.0f,
             50.0f // knockback
         ));
@@ -120,8 +127,8 @@ void Enemy::generateTemplates(Game* game) {
         enemy->attackAnimation = game->getAnimation("sigma_attack");
         enemy->setWeapon(new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
-            { .damage=1, .life=5.0f, .radius=0.25 },
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ enemy->getRadius(), enemy->getRadius() } }, 
+            { .damage=1, .life=5.0f, .radius=enemy->getRadius() },
             2.0f,
             50.0f // knockback
         ));
@@ -142,11 +149,15 @@ void Enemy::generateTemplates(Game* game) {
         enemy->idleAnimation = game->getAnimation("pi_idle");
         enemy->runAnimation = game->getAnimation("pi_idle");
         enemy->attackAnimation = game->getAnimation("pi_attack");
+
+        float projectileRadius = 1.0f;
+
         enemy->setWeapon(new ProjectileWeapon(
-            enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ 0.25, 0.25 } }, 
-            { .damage=1, .life=5.0f, .speed=10, .radius=0.25 },
+            enemy,  
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ projectileRadius, projectileRadius } }, 
+            { .damage=1, .life=5.0f, .speed=4.0f, .radius=projectileRadius / 2.0f },
             2.0f,
+            { "piProjectile1", "piProjectile2", "piProjectile3", "piProjectile4", "piProjectile5" },
             0 // ricochet
         ));
 

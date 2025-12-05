@@ -31,8 +31,8 @@ public:
     Character(Game* game, int maxHealth, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team, float radius, vec2 scale, std::string damageSound);
     ~Character();
 
-    void onDamage(int damage);
-    void onDeath();
+    virtual void onDamage(int damage);
+    virtual void onDeath();
 
     bool isDead() { return health <= 0; }
 
@@ -44,11 +44,13 @@ public:
     std::string getTeam() { return team; }
     Node2D* getNode() { return node; }
     SingleSide* getSide() { return side; }
+    Game* getGame() { return game; }
 
     vec2 getPosition() { return node->getPosition(); }
     vec3 getVelocity() { return node->getVelocity(); }
     float getRadius() { return radius; }
     vec2& getMoveDir() { return moveDir; }
+    std::string getDamageSound() { return damageSound; }
 
     // setters
     void setMaxMealth(int maxHealth) { this->maxHealth = maxHealth; }

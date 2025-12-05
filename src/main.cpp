@@ -21,7 +21,7 @@ int main() {
     // ------------------------------------------
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug", "john", "blue", "darkred" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug", "john", "blue", "darkred", "circle" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
@@ -37,6 +37,14 @@ int main() {
             game->addMaterial(name + "_" + level, new Material({ 1, 1, 1 }, game->getImage(name + "_" + level)));
         }
     }
+
+    for (int i = 1; i < 6; i++) {
+        game->addImage("piProjectile" + std::to_string(i), new Image("art/sprites/enemies/ranged/grid_pi/projectiles_pi/" + std::to_string(i) + ".PNG"));
+        game->addMaterial("piProjectile" + std::to_string(i), new Material({ 1, 1, 1 }, game->getImage("piProjectile" + std::to_string(i))));
+    }
+
+    game->addImage("glueProjectile", new Image("art/sprites/enemies/ranged/notebook_glue/projectile_glue.PNG"));
+    game->addMaterial("glueProjectile", new Material({ 1, 1, 1 }, game->getImage("glueProjectile")));
 
     // Player
     game->addAnimation("player_idle", "art/sprites/player/idle/", 4);

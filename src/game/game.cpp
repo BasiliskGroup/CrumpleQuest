@@ -311,7 +311,7 @@ void Game::update(float dt) {
         // Always update game scene if it exists (unless menus are active)
         if (!MenuManager::Get().hasActiveMenu()) {
             if (player != nullptr) {
-                currentSide->update(player->getPosition(), dt);
+                currentSide->update(player->getPosition(), dt, player);
                 paper->getBackSide()->update({-100, -100}, dt); // player isn't on that side
             } else {
                 currentSide->update({0, 0}, dt);
@@ -409,11 +409,13 @@ void Game::startGame() {
 
     // create player
     Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
-    Player* player = new Player(this, 3, 3, playerNode, getSide(), nullptr, 1.25, playerNode->getScale());
+    Player* player = new Player(this, 3, 6, playerNode, getSide(), nullptr, 0.6f, playerNode->getScale());
     setPlayer(player);
 
+    float meleeRadius = 1.0f;
+
     // create weapons
-    player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("sword"), .scale={0.75, 0.75}}, { .damage=1, .life=0.2f, .radius=0.75 }, 0.5f, 60.0f));
+    player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("circle"), .scale={meleeRadius, meleeRadius}}, { .damage=1, .life=0.2f, .radius=meleeRadius / 2.0f }, 0.5f, 60.0f));
 }
 
 void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
@@ -426,8 +428,6 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
     // Update floor's current position
     int currentX = floor->getCurrentX();
     int currentY = floor->getCurrentY();
-    std::cout << "[Game] switchToRoom: Current position (" << currentX << ", " << currentY 
-              << "), moving by (" << dx << ", " << dy << ")" << std::endl;
     
     int newX = currentX + dx;
     int newY = currentY + dy;
@@ -436,7 +436,6 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
     // Verify position was set correctly
     int verifyX = floor->getCurrentX();
     int verifyY = floor->getCurrentY();
-    std::cout << "[Game] switchToRoom: Position after update (" << verifyX << ", " << verifyY << ")" << std::endl;
     
     // Switch to the new paper
     this->paper = newPaper;
@@ -448,7 +447,6 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
         // Hide directions initially - they will be revealed if the room is open
         paperView->hideDirectionalNodes();
         // Update minimap to reflect new player position
-        std::cout << "[Game] switchToRoom: Updating minimap" << std::endl;
         paperView->createMinimap();
     }
     
@@ -461,15 +459,14 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
     if (newMesh && (dx != 0 || dy != 0)) {
         // Get AABB center of the new room
         auto aabb = newMesh->getAABB();
-        vec2 aabbCenter = (aabb.first + aabb.second) * 0.5f; // Center = (bl + tr) / 2
+        vec2 aabbCenter = (aabb.first + aabb.second) * 0.5f;
         
         // Calculate direction vector based on where player is coming from
-        // dx, dy represent the direction we're moving TO, so we came FROM the opposite
         vec2 entryDirectionVec = vec2(-dx, -dy);
         float dirLength = glm::length(entryDirectionVec);
         
         if (dirLength > 1e-6f) {
-            vec2 entryDirection = entryDirectionVec / dirLength; // Normalize
+            vec2 entryDirection = entryDirectionVec / dirLength;
             
             // Cast ray from center in the entry direction to find edge intersection
             vec2 edgeIntersection = newMesh->getNearestEdgeIntersection(aabbCenter, entryDirection);

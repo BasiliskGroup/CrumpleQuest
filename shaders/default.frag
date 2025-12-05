@@ -13,9 +13,5 @@ void main() {
 
     vec4 textureValue = texture(uTexture, uv);
 
-    if (textureValue.r == 0.0 && textureValue.g == 1.0 && textureValue.b == 0.0) {
-        discard;
-    }
-
     fragColor = vec4((0.75 + brightness / 4) * textureValue.rgb, textureValue.a);
 } 

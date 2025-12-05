@@ -41,7 +41,8 @@ public:
     Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale, std::string hitSound = "hit");
     ~Enemy() = default;
 
-    void onDamage(int damage);
+    void onDamage(int damage) override;
+    void onDeath() override;
     void updateStatus(const vec2& playerPos);
     virtual void move(const vec2& playerPos, float dt);
     void attack(const vec2& playerPos, float dt);

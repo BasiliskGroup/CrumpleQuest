@@ -35,7 +35,9 @@ bool DamageZone::hit(Character* other) {
     bool isFriendly = (owner->getTeam() == other->getTeam());
 
     // skip damage
-    if ((isSelf && !selfDamage) || (isFriendly && !friendlyDamage)) return false; 
+    if ((isSelf && !selfDamage) || (isFriendly && !friendlyDamage)) {
+        return false; 
+    }
 
     if (onHit) onHit(other);
     other->onDamage(damage);

@@ -22,6 +22,10 @@ void Player::onDamage(int damage) {
     std::cout << "Player Health: " << health << std::endl;
 }
 
+void Player::onDeath() {
+    std::cout << "Player died" << std::endl;
+}
+
 void Player::move(float dt) {
     // if menu open, do nothing
     if (MenuManager::Get().hasActiveMenu()) {

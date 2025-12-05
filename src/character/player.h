@@ -21,7 +21,8 @@ public:
     Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, float radius, vec2 sacle);
     ~Player() = default;
     
-    void onDamage(int damage);
+    void onDamage(int damage) override;
+    void onDeath() override;
     void move(float dt);
 
     Node2D* getNode() { return node; }

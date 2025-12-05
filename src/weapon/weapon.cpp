@@ -21,7 +21,7 @@ void Weapon::update(float dt) {
 }
 
 // --------------------------
-// Weapon subclasses
+// Weapon subclasses    std::vector<std::string> projectileMeshes,
 // --------------------------
 
 ContactWeapon::ContactWeapon(Character* owner, Node2D::Params node, DamageZone::Params params) : Weapon(owner, node, params, 0, 1.0f) {
@@ -36,8 +36,15 @@ MeleeWeapon::MeleeWeapon(Character* owner, Node2D::Params node, DamageZone::Para
     };
 }
 
-ProjectileWeapon::ProjectileWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, int ricochet) : Weapon(owner, node, params, maxCooldown, 100.0f) {
-    damageZoneGen = [owner, node, params, ricochet](const vec2& pos, const vec2& dir) {
-        return new ProjectileZone(owner, node, params, pos, dir, ricochet);
+ProjectileWeapon::ProjectileWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, std::vector<std::string> projectileMaterials, int ricochet) 
+    : Weapon(owner, node, params, maxCooldown, 100.0f), projectileMaterials(projectileMaterials) {
+    damageZoneGen = [this, owner, node, params, ricochet, projectileMaterials](const vec2& pos, const vec2& dir) {
+        std::string materialName = projectileMaterials[materialIndex++ % projectileMaterials.size()];
+        Material* material = owner->getGame()->getMaterial(materialName);
+
+        Node2D::Params projectileNode = node;
+        projectileNode.material = material;
+
+        return new ProjectileZone(owner, projectileNode, params, pos, dir, ricochet);
     };
 }

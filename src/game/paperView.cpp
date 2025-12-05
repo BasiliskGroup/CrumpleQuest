@@ -176,7 +176,10 @@ void PaperView::update(Paper* paper) {
             transitionTarget = glm::vec3(0.0, 0.1386, 0.544);
             // Play incoming paper sound when new paper starts moving in
             audio::SFXPlayer::Get().Play("pickup");
-            // Don't call switchToRoom again - it was already called immediately
+            
+            this->game->switchToRoom(nextPaper, transitionDirection.x, transitionDirection.y);
+            this->regenerateMesh();
+
         }        
     }
 
@@ -344,6 +347,16 @@ void PaperView::regenerateMesh() {
     // Generate mesh data from paper
     std::vector<float> quadVertices;
     paper->toData(quadVertices);
+
+    // std::cout << quadVertices.size() / 8 << std::endl;
+    // int i = 0;
+    // while (i < quadVertices.size()) {
+    //     for (int j = 0; j < 8; j++) {
+    //         std::cout << quadVertices[i + j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    //     i += 8;
+    // }
     
     // Replace VBO and VAO with new data
     delete paperVBO;
@@ -360,9 +373,6 @@ void PaperView::switchToRoom(Paper* paper, int dx, int dy) {
     transitionTimer = transitionDuration;
     transitionTarget = glm::vec3(0.0 + dx * transitionDistance, -1.0, 0.544 + dy * transitionDistance);
     nextPaper = paper;
-    
-    // Switch room immediately for gameplay
-    this->game->switchToRoom(paper, dx, dy);
 }
 
 void PaperView::hideDirectionalNodes() {

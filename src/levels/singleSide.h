@@ -6,6 +6,7 @@
 class Enemy;
 class Game;
 class DamageZone;
+class Player;
 
 class SingleSide {  
 public:
@@ -51,7 +52,7 @@ public:
     void addCollider(std::string name, Collider* collider) { this->colliders[name] = collider; }
 
     void generateNavmesh();
-    void update(const vec2& playerPos, float dt);
+    void update(const vec2& playerPos, float dt, Player* player = nullptr);
     void clearWalls();
     void loadResources();
     void adoptEnemy(Enemy* enemy, SingleSide* fromSide);

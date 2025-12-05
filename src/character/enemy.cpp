@@ -22,6 +22,11 @@ void Enemy::onDamage(int damage) {
     Character::onDamage(damage);
 }
 
+void Enemy::onDeath() {
+    std::cout << "Enemy died" << std::endl;
+    Character::onDeath();
+}
+
 void Enemy::updateStatus(const vec2& playerPos) {
     // Update line of sight status
     statusHasLineOfSight = hasLineOfSight(getPosition(), playerPos);
@@ -107,13 +112,11 @@ void Enemy::attack(const vec2& playerPos, float dt) {
     if (glm::length2(dir) < 1e-6f) return;
     dir = glm::normalize(dir);
 
-    vec2 offset = radius / 2 * dir + getPosition();
+    vec2 offset = radius * dir + getPosition();
     bool attackSuccessful = weapon->attack(offset, dir);
     
     // If attack was successful (weapon was off cooldown), set attack animation duration
     if (attackSuccessful && attackAnimation != nullptr) {
-        // Calculate attack animation duration: number of frames * time per frame
-        // Animator frame rate is 8 fps, so timePerFrame = 1.0 / 8 = 0.125
         float timePerFrame = 1.0f / 8.0f;  // Match the animator's frame rate
         unsigned int numFrames = attackAnimation->getNumberFrames();
         attacking = numFrames * timePerFrame;

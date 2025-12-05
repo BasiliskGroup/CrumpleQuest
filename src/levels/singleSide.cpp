@@ -141,7 +141,7 @@ void SingleSide::generateNavmesh() {
     
 }
 
-void SingleSide::update(const vec2& playerPos, float dt) {
+void SingleSide::update(const vec2& playerPos, float dt, Player* player) {
     // update all damageZones
     // done before enemy update to give a "summoning sickness" for a single frame
     for (int i = 0; i < damageZones.size(); i++) {
@@ -153,13 +153,63 @@ void SingleSide::update(const vec2& playerPos, float dt) {
             damageZones.erase(damageZones.begin() + i--);
             continue;
         }
+    }
 
-        // check collision
+    // Check for collisions between player damage zones and enemy damage zones
+    // This happens before character collision checks
+    for (int i = 0; i < damageZones.size(); i++) {
+        DamageZone* playerZone = damageZones[i];
+        if (!playerZone || playerZone->getOwner()->getTeam() != "Ally") continue;
+
+        for (int j = 0; j < damageZones.size(); j++) {
+            DamageZone* enemyZone = damageZones[j];
+            if (!enemyZone || enemyZone->getOwner()->getTeam() != "Enemy") continue;
+            if (i == j) continue; // Don't check a zone against itself
+
+            // Check collision between the two zones
+            float combinedRadius = playerZone->getRadius() + enemyZone->getRadius();
+            float distSq = glm::length2(playerZone->getPosition() - enemyZone->getPosition());
+            
+            if (distSq <= combinedRadius * combinedRadius) {
+                // Player zone hit enemy zone - remove enemy zone and play sound
+                Character* enemyOwner = enemyZone->getOwner();
+                std::string damageSound = enemyOwner->getDamageSound();
+                
+                if (!damageSound.empty()) {
+                    audio::SFXPlayer::Get().Play(damageSound);
+                }
+                
+                // Remove the enemy zone
+                delete enemyZone; enemyZone = nullptr;
+                damageZones.erase(damageZones.begin() + j);
+                
+                // Adjust indices since we removed an element
+                if (j < i) i--;
+                j--; // Decrement j to account for removed element
+            }
+        }
+    }
+
+    // Now check collisions with characters
+    for (int i = 0; i < damageZones.size(); i++) {
+        DamageZone* zone = damageZones[i];
+
+        // check collision with enemies
         for (int j = 0; j < enemies.size(); j++) {
             Enemy* enemy = enemies[j];
             if (enemy->isDead()) continue; // Skip already dead enemies
-            if (glm::length2(enemy->getPosition() - zone->getPosition()) > (enemy->getRadius() + zone->getRadius())) continue;
+            float combinedRadius = enemy->getRadius() + zone->getRadius();
+            if (glm::length2(enemy->getPosition() - zone->getPosition()) > combinedRadius * combinedRadius) continue;
             zone->hit(enemy);
+        }
+
+        // check collision with player (if player exists and is on this side)
+        if (player != nullptr && !player->isDead()) {
+            float combinedRadius = player->getRadius() + zone->getRadius();
+            float distSq = glm::length2(player->getPosition() - zone->getPosition());
+            if (distSq <= combinedRadius * combinedRadius) {
+                zone->hit(player);
+            }
         }
     }
 

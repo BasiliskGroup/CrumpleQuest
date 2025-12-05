@@ -50,8 +50,15 @@ public:
 };
 
 class ProjectileWeapon : public Weapon {
-public: 
-    ProjectileWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, int ricochet=0);
+private:
+    std::vector<std::string> projectileMaterials;
+    int materialIndex = 0;
+
+public:
+    ProjectileWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, std::vector<std::string> projectileMaterials, int ricochet=0);
+
+    std::vector<std::string> getProjectileMaterials() const { return projectileMaterials; }
+    void setProjectileMaterials(std::vector<std::string> projectileMaterials) { this->projectileMaterials = projectileMaterials; }
 };
 
 #endif
