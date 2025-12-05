@@ -106,6 +106,7 @@ public:
 
     // enemies
     void updatePathing(vec2 playerPos);
+    void checkAndSetOpen(); // Check if all enemies are defeated and set isOpen
 
     // DEBUG
     void dotData();

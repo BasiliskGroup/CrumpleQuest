@@ -1,5 +1,6 @@
 #include "game/paperView.h"
 #include "game/game.h"
+#include "levels/floor.h"
 #include "audio/sfx_player.h"
 #include <iostream>
 
@@ -19,6 +20,7 @@ PaperView::PaperView(Game* game): game(game) {
     paperVBO = new VBO(quadVertices);
     paperVAO = new VAO(paperShader, paperVBO);
     paperPosition = glm::vec3(0.0, 0.1386, 0.544);
+    transitionTarget = paperPosition;
 
     // Set up camera
     camera->use(paperShader);
@@ -64,6 +66,32 @@ PaperView::PaperView(Game* game): game(game) {
         Node* token = new Node(scene, {.mesh=game->getMesh("heart"), .material=game->getMaterial("darkred"), .position=pos, .rotation=rotation, .scale={.08, .08, .08}});
         healthTokens.push_back(token);
     }
+
+    transitionDuration = 0.4f;
+    transitionDistance =  3.5f;
+    transitionTimer = 0.0f;
+    transitionState = 0; 
+
+    // create directional nodes
+    glm::vec3 planeNormal = direction;
+    glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 planeRight = glm::cross(worldUp, planeNormal); // NOTE not safe if planeNormal is parallel to worldUp
+    planeRight = glm::normalize(planeRight);
+    glm::vec3 planeUp = glm::normalize(glm::cross(planeNormal, planeRight));
+    float offsetAbove = 0.01f;
+    glm::vec3 offsetVector = -planeNormal * offsetAbove;
+    float quadDistance = 0.5f;
+
+    topBounds = {paperPosition + 2.0f * planeUp * quadDistance + offsetVector, paperPosition + planeUp * quadDistance + offsetVector};
+    bottomBounds = {paperPosition - 2.0f * planeUp * quadDistance + offsetVector, paperPosition - planeUp * quadDistance + offsetVector};
+    rightBounds = {paperPosition + 4.0f * planeRight * quadDistance + offsetVector, paperPosition + 2.0f * planeRight * quadDistance + offsetVector};
+    leftBounds = {paperPosition - 4.0f * planeRight * quadDistance + offsetVector, paperPosition - 2.0f * planeRight * quadDistance + offsetVector};
+    
+    // create directional nodes positioned on the plane
+    topSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=topBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+    bottomSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=bottomBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+    rightSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=rightBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+    leftSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=leftBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
 }
 
 PaperView::~PaperView() {
@@ -132,8 +160,23 @@ glm::vec3 mapToSphere(float x, float y, float width, float height) {
  * 
  */
 void PaperView::update(Paper* paper) {
-    game->getPlayer()->setHealth(game->getPlayer()->getHealth() + engine->getKeyboard()->getPressed(GLFW_KEY_UP) - engine->getKeyboard()->getPressed(GLFW_KEY_DOWN));
 
+    // Paper transtions
+    if (transitionTimer > 0.0f) {
+        transitionTimer -= engine->getDeltaTime();
+        if (transitionTimer < 0.0f) {
+            std::cout << "[PaperView] Transition complete: dx=" << transitionDirection.x << ", dy=" << transitionDirection.y << std::endl;
+            // Just update visual position - room switch already happened
+            paperPosition = glm::vec3(0.0 - transitionDirection.x * transitionDistance, -1.0, 0.544 - transitionDirection.y * transitionDistance);
+            transitionTarget = glm::vec3(0.0, 0.1386, 0.544);
+            // Don't call switchToRoom again - it was already called immediately
+        }        
+    }
+
+    glm::vec3 moveVector = paperPosition - transitionTarget;
+    paperPosition = paperPosition - 3.0f * moveVector * (float)engine->getDeltaTime();
+
+    // Health token transitions
     for (int i = 0; i < 6; i++) {
         Node* token = healthTokens.at(i);
         glm::vec3 targetPosition = healthActivePositions.at(i);
@@ -141,7 +184,7 @@ void PaperView::update(Paper* paper) {
             targetPosition.x += 1;
         }
 
-        glm::vec3 moveVector = token->getPosition() - targetPosition;
+        moveVector = token->getPosition() - targetPosition;
         token->setPosition((token->getPosition() - 5.0f * moveVector * (float)engine->getDeltaTime()));
     }
 
@@ -248,6 +291,35 @@ void PaperView::update(Paper* paper) {
 
     paperModel = glm::translate(glm::mat4(1), paperPosition) * glm::toMat4(currentRotation);
     paperShader->setUniform("uModel", paperModel);
+
+    // Smooth interpolation for directional nodes
+    float nodeSmoothingFactor = 5.0f;
+    float nodeT = glm::clamp(nodeSmoothingFactor * deltaTime, 0.0f, 1.0f);
+    
+    // Interpolate each directional node to its target position
+    if (topSign) {
+        glm::vec3 targetPos = topVisible ? topBounds.second : topBounds.first;
+        glm::vec3 currentPos = topSign->getPosition();
+        topSign->setPosition(glm::mix(currentPos, targetPos, nodeT));
+    }
+    
+    if (bottomSign) {
+        glm::vec3 targetPos = bottomVisible ? bottomBounds.second : bottomBounds.first;
+        glm::vec3 currentPos = bottomSign->getPosition();
+        bottomSign->setPosition(glm::mix(currentPos, targetPos, nodeT));
+    }
+    
+    if (rightSign) {
+        glm::vec3 targetPos = rightVisible ? rightBounds.second : rightBounds.first;
+        glm::vec3 currentPos = rightSign->getPosition();
+        rightSign->setPosition(glm::mix(currentPos, targetPos, nodeT));
+    }
+    
+    if (leftSign) {
+        glm::vec3 targetPos = leftVisible ? leftBounds.second : leftBounds.first;
+        glm::vec3 currentPos = leftSign->getPosition();
+        leftSign->setPosition(glm::mix(currentPos, targetPos, nodeT));
+    }
 }
 
 void PaperView::regenerateMesh() {
@@ -273,3 +345,111 @@ void PaperView::regenerateMesh() {
     paperVAO = new VAO(paperShader, paperVBO);
 }
 
+void PaperView::switchToRoom(Paper* paper, int dx, int dy) {
+    std::cout << "[PaperView] switchToRoom called: dx=" << dx << ", dy=" << dy << std::endl;
+    
+    // Store transition info but don't switch room yet - wait for transition
+    transitionDirection = {dx, dy};
+    transitionTimer = transitionDuration;
+    transitionTarget = glm::vec3(0.0 + dx * transitionDistance, -1.0, 0.544 + dy * transitionDistance);
+    nextPaper = paper;
+    
+    // Switch room immediately for gameplay
+    this->game->switchToRoom(paper, dx, dy);
+}
+
+void PaperView::hideDirectionalNodes() {
+    topVisible = false;
+    bottomVisible = false;
+    leftVisible = false;
+    rightVisible = false;
+}
+
+void PaperView::showDirectionalNodes(bool top, bool bottom, bool left, bool right) {
+    topVisible = top;
+    bottomVisible = bottom;
+    leftVisible = left;
+    rightVisible = right;
+}
+
+void PaperView::createMinimap() {
+    // Clear and delete all previous minimap nodes
+    for (auto& row : minimapNodes) {
+        for (Node* node : row) {
+            if (node) {
+                delete node;
+            }
+        }
+    }
+    minimapNodes.clear();
+    
+    // Get the floor from game
+    Floor* floor = game->getFloor();
+    if (!floor) {
+        return; // No floor available
+    }
+    
+    // Resize minimapNodes to match floor dimensions
+    minimapNodes.resize(FLOOR_WIDTH);
+    for (auto& row : minimapNodes) {
+        row.resize(FLOOR_WIDTH, nullptr);
+    }
+    
+    // Calculate spacing between cubes
+    float cubeSize = minimapScale;
+    float totalSpacing = 2 * cubeSize + minimapSpacing;
+    
+    // Calculate offset to center the minimap (since floor is 7x7, center is at 3,3)
+    int centerX = FLOOR_WIDTH / 2;
+    int centerY = FLOOR_WIDTH / 2;
+    
+    // Get current player position
+    int currentX = floor->getCurrentX();
+    int currentY = floor->getCurrentY();
+    std::cout << "[Minimap] Creating minimap - Player at (" << currentX << ", " << currentY << ")" << std::endl;
+    
+    // Create cubes for each room in the playMap
+    for (int x = 0; x < FLOOR_WIDTH; x++) {
+        for (int y = 0; y < FLOOR_WIDTH; y++) {
+            RoomTypes roomType = floor->getRoomType(x, y);
+            
+            // Only create a cube if there's a room (not NULL_ROOM)
+            if (roomType != NULL_ROOM) {
+                // Calculate position relative to minimap center
+                float offsetX = (x - centerX) * totalSpacing;
+                float offsetZ = (y - centerY) * totalSpacing;
+                
+                glm::vec3 offset = glm::vec3(-offsetX, 0.0f, -offsetZ);
+                
+                // Rotate the offset around Y-axis by 10 degrees
+                glm::quat rotation = glm::angleAxis(glm::radians(-10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                glm::vec3 rotatedOffset = rotation * offset;
+                
+                glm::vec3 position = minimapCenter + rotatedOffset;
+                
+                // Determine material based on room type and position
+                Material* material = game->getMaterial("lightGrey"); // Default
+                
+                // Check if this is the current player room
+                if (x == currentX && y == currentY) {
+                    material = game->getMaterial("blue");
+                }
+                // Check if this is the boss room
+                else if (roomType == BOSS_ROOM) {
+                    material = game->getMaterial("darkred");
+                }
+                
+                // Create cube node with appropriate material
+                Node* cube = new Node(scene, {
+                    .mesh = game->getMesh("cube"),
+                    .material = material,
+                    .position = position,
+                    .rotation = rotation,
+                    .scale = {minimapScale, minimapScale, minimapScale}
+                });
+                
+                minimapNodes[x][y] = cube;
+            }
+        }
+    }
+}

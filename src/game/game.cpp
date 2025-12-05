@@ -109,7 +109,7 @@ void Game::update(float dt) {
         pathTimer = maxPathTimer;
     }
 
-    // get mouse state
+    // get mouse statewa
     bool rightIsDown = engine->getMouse()->getRightDown();
     bool leftIsDown = engine->getMouse()->getLeftDown();
     vec2 mousePos = { 0, 0 };
@@ -135,7 +135,7 @@ void Game::update(float dt) {
 
     // keyboard
     auto keys = this->engine->getKeyboard();
-    if (keys->getPressed(GLFW_KEY_F) && kWasDown == false) {
+    if (keys->getPressed(GLFW_KEY_SPACE) && kWasDown == false) {
         if (paper) {
             bool unfolded = paper->unfold(player->getPosition());
             if (unfolded) {
@@ -144,7 +144,7 @@ void Game::update(float dt) {
             }
         }
     }
-    kWasDown = keys->getPressed(GLFW_KEY_F);
+    kWasDown = keys->getPressed(GLFW_KEY_SPACE);
     
     // reset geometry (r key)
     if (keys->getPressed(GLFW_KEY_R) && rWasDown == false && !MenuManager::Get().hasActiveMenu()) {
@@ -176,44 +176,8 @@ void Game::update(float dt) {
     }
     escapeWasDown = keys->getPressed(GLFW_KEY_ESCAPE);
 
-    // arrow key navigation between rooms
-    if (floor && paper && player && !MenuManager::Get().hasActiveMenu()) {
-        // Up arrow (north, -y)
-        if (keys->getPressed(GLFW_KEY_UP) && !upArrowWasDown) {
-            Paper* adjacentRoom = floor->getAdjacentRoom(0, -1);
-            if (adjacentRoom) {
-                switchToRoom(adjacentRoom, 0, -1);
-            }
-        }
-        upArrowWasDown = keys->getPressed(GLFW_KEY_UP);
-        
-        // Down arrow (south, +y)
-        if (keys->getPressed(GLFW_KEY_DOWN) && !downArrowWasDown) {
-            Paper* adjacentRoom = floor->getAdjacentRoom(0, 1);
-            if (adjacentRoom) {
-                switchToRoom(adjacentRoom, 0, 1);
-            }
-        }
-        downArrowWasDown = keys->getPressed(GLFW_KEY_DOWN);
-        
-        // Left arrow (west, -x)
-        if (keys->getPressed(GLFW_KEY_LEFT) && !leftArrowWasDown) {
-            Paper* adjacentRoom = floor->getAdjacentRoom(-1, 0);
-            if (adjacentRoom) {
-                switchToRoom(adjacentRoom, -1, 0);
-            }
-        }
-        leftArrowWasDown = keys->getPressed(GLFW_KEY_LEFT);
-        
-        // Right arrow (east, +x)
-        if (keys->getPressed(GLFW_KEY_RIGHT) && !rightArrowWasDown) {
-            Paper* adjacentRoom = floor->getAdjacentRoom(1, 0);
-            if (adjacentRoom) {
-                switchToRoom(adjacentRoom, 1, 0);
-            }
-        }
-        rightArrowWasDown = keys->getPressed(GLFW_KEY_RIGHT);
-    }
+    // Automatic room switching based on AABB boundary crossing
+    // (Arrow key navigation removed - now automatic when crossing boundaries)
 
     // folding
     if (!MenuManager::Get().hasActiveMenu())
@@ -280,6 +244,65 @@ void Game::update(float dt) {
         player->move(dt);
     }
 
+    // Automatic room switching based on AABB boundary crossing
+    if (floor && paper && player && !MenuManager::Get().hasActiveMenu()) {
+        vec2 playerPos = player->getPosition();
+        vec3 playerVel = player->getVelocity();
+        PaperMesh* currentMesh = (paper->curSide == 0) ? paper->paperMeshes.first : paper->paperMeshes.second;
+        auto aabb = currentMesh->getAABB();
+        
+        vec2 bl = aabb.first;
+        vec2 tr = aabb.second;
+        
+        // Check boundaries with 1 unit padding for detection
+        // Only switch if there's a room in that direction AND player is moving outwards
+        // This prevents getting caught between room transitions
+        // Also check if transition is already in progress to prevent multiple calls
+        if (paperView && paperView->isTransitioning()) {
+            // Transition already in progress, skip boundary checks
+        } else if (playerPos.x < bl.x - 1.0f && playerVel.x < 0.0f) {
+            // Left boundary crossed (west) and moving left
+            std::cout << "[Game] Left boundary crossed, checking adjacent room..." << std::endl;
+            Paper* adjacentRoom = floor->getAdjacentRoom(-1, 0);
+            if (adjacentRoom) {
+                std::cout << "[Game] Switching to room at (-1, 0)" << std::endl;
+                paperView->switchToRoom(adjacentRoom, -1, 0);
+            } else {
+                std::cout << "[Game] No adjacent room found at (-1, 0)" << std::endl;
+            }
+        } else if (playerPos.x > tr.x + 1.0f && playerVel.x > 0.0f) {
+            // Right boundary crossed (east) and moving right
+            std::cout << "[Game] Right boundary crossed, checking adjacent room..." << std::endl;
+            Paper* adjacentRoom = floor->getAdjacentRoom(1, 0);
+            if (adjacentRoom) {
+                std::cout << "[Game] Switching to room at (1, 0)" << std::endl;
+                paperView->switchToRoom(adjacentRoom, 1, 0);
+            } else {
+                std::cout << "[Game] No adjacent room found at (1, 0)" << std::endl;
+            }
+        } else if (playerPos.y < bl.y - 1.0f && playerVel.y < 0.0f) {
+            // Bottom boundary crossed (south, +y direction) and moving down
+            std::cout << "[Game] Bottom boundary crossed, checking adjacent room..." << std::endl;
+            Paper* adjacentRoom = floor->getAdjacentRoom(0, 1);
+            if (adjacentRoom) {
+                std::cout << "[Game] Switching to room at (0, 1)" << std::endl;
+                paperView->switchToRoom(adjacentRoom, 0, 1);
+            } else {
+                std::cout << "[Game] No adjacent room found at (0, 1)" << std::endl;
+            }
+        } else if (playerPos.y > tr.y + 1.0f && playerVel.y > 0.0f) {
+            // Top boundary crossed (north, -y direction) and moving up
+            std::cout << "[Game] Top boundary crossed, checking adjacent room..." << std::endl;
+            Paper* adjacentRoom = floor->getAdjacentRoom(0, -1);
+            if (adjacentRoom) {
+                std::cout << "[Game] Switching to room at (0, -1)" << std::endl;
+                paperView->switchToRoom(adjacentRoom, 0, -1);
+            } else {
+                std::cout << "[Game] No adjacent room found at (0, -1)" << std::endl;
+            }
+        }
+    }
+
     // basilisk update
     engine->update();
     
@@ -293,6 +316,24 @@ void Game::update(float dt) {
             } else {
                 currentSide->update({0, 0}, dt);
                 paper->getBackSide()->update({-100, -100}, dt);
+            }
+            
+            // Check if all enemies are defeated and set isOpen
+            if (paper) {
+                paper->checkAndSetOpen();
+                
+                // If paper is open, reveal all valid adjacent room directions
+                if (paper->isOpen && floor && paperView) {
+                    bool topValid = floor->getAdjacentRoom(0, -1) != nullptr;
+                    bool bottomValid = floor->getAdjacentRoom(0, 1) != nullptr;
+                    bool leftValid = floor->getAdjacentRoom(1, 0) != nullptr;
+                    bool rightValid = floor->getAdjacentRoom(-1, 0) != nullptr;
+                    
+                    paperView->showDirectionalNodes(topValid, bottomValid, leftValid, rightValid);
+                } else if (paper && floor && paperView && !paper->isOpen) {
+                    // Hide all directions if paper is not open
+                    paperView->hideDirectionalNodes();
+                }
             }
         }
         // Game scene is paused if menus are active, but still rendered
@@ -341,6 +382,9 @@ void Game::startGame() {
         delete floor;
     }
     floor = new Floor(this);
+
+    // Load minimap
+    paperView->createMinimap();
     
     // Get the center room (spawn room) and set it as the current paper
     Paper* centerPaper = floor->getCenterRoom();
@@ -368,13 +412,25 @@ void Game::startGame() {
 
 void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
     if (!newPaper || !floor || !player) {
+        std::cout << "[Game] switchToRoom: Invalid parameters (newPaper=" << (newPaper ? "valid" : "null") 
+                  << ", floor=" << (floor ? "valid" : "null") << ", player=" << (player ? "valid" : "null") << ")" << std::endl;
         return;
     }
     
     // Update floor's current position
     int currentX = floor->getCurrentX();
     int currentY = floor->getCurrentY();
-    floor->setCurrentPosition(currentX + dx, currentY + dy);
+    std::cout << "[Game] switchToRoom: Current position (" << currentX << ", " << currentY 
+              << "), moving by (" << dx << ", " << dy << ")" << std::endl;
+    
+    int newX = currentX + dx;
+    int newY = currentY + dy;
+    floor->setCurrentPosition(newX, newY);
+    
+    // Verify position was set correctly
+    int verifyX = floor->getCurrentX();
+    int verifyY = floor->getCurrentY();
+    std::cout << "[Game] switchToRoom: Position after update (" << verifyX << ", " << verifyY << ")" << std::endl;
     
     // Switch to the new paper
     this->paper = newPaper;
@@ -383,16 +439,54 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
     // Regenerate PaperView mesh
     if (paperView) {
         paperView->regenerateMesh();
+        // Hide directions initially - they will be revealed if the room is open
+        paperView->hideDirectionalNodes();
+        // Update minimap to reflect new player position
+        std::cout << "[Game] switchToRoom: Updating minimap" << std::endl;
+        paperView->createMinimap();
     }
     
     // Update player nodes to the new room's nodes and update side reference
     setSideToPaperSide();
     player->setSide(this->currentSide);
     
-    // Reset player position to spawn point in new room
-    Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
-    if (playerNode) {
-        player->setPosition(playerNode->getPosition());
+    // Calculate spawn position based on entry direction using raycast
+    PaperMesh* newMesh = (paper->curSide == 0) ? paper->paperMeshes.first : paper->paperMeshes.second;
+    if (newMesh && (dx != 0 || dy != 0)) {
+        // Get AABB center of the new room
+        auto aabb = newMesh->getAABB();
+        vec2 aabbCenter = (aabb.first + aabb.second) * 0.5f; // Center = (bl + tr) / 2
+        
+        // Calculate direction vector based on where player is coming from
+        // dx, dy represent the direction we're moving TO, so we came FROM the opposite
+        vec2 entryDirectionVec = vec2(-dx, -dy);
+        float dirLength = glm::length(entryDirectionVec);
+        
+        if (dirLength > 1e-6f) {
+            vec2 entryDirection = entryDirectionVec / dirLength; // Normalize
+            
+            // Cast ray from center in the entry direction to find edge intersection
+            vec2 edgeIntersection = newMesh->getNearestEdgeIntersection(aabbCenter, entryDirection);
+            
+            // Move spawn point slightly inside from the edge (0.5 units inward)
+            vec2 spawnDirection = -entryDirection; // Point inward from edge
+            float spawnOffset = 0.5f;
+            vec2 spawnPosition = edgeIntersection + spawnDirection * spawnOffset;
+            
+            player->setPosition(spawnPosition);
+        } else {
+            // Fallback if direction is invalid
+            Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
+            if (playerNode) {
+                player->setPosition(playerNode->getPosition());
+            }
+        }
+    } else {
+        // Fallback to default spawn point if mesh not available or no direction
+        Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
+        if (playerNode) {
+            player->setPosition(playerNode->getPosition());
+        }
     }
 }
 

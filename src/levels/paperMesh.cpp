@@ -129,11 +129,25 @@ bool PaperMesh::hasLineOfSight(const vec2& start, const vec2& end) const {
     return true; // No obstacles blocking the line
 }
 
-std::pair<vec2, vec2> PaperMesh::getAABB() const {
+std::pair<vec2, vec2> PaperMesh::getOriginalAABB() const {
     vec2 bl = vec2{ std::numeric_limits<float>::infinity() };
     vec2 tr = vec2{ -std::numeric_limits<float>::infinity() };
 
     for (const auto& r : startingRegion) {
+        if (r.x < bl.x) bl.x = r.x;
+        if (r.y < bl.y) bl.y = r.y;
+        if (r.x > tr.x) tr.x = r.x;
+        if (r.y > tr.y) tr.y = r.y;
+    }
+
+    return { bl, tr };
+}
+
+std::pair<vec2, vec2> PaperMesh::getAABB() const {
+    vec2 bl = vec2{ std::numeric_limits<float>::infinity() };
+    vec2 tr = vec2{ -std::numeric_limits<float>::infinity() };
+
+    for (const auto& r : region) {
         if (r.x < bl.x) bl.x = r.x;
         if (r.y < bl.y) bl.y = r.y;
         if (r.x > tr.x) tr.x = r.x;
@@ -175,7 +189,7 @@ void PaperMesh::updateObstacleUVs(std::vector<UVRegion>& obstacles) {
 
 vec2 PaperMesh::getRandomNonObstaclePosition(int maxAttempts) const {
     // Get the bounding box of the mesh
-    auto [bl, tr] = getAABB();
+    auto [bl, tr] = getOriginalAABB();
     
     // Generate random positions within the AABB and check if they're valid
     for (int attempt = 0; attempt < maxAttempts; ++attempt) {

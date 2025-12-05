@@ -30,14 +30,10 @@ Paper::Paper(Game* game, std::pair<std::string, std::string> sideNames, std::pai
 
     paperMeshes.first  = new PaperMesh(region, mesh0);
     auto obst = PaperMesh::obstacleTemplates[obstacleNames.first]();
-    std::cout << "[Paper::Paper] Created " << obst.size() << " obstacles from template '" << obstacleNames.first << "'" << std::endl;
-    for (size_t i = 0; i < obst.size(); i++) {
-        std::cout << "[Paper::Paper] Obstacle " << i << " has isObstacle=" << obst[i].isObstacle << std::endl;
-    }
+
     // Update obstacle UVs to match surrounding paperMesh regions
     paperMeshes.first->updateObstacleUVs(obst);
     paperMeshes.first->regions.insert(paperMeshes.first->regions.begin(), obst.begin(), obst.end());
-    std::cout << "[Paper::Paper] After insertion, paperMeshes.first has " << paperMeshes.first->regions.size() << " regions" << std::endl;
     paperMeshes.first->regenerateNavmesh();  // Regenerate after adding obstacles
 
     paperMeshes.second = new PaperMesh(region, mesh1);
@@ -172,6 +168,8 @@ void Paper::flip() {
 
 void Paper::open() {
     isOpen = true;
+    // Regenerate walls after opening (will skip outer walls since isOpen is true)
+    regenerateWalls();
 }
 
 void Paper::clear() {
@@ -775,19 +773,50 @@ void Paper::regenerateWalls(int side) {
     PaperMesh* selectedMesh = (side == 0) ? paperMeshes.first : paperMeshes.second;
     selectedSide->clearWalls();
 
-    // create outer wall
-    for (int i = 0; i < region.size(); i++) {
-        int j = (i + 1) % region.size();
-        auto data = connectSquare(region[i], region[j]);
-        selectedSide->addWall(new Node2D(selectedSide->getScene(), { 
-            .mesh = game->getMesh("quad"), 
-            .material = game->getMaterial("empty"), 
-            .position = vec2{data.first.x, data.first.y}, 
-            .rotation = data.first.z, 
-            .scale = data.second,
-            .collider = selectedSide->getCollider("quad"),
-            .density = -1
-        }));
+    // create outer wall - use region when closed, AABB when open
+    if (!isOpen) {
+        // Use region polygon when closed
+        for (int i = 0; i < region.size(); i++) {
+            int j = (i + 1) % region.size();
+            auto data = connectSquare(region[i], region[j]);
+            selectedSide->addWall(new Node2D(selectedSide->getScene(), { 
+                .mesh = game->getMesh("quad"), 
+                .material = game->getMaterial("empty"), 
+                .position = vec2{data.first.x, data.first.y}, 
+                .rotation = data.first.z, 
+                .scale = data.second,
+                .collider = selectedSide->getCollider("quad"),
+                .density = -1
+            }));
+        }
+    } else {
+        // Use AABB rectangle when open
+        auto aabb = selectedMesh->getAABB();
+        vec2 bl = aabb.first;   // bottom-left
+        vec2 tr = aabb.second;  // top-right
+        
+        // Create 4 corners of the AABB rectangle
+        vec2 corners[4] = {
+            {bl.x - 2.0f, bl.y - 2.0f},  // bottom-left
+            {tr.x + 2.0f, bl.y - 2.0f},  // bottom-right
+            {tr.x + 2.0f, tr.y + 2.0f},  // top-right
+            {bl.x - 2.0f, tr.y + 2.0f}   // top-left
+        };
+        
+        // Create walls for the 4 edges of the AABB rectangle
+        for (int i = 0; i < 4; i++) {
+            int j = (i + 1) % 4;
+            auto data = connectSquare(corners[i], corners[j]);
+            selectedSide->addWall(new Node2D(selectedSide->getScene(), { 
+                .mesh = game->getMesh("quad"), 
+                .material = game->getMaterial("empty"), 
+                .position = vec2{data.first.x, data.first.y}, 
+                .rotation = data.first.z, 
+                .scale = data.second,
+                .collider = selectedSide->getCollider("quad"),
+                .density = -1
+            }));
+        }
     }
 
     // create inner walls
@@ -814,13 +843,11 @@ void Paper::regenerateWalls(int side) {
 void Paper::resetGeometry() {
     // Only reset if we have creation parameters stored
     if (!hasCreationParams) {
-        std::cout << "[Paper::resetGeometry] No creation parameters stored, cannot reset geometry" << std::endl;
         return;
     }
 
     // Ensure game pointer is set
     if (game == nullptr) {
-        std::cout << "[Paper::resetGeometry] Game pointer is null, cannot reset geometry" << std::endl;
         return;
     }
 
@@ -848,7 +875,6 @@ void Paper::resetGeometry() {
 
     paperMeshes.first  = new PaperMesh(region, mesh0);
     auto obst = PaperMesh::obstacleTemplates[obstacleNames.first]();
-    std::cout << "[Paper::resetGeometry] Created " << obst.size() << " obstacles from template '" << obstacleNames.first << "'" << std::endl;
     // Update obstacle UVs to match surrounding paperMesh regions
     paperMeshes.first->updateObstacleUVs(obst);
     paperMeshes.first->regions.insert(paperMeshes.first->regions.begin(), obst.begin(), obst.end());
@@ -875,8 +901,6 @@ void Paper::resetGeometry() {
 
     // Regenerate walls for both sides
     regenerateWalls();
-
-    std::cout << "[Paper::resetGeometry] Geometry reset complete" << std::endl;
 }
 
 void Paper::dotData() {
@@ -1151,13 +1175,43 @@ void Paper::updatePathing(vec2 playerPos) {
     }
 }
 
+void Paper::checkAndSetOpen() {
+    // Check both sides for alive enemies
+    int aliveEnemies = 0;
+    
+    // Check first side
+    if (sides.first) {
+        for (Enemy* enemy : sides.first->getEnemies()) {
+            if (enemy != nullptr && !enemy->isDead()) {
+                aliveEnemies++;
+            }
+        }
+    }
+    
+    // Check second side
+    if (sides.second) {
+        for (Enemy* enemy : sides.second->getEnemies()) {
+            if (enemy != nullptr && !enemy->isDead()) {
+                aliveEnemies++;
+            }
+        }
+    }
+    
+    // Set isOpen to true if there are no alive enemies on either side
+    if (aliveEnemies == 0 && !isOpen) {
+        isOpen = true;
+        // Regenerate walls after opening (will use AABB instead of region polygon)
+        regenerateWalls();
+    }
+}
+
 void Paper::toData(std::vector<float>& out) {
     out.clear();
     std::vector<float> out2;
 
     std::vector<float> pageData;
     std::vector<vec2> region = paperMeshes.first->region;
-    std::pair<vec2, vec2> aabb = paperMeshes.first->getAABB();
+    std::pair<vec2, vec2> aabb = paperMeshes.first->getOriginalAABB();
     
     // Triangulate region
     std::vector<std::vector<std::array<double, 2>>> polygon;

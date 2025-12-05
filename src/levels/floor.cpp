@@ -153,3 +153,10 @@ void Floor::setCurrentPosition(int x, int y) {
         playerPos = { x, y };
     }
 }
+
+RoomTypes Floor::getRoomType(int x, int y) const {
+    if (x < 0 || x >= FLOOR_WIDTH || y < 0 || y >= FLOOR_WIDTH) {
+        return NULL_ROOM;
+    }
+    return playMap[x][y];
+}

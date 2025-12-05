@@ -103,8 +103,8 @@ void Player::move(float dt) {
     if (mouse->getClicked() == false) return;
 
     vec2 pos = { 
-        mouse->getWorldX(node->getScene()->getCamera()), 
-        mouse->getWorldY(node->getScene()->getCamera())
+        mouse->getWorldX(node->getScene()->getCamera()) * 8.0 / 4.6153, 
+        mouse->getWorldY(node->getScene()->getCamera()) * 4.5 / 3.492
     };
 
     vec2 dir = pos - getPosition();
