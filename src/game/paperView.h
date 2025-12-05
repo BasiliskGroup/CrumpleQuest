@@ -49,6 +49,8 @@ class PaperView {
         void render();
         void renderLevelFBO(Paper* paper);
         void regenerateMesh(); // Regenerate mesh data from current paper
+        
+        Scene* getScene() { return scene; } 
 };
 
 #endif

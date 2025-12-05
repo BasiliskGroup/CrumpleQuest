@@ -64,6 +64,8 @@ PaperView::PaperView(Game* game): game(game) {
         Node* token = new Node(scene, {.mesh=game->getMesh("heart"), .material=game->getMaterial("darkred"), .position=pos, .rotation=rotation, .scale={.08, .08, .08}});
         healthTokens.push_back(token);
     }
+
+    Node* isaacSquare = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position={0.5, 0.5, 0.5}, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
 }
 
 PaperView::~PaperView() {
