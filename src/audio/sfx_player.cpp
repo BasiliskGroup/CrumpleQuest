@@ -84,6 +84,13 @@ void SFXPlayer::Initialize(GroupHandle sfx_group) {
     playerHitConfig.pitchMin = 0.7f;
     playerHitConfig.pitchMax = 0.9f;
     LoadCollection("hit-player", "sounds/sfx/enemy/hit-metal-ring", playerHitConfig);
+    
+    // Load paper slide sounds for room transitions
+    RandomSoundContainerConfig slideConfig;
+    slideConfig.avoidRepeat = true;
+    slideConfig.pitchMin = 0.95f;
+    slideConfig.pitchMax = 1.05f;
+    LoadCollection("slide", "sounds/sfx/paper/slide_sounds", slideConfig);
 }
 
 void SFXPlayer::LoadCollection(const std::string& name, 

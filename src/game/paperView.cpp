@@ -348,6 +348,9 @@ void PaperView::regenerateMesh() {
 void PaperView::switchToRoom(Paper* paper, int dx, int dy) {
     std::cout << "[PaperView] switchToRoom called: dx=" << dx << ", dy=" << dy << std::endl;
     
+    // Play paper slide sound for transition
+    audio::SFXPlayer::Get().Play("slide");
+    
     // Store transition info but don't switch room yet - wait for transition
     transitionDirection = {dx, dy};
     transitionTimer = transitionDuration;
