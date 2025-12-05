@@ -68,6 +68,10 @@ void RandomSoundContainer::LoadFromFolder(const std::string& folderPath) {
 }
 
 void RandomSoundContainer::Play() {
+    PlayWithVolume(1.0f); // Default full volume
+}
+
+void RandomSoundContainer::PlayWithVolume(float volume) {
     if (sounds_.empty()) {
         std::cout << "RandomSoundContainer '" << name_ << "': Cannot play - no sounds loaded" << std::endl;
         return;
@@ -83,6 +87,9 @@ void RandomSoundContainer::Play() {
         float pitch = pitchDist(rng_);
         audio.SetSoundPitch(selected, pitch);
     }
+    
+    // Apply volume
+    audio.SetSoundVolume(selected, volume);
     
     audio.StartSound(selected);
     last_played_ = selected;
