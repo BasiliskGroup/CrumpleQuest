@@ -109,7 +109,7 @@ void Game::update(float dt) {
         pathTimer = maxPathTimer;
     }
 
-    // get mouse state
+    // get mouse statewa
     bool rightIsDown = engine->getMouse()->getRightDown();
     bool leftIsDown = engine->getMouse()->getLeftDown();
     vec2 mousePos = { 0, 0 };
@@ -176,44 +176,8 @@ void Game::update(float dt) {
     }
     escapeWasDown = keys->getPressed(GLFW_KEY_ESCAPE);
 
-    // arrow key navigation between rooms
-    if (floor && paper && player && !MenuManager::Get().hasActiveMenu()) {
-        // Up arrow (north, -y)
-        if (keys->getPressed(GLFW_KEY_UP) && !upArrowWasDown) {
-            Paper* adjacentRoom = floor->getAdjacentRoom(0, -1);
-            if (adjacentRoom) {
-                switchToRoom(adjacentRoom, 0, -1);
-            }
-        }
-        upArrowWasDown = keys->getPressed(GLFW_KEY_UP);
-        
-        // Down arrow (south, +y)
-        if (keys->getPressed(GLFW_KEY_DOWN) && !downArrowWasDown) {
-            Paper* adjacentRoom = floor->getAdjacentRoom(0, 1);
-            if (adjacentRoom) {
-                switchToRoom(adjacentRoom, 0, 1);
-            }
-        }
-        downArrowWasDown = keys->getPressed(GLFW_KEY_DOWN);
-        
-        // Left arrow (west, -x)
-        if (keys->getPressed(GLFW_KEY_LEFT) && !leftArrowWasDown) {
-            Paper* adjacentRoom = floor->getAdjacentRoom(-1, 0);
-            if (adjacentRoom) {
-                switchToRoom(adjacentRoom, -1, 0);
-            }
-        }
-        leftArrowWasDown = keys->getPressed(GLFW_KEY_LEFT);
-        
-        // Right arrow (east, +x)
-        if (keys->getPressed(GLFW_KEY_RIGHT) && !rightArrowWasDown) {
-            Paper* adjacentRoom = floor->getAdjacentRoom(1, 0);
-            if (adjacentRoom) {
-                switchToRoom(adjacentRoom, 1, 0);
-            }
-        }
-        rightArrowWasDown = keys->getPressed(GLFW_KEY_RIGHT);
-    }
+    // Automatic room switching based on AABB boundary crossing
+    // (Arrow key navigation removed - now automatic when crossing boundaries)
 
     // folding
     if (!MenuManager::Get().hasActiveMenu())
@@ -280,6 +244,46 @@ void Game::update(float dt) {
         player->move(dt);
     }
 
+    // Automatic room switching based on AABB boundary crossing
+    if (floor && paper && player && !MenuManager::Get().hasActiveMenu()) {
+        vec2 playerPos = player->getPosition();
+        vec3 playerVel = player->getVelocity();
+        PaperMesh* currentMesh = (paper->curSide == 0) ? paper->paperMeshes.first : paper->paperMeshes.second;
+        auto aabb = currentMesh->getAABB();
+        
+        vec2 bl = aabb.first;   // bottom-left
+        vec2 tr = aabb.second;  // top-right
+        
+        // Check boundaries with 1 unit padding for detection
+        // Only switch if there's a room in that direction AND player is moving outwards
+        // This prevents getting caught between room transitions
+        if (playerPos.x < bl.x - 1.0f && playerVel.x < 0.0f) {
+            // Left boundary crossed (west) and moving left
+            Paper* adjacentRoom = floor->getAdjacentRoom(-1, 0);
+            if (adjacentRoom) {
+                switchToRoom(adjacentRoom, -1, 0);
+            }
+        } else if (playerPos.x > tr.x + 1.0f && playerVel.x > 0.0f) {
+            // Right boundary crossed (east) and moving right
+            Paper* adjacentRoom = floor->getAdjacentRoom(1, 0);
+            if (adjacentRoom) {
+                switchToRoom(adjacentRoom, 1, 0);
+            }
+        } else if (playerPos.y < bl.y - 1.0f && playerVel.y < 0.0f) {
+            // Bottom boundary crossed (south, +y direction) and moving down
+            Paper* adjacentRoom = floor->getAdjacentRoom(0, 1);
+            if (adjacentRoom) {
+                switchToRoom(adjacentRoom, 0, 1);
+            }
+        } else if (playerPos.y > tr.y + 1.0f && playerVel.y > 0.0f) {
+            // Top boundary crossed (north, -y direction) and moving up
+            Paper* adjacentRoom = floor->getAdjacentRoom(0, -1);
+            if (adjacentRoom) {
+                switchToRoom(adjacentRoom, 0, -1);
+            }
+        }
+    }
+
     // basilisk update
     engine->update();
     
@@ -293,6 +297,11 @@ void Game::update(float dt) {
             } else {
                 currentSide->update({0, 0}, dt);
                 paper->getBackSide()->update({-100, -100}, dt);
+            }
+            
+            // Check if all enemies are defeated and set isOpen
+            if (paper) {
+                paper->checkAndSetOpen();
             }
         }
         // Game scene is paused if menus are active, but still rendered
