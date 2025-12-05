@@ -419,4 +419,5 @@ void Game::setSideToPaperSide() {
     this->player->getNode()->setMaterial(getMaterial("empty"));
     this->player->getWeaponNode()->setMaterial(getMaterial("empty"));
     this->player->setNodes(this->currentSide->getPlayerNode(), this->currentSide->getWeaponNode());
+    this->player->setSide(this->currentSide);
 }
