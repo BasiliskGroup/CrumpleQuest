@@ -1161,23 +1161,38 @@ void Paper::toData(std::vector<float>& out) {
             out.push_back(pos.x / 10.0f);
             out.push_back(pos.y / 10.0f);
             out.push_back(0.001f);
+
             out.push_back(uvx);  // Map to left half: [0, 0.5]
             out.push_back(uv.y);
+            
             out.push_back(0.0f);
             out.push_back(0.0f);
             out.push_back(1.0f);
 
+            
+        }
+
+        for (int j = 0; j < 3; j++) {
+            uint32_t idx = indices[i + j];
+            if (idx >= region.size()) continue; // Safety check
+            const vec2& pos = region[idx];
+            
+            // Interpolate UV in AABB: normalize position to [0, 1] range
+            vec2 uv = (pos - aabbMin) / size;
+
+            float uvx = uv.x * 0.5f;
+
             // Second side: right half of framebuffer [0.5, 1] x [0, 1]
-            out2.push_back(pos.x / 10.0f);
-            out2.push_back(pos.y / 10.0f);
-            out2.push_back(-0.001f);
-            out2.push_back(1.0f - uvx);  // Map to right half: [0.5, 1]
-            out2.push_back(uv.y);
-            out2.push_back(0.0f);
-            out2.push_back(0.0f);
-            out2.push_back(1.0f);
+            out.push_back(pos.x / 10.0f);
+            out.push_back(pos.y / 10.0f);
+            out.push_back(-0.001f);
+
+            out.push_back(1.0f - uvx);  // Map to right half: [0.5, 1]
+            out.push_back(uv.y);
+
+            out.push_back(0.0f);
+            out.push_back(0.0f);
+            out.push_back(1.0f);
         }
     }
-
-    out.insert(out.begin(), out2.begin(), out2.end());
 }
