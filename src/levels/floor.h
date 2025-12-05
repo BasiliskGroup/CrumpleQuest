@@ -71,6 +71,7 @@ public:
     int getCurrentY() const { return playerPos.y; }
     Paper* getAdjacentRoom(int dx, int dy) const;
     void setCurrentPosition(int x, int y);
+    RoomTypes getRoomType(int x, int y) const;
 
 private:
     void generateFloor();

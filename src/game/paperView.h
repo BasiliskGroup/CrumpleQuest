@@ -66,6 +66,12 @@ class PaperView {
         bool leftVisible = false;
         bool rightVisible = false;
 
+        // minimap
+        std::vector<std::vector<Node*>> minimapNodes;
+        vec3 minimapCenter={-1.4, -0.75, 0.5};
+        float minimapScale=0.03;
+        float minimapSpacing=0.01;
+
     public:
         PaperView(Game* game);
         ~PaperView();
@@ -80,6 +86,9 @@ class PaperView {
         void switchToRoom(Paper* paper, int dx, int dy);
         void hideDirectionalNodes();
         void showDirectionalNodes(bool top, bool bottom, bool left, bool right);
+
+        void createMinimap();
+        bool isTransitioning() const { return transitionTimer > 0.0f; }
 };
 
 #endif

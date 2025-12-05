@@ -1,5 +1,6 @@
 #include "game/paperView.h"
 #include "game/game.h"
+#include "levels/floor.h"
 #include "audio/sfx_player.h"
 #include <iostream>
 
@@ -69,8 +70,8 @@ PaperView::PaperView(Game* game): game(game) {
     transitionDuration = 0.4f;
     transitionDistance =  3.5f;
     transitionTimer = 0.0f;
-    transitionState = 0;
-    
+    transitionState = 0; 
+
     // create directional nodes
     glm::vec3 planeNormal = direction;
     glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -164,9 +165,11 @@ void PaperView::update(Paper* paper) {
     if (transitionTimer > 0.0f) {
         transitionTimer -= engine->getDeltaTime();
         if (transitionTimer < 0.0f) {
+            std::cout << "[PaperView] Transition complete: dx=" << transitionDirection.x << ", dy=" << transitionDirection.y << std::endl;
+            // Just update visual position - room switch already happened
             paperPosition = glm::vec3(0.0 - transitionDirection.x * transitionDistance, -1.0, 0.544 - transitionDirection.y * transitionDistance);
             transitionTarget = glm::vec3(0.0, 0.1386, 0.544);
-            this->game->switchToRoom(nextPaper, transitionDirection.x, transitionDirection.y);
+            // Don't call switchToRoom again - it was already called immediately
         }        
     }
 
@@ -343,10 +346,15 @@ void PaperView::regenerateMesh() {
 }
 
 void PaperView::switchToRoom(Paper* paper, int dx, int dy) {
+    std::cout << "[PaperView] switchToRoom called: dx=" << dx << ", dy=" << dy << std::endl;
+    
+    // Store transition info but don't switch room yet - wait for transition
     transitionDirection = {dx, dy};
     transitionTimer = transitionDuration;
     transitionTarget = glm::vec3(0.0 + dx * transitionDistance, -1.0, 0.544 + dy * transitionDistance);
     nextPaper = paper;
+    
+    // Switch room immediately for gameplay
     this->game->switchToRoom(paper, dx, dy);
 }
 
@@ -362,4 +370,86 @@ void PaperView::showDirectionalNodes(bool top, bool bottom, bool left, bool righ
     bottomVisible = bottom;
     leftVisible = left;
     rightVisible = right;
+}
+
+void PaperView::createMinimap() {
+    // Clear and delete all previous minimap nodes
+    for (auto& row : minimapNodes) {
+        for (Node* node : row) {
+            if (node) {
+                delete node;
+            }
+        }
+    }
+    minimapNodes.clear();
+    
+    // Get the floor from game
+    Floor* floor = game->getFloor();
+    if (!floor) {
+        return; // No floor available
+    }
+    
+    // Resize minimapNodes to match floor dimensions
+    minimapNodes.resize(FLOOR_WIDTH);
+    for (auto& row : minimapNodes) {
+        row.resize(FLOOR_WIDTH, nullptr);
+    }
+    
+    // Calculate spacing between cubes
+    float cubeSize = minimapScale;
+    float totalSpacing = 2 * cubeSize + minimapSpacing;
+    
+    // Calculate offset to center the minimap (since floor is 7x7, center is at 3,3)
+    int centerX = FLOOR_WIDTH / 2;
+    int centerY = FLOOR_WIDTH / 2;
+    
+    // Get current player position
+    int currentX = floor->getCurrentX();
+    int currentY = floor->getCurrentY();
+    std::cout << "[Minimap] Creating minimap - Player at (" << currentX << ", " << currentY << ")" << std::endl;
+    
+    // Create cubes for each room in the playMap
+    for (int x = 0; x < FLOOR_WIDTH; x++) {
+        for (int y = 0; y < FLOOR_WIDTH; y++) {
+            RoomTypes roomType = floor->getRoomType(x, y);
+            
+            // Only create a cube if there's a room (not NULL_ROOM)
+            if (roomType != NULL_ROOM) {
+                // Calculate position relative to minimap center
+                float offsetX = (x - centerX) * totalSpacing;
+                float offsetZ = (y - centerY) * totalSpacing;
+                
+                glm::vec3 offset = glm::vec3(offsetX, 0.0f, offsetZ);
+                
+                // Rotate the offset around Y-axis by 10 degrees
+                glm::quat rotation = glm::angleAxis(glm::radians(-10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                glm::vec3 rotatedOffset = rotation * offset;
+                
+                glm::vec3 position = minimapCenter + rotatedOffset;
+                
+                // Determine material based on room type and position
+                Material* material = game->getMaterial("lightGrey"); // Default
+                
+                // Check if this is the current player room
+                if (x == currentX && y == currentY) {
+                    material = game->getMaterial("blue");
+                }
+                // Check if this is the boss room
+                else if (roomType == BOSS_ROOM) {
+                    material = game->getMaterial("darkred");
+                }
+                
+                // Create cube node with appropriate material
+                Node* cube = new Node(scene, {
+                    .mesh = game->getMesh("cube"),
+                    .material = material,
+                    .position = position,
+                    .rotation = rotation,
+                    .scale = {minimapScale, minimapScale, minimapScale}
+                });
+                
+                minimapNodes[x][y] = cube;
+            }
+        }
+    }
 }

@@ -30,14 +30,10 @@ Paper::Paper(Game* game, std::pair<std::string, std::string> sideNames, std::pai
 
     paperMeshes.first  = new PaperMesh(region, mesh0);
     auto obst = PaperMesh::obstacleTemplates[obstacleNames.first]();
-    std::cout << "[Paper::Paper] Created " << obst.size() << " obstacles from template '" << obstacleNames.first << "'" << std::endl;
-    for (size_t i = 0; i < obst.size(); i++) {
-        std::cout << "[Paper::Paper] Obstacle " << i << " has isObstacle=" << obst[i].isObstacle << std::endl;
-    }
+
     // Update obstacle UVs to match surrounding paperMesh regions
     paperMeshes.first->updateObstacleUVs(obst);
     paperMeshes.first->regions.insert(paperMeshes.first->regions.begin(), obst.begin(), obst.end());
-    std::cout << "[Paper::Paper] After insertion, paperMeshes.first has " << paperMeshes.first->regions.size() << " regions" << std::endl;
     paperMeshes.first->regenerateNavmesh();  // Regenerate after adding obstacles
 
     paperMeshes.second = new PaperMesh(region, mesh1);
@@ -847,13 +843,11 @@ void Paper::regenerateWalls(int side) {
 void Paper::resetGeometry() {
     // Only reset if we have creation parameters stored
     if (!hasCreationParams) {
-        std::cout << "[Paper::resetGeometry] No creation parameters stored, cannot reset geometry" << std::endl;
         return;
     }
 
     // Ensure game pointer is set
     if (game == nullptr) {
-        std::cout << "[Paper::resetGeometry] Game pointer is null, cannot reset geometry" << std::endl;
         return;
     }
 
@@ -881,7 +875,6 @@ void Paper::resetGeometry() {
 
     paperMeshes.first  = new PaperMesh(region, mesh0);
     auto obst = PaperMesh::obstacleTemplates[obstacleNames.first]();
-    std::cout << "[Paper::resetGeometry] Created " << obst.size() << " obstacles from template '" << obstacleNames.first << "'" << std::endl;
     // Update obstacle UVs to match surrounding paperMesh regions
     paperMeshes.first->updateObstacleUVs(obst);
     paperMeshes.first->regions.insert(paperMeshes.first->regions.begin(), obst.begin(), obst.end());
@@ -908,8 +901,6 @@ void Paper::resetGeometry() {
 
     // Regenerate walls for both sides
     regenerateWalls();
-
-    std::cout << "[Paper::resetGeometry] Geometry reset complete" << std::endl;
 }
 
 void Paper::dotData() {

@@ -104,6 +104,7 @@ public:
     Paper* getPaper() { return paper; }
     SingleSide*& getSide() { return currentSide; }
     Player* getPlayer() { return player; }
+    Floor* getFloor() { return floor; }
 
     auto& getEnemies() { return currentSide->getEnemies(); }
 
