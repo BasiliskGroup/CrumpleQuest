@@ -32,6 +32,11 @@ void MenuManager::pushSettingsMenu() {
     menuStack->push(settingsMenu);
 }
 
+void MenuManager::pushGameOverMenu() {
+    Menu* gameOverMenu = createGameOverMenu();
+    menuStack->push(gameOverMenu);
+}
+
 void MenuManager::popMenu() {
     if (!menuStack || !menuStack->top()) {
         return;
@@ -75,8 +80,8 @@ Menu* MenuManager::createMainMenu() {
     // Create background (clickable to play paper touch sound)
     Button* background = new Button(game->getMenuScene(), game, {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("paper"),
-        .scale = {16, 9}
+        .material = game->getMaterial("notebook"),
+        .scale = {9, 6.75}
     },
     {
         .onDown = [this]() {
@@ -90,17 +95,17 @@ Menu* MenuManager::createMainMenu() {
     Node2D* title = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
         .material = game->getMaterial("paper"),
-        .position = {0, 3},
-        .scale = {6, 2}
+        .position = {0, 2.2},
+        .scale = {4, 1.2}
     });
     title->setLayer(0.2f);
     mainMenu->addNode(title);
 
     // Button layout
-    float buttonY = 0.5f;
-    float buttonSpacing = 3.0f;
-    float buttonWidth = 2.0f;
-    float buttonHeight = 1.0f;
+    float buttonY = -0.2f;
+    float buttonSpacing = 2.0f;
+    float buttonWidth = 1.5f;
+    float buttonHeight = 0.8f;
 
     // Settings button (left)
     Button* settingsButton = new Button(game->getMenuScene(), game, 
@@ -166,8 +171,8 @@ Menu* MenuManager::createSettingsMenu() {
     // Create background (clickable to play paper touch sound)
     Button* background = new Button(game->getMenuScene(), game, {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("box"),
-        .scale = {16, 9}
+        .material = game->getMaterial("notebook"),
+        .scale = {9, 6.75}
     },
     {
         .onDown = [this]() {
@@ -181,16 +186,16 @@ Menu* MenuManager::createSettingsMenu() {
     Node2D* title = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
         .material = game->getMaterial("lightGrey"),
-        .position = {0, 3},
-        .scale = {4, 1.5}
+        .position = {0, 2.4},
+        .scale = {3.5, 1.2}
     });
     title->setLayer(0.5f);
     settingsMenu->addNode(title);
 
     // Sliders layout
-    float sliderStartY = 1.5f;
-    float sliderSpacing = 1.2f;
-    float iconX = -3.5f;
+    float sliderStartY = 1.3f;
+    float sliderSpacing = 0.9f;
+    float iconX = -3.2f;
     float sliderMinX = -2.5f;
     float sliderMaxX = 2.5f;
     float iconSize = 0.4f;
@@ -271,8 +276,8 @@ Menu* MenuManager::createSettingsMenu() {
             {
                 .mesh = game->getMesh("quad"),
                 .material = game->getMaterial("lightGrey"),
-                .position = {0, -2},
-                .scale = {3, 1}
+                .position = {0, -1.5},
+                .scale = {2.8, 0.8}
             },
             {
                 .onUp = [this]() {
@@ -289,8 +294,8 @@ Menu* MenuManager::createSettingsMenu() {
         {
             .mesh = game->getMesh("quad"),
             .material = game->getMaterial("box"),
-            .position = {0, game->getPaper() != nullptr ? -3.5f : -3},
-            .scale = {2, 1}
+            .position = {0, game->getPaper() != nullptr ? -2.4f : -2.2},
+            .scale = {2.0, 0.8}
         },
         {
             .onUp = [this]() {
@@ -302,4 +307,51 @@ Menu* MenuManager::createSettingsMenu() {
     settingsMenu->addElement(backButton);
     
     return settingsMenu;
+}
+
+Menu* MenuManager::createGameOverMenu() {
+    Menu* gameOverMenu = new Menu(game);
+    
+    // Create background (clickable to play paper touch sound)
+    Button* background = new Button(game->getMenuScene(), game, {
+        .mesh = game->getMesh("quad"),
+        .material = game->getMaterial("notebook"),
+        .scale = {9, 6.75}
+    },
+    {
+        .onDown = [this]() {
+            this->playMenuTouchSound();
+        }
+    });
+    background->setLayer(0.4f);
+    gameOverMenu->addElement(background);
+    
+    // Create game over image/title
+    Node2D* gameOverImage = new Node2D(game->getMenuScene(), {
+        .mesh = game->getMesh("quad"),
+        .material = game->getMaterial("lightGrey"),
+        .position = {0, 1.0},
+        .scale = {4, 2}
+    });
+    gameOverImage->setLayer(0.5f);
+    gameOverMenu->addNode(gameOverImage);
+    
+    // Return to Main Menu button
+    Button* mainMenuButton = new Button(game->getMenuScene(), game,
+        {
+            .mesh = game->getMesh("quad"),
+            .material = game->getMaterial("box"),
+            .position = {0, -1.5},
+            .scale = {2.8, 0.8}
+        },
+        {
+            .onUp = [this]() {
+                this->game->returnToMainMenu();
+            }
+        }
+    );
+    mainMenuButton->setLayer(0.6f);
+    gameOverMenu->addElement(mainMenuButton);
+    
+    return gameOverMenu;
 }

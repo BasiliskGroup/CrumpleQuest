@@ -29,6 +29,7 @@ private:
     // Menu creation functions (menus are created on-demand)
     Menu* createMainMenu();
     Menu* createSettingsMenu();
+    Menu* createGameOverMenu();
 
 public:
     ~MenuManager();
@@ -42,6 +43,7 @@ public:
     // Menu navigation
     void pushMainMenu();
     void pushSettingsMenu();
+    void pushGameOverMenu();
     void popMenu();
     void popMenuDeferred(); // Pop menu but defer deletion until next frame
     bool hasActiveMenu() const { return menuStack->hasActiveMenu(); }

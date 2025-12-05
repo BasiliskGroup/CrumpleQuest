@@ -20,6 +20,12 @@ Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* si
 void Player::onDamage(int damage) {
     Character::onDamage(damage);
     std::cout << "Player Health: " << health << std::endl;
+
+    // End game if dead
+    if (isDead())
+    {
+        MenuManager::Get().pushGameOverMenu();
+    }
 }
 
 void Player::onDeath() {
