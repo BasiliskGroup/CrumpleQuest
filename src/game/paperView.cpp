@@ -132,8 +132,6 @@ glm::vec3 mapToSphere(float x, float y, float width, float height) {
  * 
  */
 void PaperView::update(Paper* paper) {
-    game->getPlayer()->setHealth(game->getPlayer()->getHealth() + engine->getKeyboard()->getPressed(GLFW_KEY_UP) - engine->getKeyboard()->getPressed(GLFW_KEY_DOWN));
-
     for (int i = 0; i < 6; i++) {
         Node* token = healthTokens.at(i);
         glm::vec3 targetPosition = healthActivePositions.at(i);
