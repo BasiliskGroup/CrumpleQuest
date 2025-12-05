@@ -70,7 +70,7 @@ public: // DEBUG
 
 public:
     Paper();
-    Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames);
+    Paper(Game* game, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames);
     
     // Rule of 5
     Paper(const Paper& other);
@@ -98,6 +98,7 @@ public:
     void deactivateFold();
     void regenerateWalls();
     void regenerateWalls(int side);
+    void resetGeometry();
 
     void setGame(Game* game) { this->game = game; }
     void previewFold(const vec2& start, const vec2& end);  // Preview fold cover without applying
@@ -122,6 +123,11 @@ private:
     FoldGeometry validateFoldGeometry(const vec2& start, const vec2& end);
 
 private:
+    // Stored creation parameters for resetGeometry
+    std::pair<std::string, std::string> sideNames;
+    std::pair<std::string, std::string> obstacleNames;
+    bool hasCreationParams = false; // Track if we were created with parameters
+    
     void clear();
     PaperMesh* getPaperMesh() { return curSide == 0 ? paperMeshes.first : paperMeshes.second; }
     PaperMesh* getBackPaperMesh() { return curSide == 0 ? paperMeshes.second : paperMeshes.first; }

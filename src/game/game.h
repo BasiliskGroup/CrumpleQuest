@@ -45,6 +45,7 @@ private:
 
     bool kWasDown = false;
     bool escapeWasDown = false;
+    bool rWasDown = false;
     bool upArrowWasDown = false;
     bool downArrowWasDown = false;
     bool leftArrowWasDown = false;

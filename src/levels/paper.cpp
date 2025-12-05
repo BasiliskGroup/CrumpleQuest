@@ -8,16 +8,26 @@ Paper::Paper() :
     isOpen(false),
     activeFold(NULL_FOLD),
     sides(nullptr, nullptr), 
-    paperMeshes(nullptr, nullptr) 
+    paperMeshes(nullptr, nullptr),
+    hasCreationParams(false)
 {}
 
-Paper::Paper(Mesh* mesh0, Mesh* mesh1, const std::vector<vec2>& region, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames) : 
+Paper::Paper(Game* game, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames) : 
     curSide(0), 
     isOpen(false),
     activeFold(NULL_FOLD),
     sides(nullptr, nullptr), 
-    paperMeshes(nullptr, nullptr) 
+    paperMeshes(nullptr, nullptr),
+    game(game),
+    sideNames(sideNames),
+    obstacleNames(obstacleNames),
+    hasCreationParams(true)
 {
+    // all paper's have the same region
+    std::vector<vec2> region = {vec2{ 6.0,  4.5},vec2{-6.0,  4.5},vec2{-6.0, -4.5},vec2{ 6.0, -4.5} };
+    Mesh* mesh0 = game->getMesh("paper0");
+    Mesh* mesh1 = game->getMesh("paper1");
+
     paperMeshes.first  = new PaperMesh(region, mesh0);
     auto obst = PaperMesh::obstacleTemplates[obstacleNames.first]();
     std::cout << "[Paper::Paper] Created " << obst.size() << " obstacles from template '" << obstacleNames.first << "'" << std::endl;
@@ -47,7 +57,11 @@ Paper::Paper(const Paper& other)
       folds(other.folds),
       activeFold(other.activeFold),
       sides(nullptr, nullptr),
-      paperMeshes(nullptr, nullptr)
+      paperMeshes(nullptr, nullptr),
+      game(other.game),
+      sideNames(other.sideNames),
+      obstacleNames(other.obstacleNames),
+      hasCreationParams(other.hasCreationParams)
 {
     try {
         // Deep copy sides
@@ -81,12 +95,18 @@ Paper::Paper(Paper&& other) noexcept
       folds(std::move(other.folds)),
       activeFold(other.activeFold),
       sides(std::move(other.sides)),
-      paperMeshes(std::move(other.paperMeshes))
+      paperMeshes(std::move(other.paperMeshes)),
+      game(other.game),
+      sideNames(std::move(other.sideNames)),
+      obstacleNames(std::move(other.obstacleNames)),
+      hasCreationParams(other.hasCreationParams)
 {
     // Clear other
     other.sides = { nullptr, nullptr };
     other.paperMeshes = { nullptr, nullptr };
     other.activeFold = NULL_FOLD;
+    other.game = nullptr;
+    other.hasCreationParams = false;
 }
 
 Paper::~Paper() {
@@ -107,6 +127,10 @@ Paper& Paper::operator=(const Paper& other) {
     std::swap(isOpen, temp.isOpen);
     std::swap(folds, temp.folds);
     std::swap(activeFold, temp.activeFold);
+    std::swap(game, temp.game);
+    std::swap(sideNames, temp.sideNames);
+    std::swap(obstacleNames, temp.obstacleNames);
+    std::swap(hasCreationParams, temp.hasCreationParams);
     
     // temp's destructor will clean up our old resources
     return *this;
@@ -125,11 +149,17 @@ Paper& Paper::operator=(Paper&& other) noexcept {
     isOpen = other.isOpen;
     folds = std::move(other.folds);
     activeFold = other.activeFold;
+    game = other.game;
+    sideNames = std::move(other.sideNames);
+    obstacleNames = std::move(other.obstacleNames);
+    hasCreationParams = other.hasCreationParams;
 
     // Clear other
     other.sides = { nullptr, nullptr };
     other.paperMeshes = { nullptr, nullptr };
     other.activeFold = NULL_FOLD;
+    other.game = nullptr;
+    other.hasCreationParams = false;
 
     return *this;
 }
@@ -779,6 +809,74 @@ void Paper::regenerateWalls(int side) {
             }));
         }
     }
+}
+
+void Paper::resetGeometry() {
+    // Only reset if we have creation parameters stored
+    if (!hasCreationParams) {
+        std::cout << "[Paper::resetGeometry] No creation parameters stored, cannot reset geometry" << std::endl;
+        return;
+    }
+
+    // Ensure game pointer is set
+    if (game == nullptr) {
+        std::cout << "[Paper::resetGeometry] Game pointer is null, cannot reset geometry" << std::endl;
+        return;
+    }
+
+    // Clear all folds and fold-related state
+    folds.clear();
+    activeFold = NULL_FOLD;
+
+    // Clear debug region nodes
+    for (uint i = 0; i < regionNodes.size(); i++) {
+        delete regionNodes[i];
+    }
+    regionNodes.clear();
+
+    // Delete old PaperMesh objects
+    delete paperMeshes.first;
+    delete paperMeshes.second;
+    paperMeshes.first = nullptr;
+    paperMeshes.second = nullptr;
+
+    // Recreate PaperMesh objects with original geometry (same as constructor)
+    // all paper's have the same region
+    std::vector<vec2> region = {vec2{ 6.0,  4.5},vec2{-6.0,  4.5},vec2{-6.0, -4.5},vec2{ 6.0, -4.5} };
+    Mesh* mesh0 = game->getMesh("paper0");
+    Mesh* mesh1 = game->getMesh("paper1");
+
+    paperMeshes.first  = new PaperMesh(region, mesh0);
+    auto obst = PaperMesh::obstacleTemplates[obstacleNames.first]();
+    std::cout << "[Paper::resetGeometry] Created " << obst.size() << " obstacles from template '" << obstacleNames.first << "'" << std::endl;
+    // Update obstacle UVs to match surrounding paperMesh regions
+    paperMeshes.first->updateObstacleUVs(obst);
+    paperMeshes.first->regions.insert(paperMeshes.first->regions.begin(), obst.begin(), obst.end());
+    paperMeshes.first->regenerateNavmesh();  // Regenerate after adding obstacles
+
+    paperMeshes.second = new PaperMesh(region, mesh1);
+    obst = PaperMesh::obstacleTemplates[obstacleNames.second]();
+    // Update obstacle UVs to match surrounding paperMesh regions
+    paperMeshes.second->updateObstacleUVs(obst);
+    paperMeshes.second->regions.insert(paperMeshes.second->regions.begin(), obst.begin(), obst.end());
+    paperMeshes.second->regenerateNavmesh();  // Regenerate after adding obstacles
+
+    // Regenerate meshes
+    paperMeshes.first->regenerateMesh();
+    paperMeshes.second->regenerateMesh();
+
+    // Update background mesh references in SingleSides (they should already exist, don't recreate them)
+    if (sides.first) {
+        sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
+    }
+    if (sides.second) {
+        sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
+    }
+
+    // Regenerate walls for both sides
+    regenerateWalls();
+
+    std::cout << "[Paper::resetGeometry] Geometry reset complete" << std::endl;
 }
 
 void Paper::dotData() {

@@ -143,6 +143,17 @@ void Game::update(float dt) {
     }
     kWasDown = keys->getPressed(GLFW_KEY_F);
     
+    // reset geometry (r key)
+    if (keys->getPressed(GLFW_KEY_R) && rWasDown == false && !MenuManager::Get().hasActiveMenu()) {
+        if (paper) {
+            paper->resetGeometry();
+            if (paperView) {
+                paperView->regenerateMesh();
+            }
+        }
+    }
+    rWasDown = keys->getPressed(GLFW_KEY_R);
+    
     // pause (escape key)
     if (keys->getPressed(GLFW_KEY_ESCAPE) && escapeWasDown == false) {
         if (player == nullptr) {
