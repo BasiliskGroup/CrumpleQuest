@@ -53,7 +53,16 @@ PaperView::PaperView(Game* game): game(game) {
     Node* mug = new Node(scene, {.mesh=game->getMesh("mug"), .material=game->getMaterial("lightGrey"), .position={-1.8, -0.75, 1.5}, .rotation=glm::angleAxis(glm::radians(110.0f), glm::vec3(0.0f, 1.0f, 0.0f)), .scale={0.3, 0.3, 0.3}});
     
     glm::quat johnRotation = glm::angleAxis(glm::radians(-13.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    Node* john = new Node(scene, {.mesh=game->getMesh("john"), .material=game->getMaterial("john"), .position={1.8, -0.75, 1.1}, .rotation=johnRotation, .scale={0.15, 0.15, 0.15}});
+    Node* john = new Node(scene, {.mesh=game->getMesh("john"), .material=game->getMaterial("john"), .position={1.8, -0.75, 1.8}, .rotation=johnRotation, .scale={0.15, 0.15, 0.15}});
+
+    // Health tokens
+    healthActivePositions = {{2.0, -.95, 1.00}, {1.75, -.95, 0.5}, {1.9, -.95, 1.35}, {1.5, -.95, 1.15}, {1.5, -.95, 0.75}, {1.3, -.95, 0.3}};
+
+    for (glm::vec3& pos : healthActivePositions) {
+        glm::quat rotation = glm::angleAxis(glm::radians(90.0f + uniform(-25.0, 25.0)), glm::vec3(0.0f, 1.0f, 0.0f));
+        Node* token = new Node(scene, {.mesh=game->getMesh("heart"), .material=game->getMaterial("darkred"), .position=pos, .rotation=rotation, .scale={.08, .08, .08}});
+        healthTokens.push_back(token);
+    }
 }
 
 PaperView::~PaperView() {
@@ -122,7 +131,19 @@ glm::vec3 mapToSphere(float x, float y, float width, float height) {
  * 
  */
 void PaperView::update(Paper* paper) {
-    
+    game->getPlayer()->setHealth(game->getPlayer()->getHealth() + engine->getKeyboard()->getPressed(GLFW_KEY_UP) - engine->getKeyboard()->getPressed(GLFW_KEY_DOWN));
+
+    for (int i = 0; i < 6; i++) {
+        Node* token = healthTokens.at(i);
+        glm::vec3 targetPosition = healthActivePositions.at(i);
+        if ((6 - i) > game->getPlayer()->getHealth()) { // Does not have this token
+            targetPosition.x += 1;
+        }
+
+        glm::vec3 moveVector = token->getPosition() - targetPosition;
+        token->setPosition((token->getPosition() - 5.0f * moveVector * (float)engine->getDeltaTime()));
+    }
+
     scene->update();
 
     Mouse* mouse = engine->getMouse();

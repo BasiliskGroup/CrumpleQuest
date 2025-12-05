@@ -2,6 +2,7 @@
 #define PAPER_VIEW_H
 
 #include "util/includes.h"
+#include "util/random.h"
 #include "levels/paper.h"
 
 class Game;
@@ -28,6 +29,11 @@ class PaperView {
         glm::quat currentRotation;
         glm::quat lastRotation;
         glm::quat targetRotation;
+
+        // Health tokens
+        std::vector<glm::vec3> healthActivePositions;
+        std::vector<glm::vec3> healthInactivePositions;
+        std::vector<Node*> healthTokens;
 
 
     public:
