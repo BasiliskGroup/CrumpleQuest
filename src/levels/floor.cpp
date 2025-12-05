@@ -1,11 +1,13 @@
 #include "levels/levels.h"
+#include "game/game.h"
 
-Floor::Floor() : roomMap() {
+Floor::Floor(Game* game) : roomMap(), game(game) {
     for (uint x = 0; x < FLOOR_WIDTH; x++) {
         for (uint y = 0; y < FLOOR_WIDTH; y++) {
             playMap[x][y] = NULL_ROOM;
             tempMap[x][y] = 0;
             distMap[x][y] = distMax;
+            roomMap[x][y] = nullptr;
         }
     }
 
@@ -16,12 +18,14 @@ Floor::Floor() : roomMap() {
 }
 
 void Floor::loadRooms() {
-    return; // uncomment this out when we have 1 of each room type
-
     for (uint x = 0; x < FLOOR_WIDTH; x++) {
         for (uint y = 0; y < FLOOR_WIDTH; y++) {
             if (playMap[x][y] == NULL_ROOM) continue;
             roomMap[x][y] = Paper::getRandomTemplate(playMap[x][y]);
+            if (roomMap[x][y]) {
+                roomMap[x][y]->setGame(game);
+                roomMap[x][y]->regenerateWalls();
+            }
         }
     }
 }
@@ -33,11 +37,22 @@ void Floor::generateFloor() {
 
     // generate the remaining floor
     uint numRooms = glm::max(FLOOR_MIN_ROOMS, randomIntNormal(FLOOR_MEAN_ROOMS, FLOOR_STDEV_ROOMS));
-    for (uint i = 1; numRooms; i++) {
+    for (uint i = 1; i < numRooms; i++) {
+        
+        // Check if we have any valid positions
+        if (valids.empty()) {
+            break; // No more valid positions to add rooms
+        }
         
         // sort dictionary by keys
         std::vector<std::pair<Position, int>> adjs(valids.begin(), valids.end());
         std::sort(adjs.begin(), adjs.end(), [](const auto& a, const auto& b) { return a.second < b.second; });
+        
+        // Safety check
+        if (adjs.empty()) {
+            break;
+        }
+        
         Position pos = adjs[0].first;
 
         // get nth random based on temp decrease
@@ -50,7 +65,7 @@ void Floor::generateFloor() {
         }
 
         // add the room to the maps
-        valids.erase(adjs[j - 1].first);
+        valids.erase(pos);
         addToMaps(pos, BASIC_ROOM);
     }
 
@@ -98,4 +113,43 @@ void Floor::addToMaps(const Position& pos, RoomTypes type) {
 
 void Floor::getOptions(std::vector<Position> directions) {
 
+}
+
+Floor::~Floor() {
+    // Clean up all Paper instances
+    for (uint x = 0; x < FLOOR_WIDTH; x++) {
+        for (uint y = 0; y < FLOOR_WIDTH; y++) {
+            if (roomMap[x][y]) {
+                delete roomMap[x][y];
+                roomMap[x][y] = nullptr;
+            }
+        }
+    }
+}
+
+Paper* Floor::getCenterRoom() const {
+    return roomMap[center][center];
+}
+
+Paper* Floor::getRoom(int x, int y) const {
+    if (x < 0 || x >= FLOOR_WIDTH || y < 0 || y >= FLOOR_WIDTH) {
+        return nullptr;
+    }
+    return roomMap[x][y];
+}
+
+Paper* Floor::getCurrentRoom() const {
+    return getRoom(playerPos.x, playerPos.y);
+}
+
+Paper* Floor::getAdjacentRoom(int dx, int dy) const {
+    int newX = playerPos.x + dx;
+    int newY = playerPos.y + dy;
+    return getRoom(newX, newY);
+}
+
+void Floor::setCurrentPosition(int x, int y) {
+    if (x >= 0 && x < FLOOR_WIDTH && y >= 0 && y < FLOOR_WIDTH) {
+        playerPos = { x, y };
+    }
 }

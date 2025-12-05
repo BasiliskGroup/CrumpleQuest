@@ -12,6 +12,7 @@
 #define FLOOR_TEMP_REDUCT 0.95
 
 class Paper;
+class Game;
 
 class Floor {
 private:
@@ -55,12 +56,21 @@ private:
     // play data
     Position playerPos;
     SquareMap<Paper*> roomMap;
+    Game* game;
 
 public:
-    Floor();
-    ~Floor() = default;
+    Floor(Game* game);
+    ~Floor();
 
     void getOptions(std::vector<Position> directions);
+    Paper* getCenterRoom() const;
+    Paper* getRoom(int x, int y) const;
+    Paper* getCurrentRoom() const;
+    Position getCurrentPosition() const { return playerPos; }
+    int getCurrentX() const { return playerPos.x; }
+    int getCurrentY() const { return playerPos.y; }
+    Paper* getAdjacentRoom(int dx, int dy) const;
+    void setCurrentPosition(int x, int y);
 
 private:
     void generateFloor();
