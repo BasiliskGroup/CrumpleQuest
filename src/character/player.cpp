@@ -24,7 +24,7 @@ void Player::onDamage(int damage) {
     // End game if dead
     if (isDead())
     {
-        
+        MenuManager::Get().pushGameOverMenu();
     }
 }
 
