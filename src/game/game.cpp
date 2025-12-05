@@ -261,25 +261,25 @@ void Game::update(float dt) {
             // Left boundary crossed (west) and moving left
             Paper* adjacentRoom = floor->getAdjacentRoom(-1, 0);
             if (adjacentRoom) {
-                switchToRoom(adjacentRoom, -1, 0);
+                paperView->switchToRoom(adjacentRoom, -1, 0);
             }
         } else if (playerPos.x > tr.x + 1.0f && playerVel.x > 0.0f) {
             // Right boundary crossed (east) and moving right
             Paper* adjacentRoom = floor->getAdjacentRoom(1, 0);
             if (adjacentRoom) {
-                switchToRoom(adjacentRoom, 1, 0);
+                paperView->switchToRoom(adjacentRoom, 1, 0);
             }
         } else if (playerPos.y < bl.y - 1.0f && playerVel.y < 0.0f) {
             // Bottom boundary crossed (south, +y direction) and moving down
             Paper* adjacentRoom = floor->getAdjacentRoom(0, 1);
             if (adjacentRoom) {
-                switchToRoom(adjacentRoom, 0, 1);
+                paperView->switchToRoom(adjacentRoom, 0, 1);
             }
         } else if (playerPos.y > tr.y + 1.0f && playerVel.y > 0.0f) {
             // Top boundary crossed (north, -y direction) and moving up
             Paper* adjacentRoom = floor->getAdjacentRoom(0, -1);
             if (adjacentRoom) {
-                switchToRoom(adjacentRoom, 0, -1);
+                paperView->switchToRoom(adjacentRoom, 0, -1);
             }
         }
     }

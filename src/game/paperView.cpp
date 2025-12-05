@@ -273,3 +273,6 @@ void PaperView::regenerateMesh() {
     paperVAO = new VAO(paperShader, paperVBO);
 }
 
+void PaperView::switchToRoom(Paper* paper, int dx, int dy) {
+    this->game->switchToRoom(paper, dx, dy);
+}

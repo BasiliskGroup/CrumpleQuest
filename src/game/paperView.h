@@ -51,6 +51,8 @@ class PaperView {
         void regenerateMesh(); // Regenerate mesh data from current paper
         
         Scene* getScene() { return scene; } 
+
+        void switchToRoom(Paper* paper, int dx, int dy);
 };
 
 #endif
