@@ -251,8 +251,8 @@ void Game::update(float dt) {
         PaperMesh* currentMesh = (paper->curSide == 0) ? paper->paperMeshes.first : paper->paperMeshes.second;
         auto aabb = currentMesh->getAABB();
         
-        vec2 bl = aabb.first;   // bottom-left
-        vec2 tr = aabb.second;  // top-right
+        vec2 bl = aabb.first;
+        vec2 tr = aabb.second;
         
         // Check boundaries with 1 unit padding for detection
         // Only switch if there's a room in that direction AND player is moving outwards
@@ -326,8 +326,8 @@ void Game::update(float dt) {
                 if (paper->isOpen && floor && paperView) {
                     bool topValid = floor->getAdjacentRoom(0, -1) != nullptr;
                     bool bottomValid = floor->getAdjacentRoom(0, 1) != nullptr;
-                    bool leftValid = floor->getAdjacentRoom(-1, 0) != nullptr;
-                    bool rightValid = floor->getAdjacentRoom(1, 0) != nullptr;
+                    bool leftValid = floor->getAdjacentRoom(1, 0) != nullptr;
+                    bool rightValid = floor->getAdjacentRoom(-1, 0) != nullptr;
                     
                     paperView->showDirectionalNodes(topValid, bottomValid, leftValid, rightValid);
                 } else if (paper && floor && paperView && !paper->isOpen) {

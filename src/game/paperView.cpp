@@ -419,7 +419,7 @@ void PaperView::createMinimap() {
                 float offsetX = (x - centerX) * totalSpacing;
                 float offsetZ = (y - centerY) * totalSpacing;
                 
-                glm::vec3 offset = glm::vec3(offsetX, 0.0f, offsetZ);
+                glm::vec3 offset = glm::vec3(-offsetX, 0.0f, -offsetZ);
                 
                 // Rotate the offset around Y-axis by 10 degrees
                 glm::quat rotation = glm::angleAxis(glm::radians(-10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
