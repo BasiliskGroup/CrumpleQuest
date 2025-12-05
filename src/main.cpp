@@ -21,7 +21,7 @@ int main() {
     // ------------------------------------------
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug", "john" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
@@ -66,7 +66,7 @@ int main() {
     game->addAnimation("pi_attack", "art/sprites/enemies/ranged/grid_pi/attack/", 7);
 
     // mesh
-    std::vector<std::string> meshNames = { "quad", "paper0", "paper1", "quad3D", "cube"};
+    std::vector<std::string> meshNames = { "quad", "paper0", "paper1", "quad3D", "cube", "mug", "john"};
     for (std::string& name : meshNames) game->addMesh(name, new Mesh("models/" + name + ".obj"));
 
     // ------------------------------------------

@@ -3,6 +3,94 @@
 #include "character/character.h"
 #include "levels/paperMesh.h"
 
+// Helper function to check if destination is reached
+static bool isDestinationReached(Enemy* enemy, const std::vector<vec2>& path) {
+    std::optional<vec2> currentDestination = enemy->getCustomDestination();
+    if (!currentDestination.has_value()) {
+        return false; // No destination set
+    }
+    
+    vec2 enemyPos = enemy->getPosition();
+    vec2 dest = currentDestination.value();
+    float distToDest = glm::length(enemyPos - dest);
+    float finishRadius = enemy->getFinishRadius();
+    
+    // Consider destination reached if:
+    // 1. We're within finishRadius of the destination, OR
+    // 2. Path is empty AND we're close to the destination (within 2x finishRadius for safety)
+    if (distToDest < finishRadius) {
+        return true;
+    } else if (path.empty()) {
+        // Path is empty - check if we're close enough to consider it reached
+        if (distToDest < finishRadius * 2.0f) {
+            return true; // Close enough
+        } else {
+            // Path is empty but we're far from destination - pathfinding may have failed
+            // Consider it "reached" so we pick a new destination to avoid getting stuck
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Helper function to clean up path waypoints and set movement direction
+static void updatePathFollowing(Enemy* enemy, const vec2& fallbackDir = vec2(0, 0)) {
+    std::vector<vec2>& path = enemy->getPath();
+    vec2 enemyPos = enemy->getPosition();
+    float finishRadius = enemy->getFinishRadius();
+    
+    // Remove waypoints we've already passed
+    while (path.size() > 0 && glm::length2(path[0] - enemyPos) < finishRadius * finishRadius) {
+        path.erase(path.begin());
+    }
+    
+    // Set movement direction towards next waypoint
+    if (path.size() > 0) {
+        vec2 direction = path[0] - enemyPos;
+        enemy->getMoveDir() = direction;
+    } else {
+        enemy->getMoveDir() = fallbackDir;
+    }
+}
+
+// Helper function to update destination-based wandering behavior
+// destinationSelector: function that takes (paperMesh, enemyPos, playerPos) and returns a target position
+static void updateDestinationWandering(
+    Enemy* enemy, 
+    PaperMesh* paperMesh, 
+    const vec2& playerPos,
+    std::function<vec2(PaperMesh*, const vec2&, const vec2&)> destinationSelector,
+    const vec2& fallbackDir = vec2(0, 0)
+) {
+    if (!paperMesh) {
+        enemy->getMoveDir() = fallbackDir;
+        enemy->clearCustomDestination();
+        return;
+    }
+    
+    std::vector<vec2>& path = enemy->getPath();
+    
+    // Check if we need a new destination
+    bool needsNewDestination = false;
+    if (!enemy->getCustomDestination().has_value()) {
+        needsNewDestination = true;
+    } else if (isDestinationReached(enemy, path)) {
+        needsNewDestination = true;
+    }
+    
+    // Pick a new destination if needed
+    if (needsNewDestination) {
+        enemy->clearCustomDestination();
+        vec2 enemyPos = enemy->getPosition();
+        vec2 targetPos = destinationSelector(paperMesh, enemyPos, playerPos);
+        enemy->setCustomDestination(targetPos);
+    }
+    
+    // Update path following
+    updatePathFollowing(enemy, fallbackDir);
+}
+
 void ChasePlayerBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) {
     // Get the paper mesh for pathfinding
     PaperMesh* paperMesh = enemy->getPaperMeshForSide();
@@ -46,49 +134,45 @@ void RunawayBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) {
     // Only run away if player is too close
     if (distance > minDistance) {
         enemy->getMoveDir() = vec2(0, 0);
+        enemy->clearCustomDestination();
         return;
     }
     
-    // Calculate runaway direction (opposite of player)
-    vec2 runawayDir = -toPlayer;
-    if (distance > 1e-6f) {
-        runawayDir = glm::normalize(runawayDir);
-    }
-    
-    // Find a position to run to (far away from player)
-    float runDistance = minDistance * 1.5f;
-    vec2 targetPos = enemyPos + runawayDir * runDistance;
-    
-    // Get path away from player
+    // Get the paper mesh for pathfinding
     PaperMesh* paperMesh = enemy->getPaperMeshForSide();
-    if (!paperMesh) {
-        // Fallback: just move directly away
-        enemy->getMoveDir() = runawayDir;
-        return;
+    
+    // Calculate fallback direction (directly away from player)
+    vec2 fallbackDir = vec2(0, 0);
+    if (distance > 1e-6f) {
+        fallbackDir = -glm::normalize(toPlayer);
     }
     
-    std::vector<vec2>& path = enemy->getPath();
-    float padding = enemy->getRadius() * 1.2f;
-    paperMesh->getPath(path, enemyPos, targetPos, padding);
+    // Destination selector: pick furthest of 3 random positions from player
+    auto destinationSelector = [](PaperMesh* mesh, const vec2& enemyPos, const vec2& playerPos) -> vec2 {
+        // Generate 3 random non-obstacle positions
+        std::vector<vec2> candidatePositions;
+        for (int i = 0; i < 3; ++i) {
+            vec2 candidate = mesh->getRandomNonObstaclePosition();
+            candidatePositions.push_back(candidate);
+        }
+        
+        // Find the furthest position from the player
+        vec2 targetPos = candidatePositions[0];
+        float maxDistance = glm::length(candidatePositions[0] - playerPos);
+        
+        for (size_t i = 1; i < candidatePositions.size(); ++i) {
+            float distToPlayer = glm::length(candidatePositions[i] - playerPos);
+            if (distToPlayer > maxDistance) {
+                maxDistance = distToPlayer;
+                targetPos = candidatePositions[i];
+            }
+        }
+        
+        return targetPos;
+    };
     
-    // Handle path following
-    if (path.size() == 0) {
-        enemy->getMoveDir() = runawayDir;  // Fallback to direct movement
-        return;
-    }
-    
-    // Remove waypoints we've already passed
-    float finishRadius = enemy->getFinishRadius();
-    while (path.size() > 0 && glm::length2(path[0] - enemyPos) < finishRadius * finishRadius) {
-        path.erase(path.begin());
-    }
-    
-    // Set movement direction towards next waypoint
-    if (path.size() > 0) {
-        enemy->getMoveDir() = path[0] - enemyPos;
-    } else {
-        enemy->getMoveDir() = runawayDir;  // Fallback
-    }
+    // Update destination-based wandering
+    updateDestinationWandering(enemy, paperMesh, playerPos, destinationSelector, fallbackDir);
 }
 
 void IdleBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) {
@@ -111,89 +195,24 @@ void StationaryBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) {
 void WanderBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) {
     // Get the paper mesh for pathfinding
     PaperMesh* paperMesh = enemy->getPaperMeshForSide();
-    if (!paperMesh) {
-        enemy->getMoveDir() = vec2(0, 0);
-        enemy->clearCustomDestination();
-        return;
-    }
     
-    std::vector<vec2>& path = enemy->getPath();
-    float finishRadius = enemy->getFinishRadius();
-    vec2 enemyPos = enemy->getPosition();
-    
-    // Remove waypoints we've already passed
-    while (path.size() > 0 && glm::length2(path[0] - enemyPos) < finishRadius * finishRadius) {
-        path.erase(path.begin());
-    }
-    
-    // Check if we've reached our destination
-    std::optional<vec2> currentDestination = enemy->getCustomDestination();
-    bool reachedDestination = false;
-    bool needsNewDestination = false;
-    
-    if (!currentDestination.has_value()) {
-        // No destination set, need to pick one
-        needsNewDestination = true;
-    } else {
-        // Check distance to current destination
-        vec2 dest = currentDestination.value();
-        float distToDest = glm::length(enemyPos - dest);
-        
-        // Consider destination reached if:
-        // 1. We're within finishRadius of the destination, OR
-        // 2. Path is empty AND we're close to the destination (within 2x finishRadius for safety)
-        if (distToDest < finishRadius) {
-            reachedDestination = true;
-            needsNewDestination = true;
-            std::cout << "[Wander] Reached destination at (" << dest.x << ", " << dest.y << "), distance: " << distToDest << std::endl;
-        } else if (path.empty()) {
-            // Path is empty - check if we're close enough to consider it reached
-            if (distToDest < finishRadius * 2.0f) {
-                // Close enough - consider it reached
-                reachedDestination = true;
-                needsNewDestination = true;
-                std::cout << "[Wander] Path empty and close to destination at (" << dest.x << ", " << dest.y << "), distance: " << distToDest << std::endl;
-            } else {
-                // Path is empty but we're far from destination - pathfinding may have failed
-                // Pick a new destination to avoid getting stuck
-                reachedDestination = false; // Didn't actually reach it, but need a new one
-                needsNewDestination = true;
-                std::cout << "[Wander] Path empty but far from destination at (" << dest.x << ", " << dest.y << "), distance: " << distToDest << " - picking new destination" << std::endl;
-            }
-        }
-    }
-    
-    // Pick a new random target if needed
-    if (needsNewDestination) {
-        // Clear the old destination
-        enemy->clearCustomDestination();
-        
-        // Get a random non-obstacle position (NOT the player position)
-        vec2 targetPos = paperMesh->getRandomNonObstaclePosition();
-        std::cout << "[Wander] Generated random position: (" << targetPos.x << ", " << targetPos.y << ")" << std::endl;
+    // Destination selector: pick a random position, ensuring it's not too close to player
+    auto destinationSelector = [](PaperMesh* mesh, const vec2& enemyPos, const vec2& playerPos) -> vec2 {
+        // Get a random non-obstacle position
+        vec2 targetPos = mesh->getRandomNonObstaclePosition();
         
         // Ensure we're not targeting the player's position
         float distToPlayer = glm::length(targetPos - playerPos);
         if (distToPlayer < 1.0f) {
             // If random position is too close to player, try again
-            targetPos = paperMesh->getRandomNonObstaclePosition();
-            std::cout << "[Wander] Regenerated random position (too close to player): (" << targetPos.x << ", " << targetPos.y << ")" << std::endl;
+            targetPos = mesh->getRandomNonObstaclePosition();
         }
         
-        // Set the custom destination - updatePathing will generate the path to it
-        enemy->setCustomDestination(targetPos);
-        
-        std::cout << "[Wander] Enemy at (" << enemyPos.x << ", " << enemyPos.y << ") targeting (" << targetPos.x << ", " << targetPos.y << ")" << std::endl;
-    }
+        return targetPos;
+    };
     
-    // Set movement direction towards next waypoint
-    // Path is generated by updatePathing which runs 5 times per second
-    if (path.size() > 0) {
-        vec2 direction = path[0] - enemyPos;
-        enemy->getMoveDir() = direction;
-    } else {
-        enemy->getMoveDir() = vec2(0, 0);
-    }
+    // Update destination-based wandering
+    updateDestinationWandering(enemy, paperMesh, playerPos, destinationSelector);
     
     // Attack if we can attack (weapon ready, in range, and have line of sight)
     if (enemy->canAttackStatus() && enemy->hasLineOfSightStatus()) {

@@ -272,7 +272,7 @@ void Game::startGame() {
     setPlayer(player);
 
     // create weapons
-    player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("sword"), .scale={0.75, 0.75}}, { .damage=1, .life=0.2f, .radius=0.5 }, 0.5f, 60.0f));
+    player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("sword"), .scale={0.75, 0.75}}, { .damage=1, .life=0.2f, .radius=0.75 }, 0.5f, 60.0f));
 }
 
 void Game::returnToMainMenu() {
