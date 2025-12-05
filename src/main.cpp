@@ -55,7 +55,7 @@ int main() {
     game->addAnimation("pi_attack", "art/sprites/enemies/ranged/grid_pi/attack/", 7);
 
     // mesh
-    std::vector<std::string> meshNames = { "quad", "paper0", "paper1", "quad3D" };
+    std::vector<std::string> meshNames = { "quad", "paper0", "paper1", "quad3D", "cube"};
     for (std::string& name : meshNames) game->addMesh(name, new Mesh("models/" + name + ".obj"));
 
     // ------------------------------------------

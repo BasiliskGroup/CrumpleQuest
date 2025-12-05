@@ -19,6 +19,7 @@ class PaperView {
         Shader* backgroundShader;
         VBO* paperVBO;
         VAO* paperVAO;
+        glm::vec3 paperPosition;
         glm::mat4 paperModel;
 
         // Arcball for paper rotating

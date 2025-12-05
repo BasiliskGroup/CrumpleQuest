@@ -7,7 +7,7 @@ PaperView::PaperView(Game* game): game(game) {
     backgroundShader = new Shader("shaders/background.vert", "shaders/background.frag");
     scene = new Scene(engine, backgroundShader);
     frame = new Frame(engine, 2400, 900);
-    camera = new StaticCamera(engine);
+    camera = new StaticCamera(engine, {0, 1.094, 0.1266});
 
     // Set up shader for paper
     paperShader = new Shader("shaders/default.vert", "shaders/default.frag");
@@ -17,17 +17,29 @@ PaperView::PaperView(Game* game): game(game) {
     std::vector<float> quadVertices; // Start with empty - will be populated when paper exists
     paperVBO = new VBO(quadVertices);
     paperVAO = new VAO(paperShader, paperVBO);
+    paperPosition = glm::vec3(0.0, 0.1386, 0.544);
 
     // Set up camera
     camera->use(paperShader);
-    camera->setX(0.0);
-    camera->setZ(1.2);
-    camera->setYaw(-90.0);
+    glm::vec3 cameraPos = camera->getPosition();
+
+    // Calculate direction from camera to paper
+    glm::vec3 direction = glm::normalize(paperPosition - cameraPos);
+
+    // Calculate yaw (rotation around Y axis)
+    float yaw = glm::degrees(atan2(direction.x, direction.z));
+
+    // Calculate pitch (rotation around X axis)
+    float pitch = glm::degrees(asin(-direction.y));
+
+    camera->setYaw(yaw - 270.0);
+    camera->setPitch(-pitch);
     camera->setAspect(16.0 / 9.0);
     scene->setCamera(camera);
 
     // Set up paper model
     paperModel = glm::mat4(1);
+    paperModel = glm::translate(paperModel, paperPosition);
     paperShader->setUniform("uModel", paperModel);
 
     // Set up rotation data
@@ -36,8 +48,8 @@ PaperView::PaperView(Game* game): game(game) {
     targetRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
     // Set up table
-    Node* table = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("table"), .position={0.0, 0.0, -1.0}, .scale={5.0, 5.0, 1.0}});
-    
+    Node* table = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("table"), .position={0.0, -1.0, 0.0}, .rotation=glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={8.0, 5.0, 1.0}});
+    Node* mug = new Node(scene, {.mesh=game->getMesh("cube"), .material=game->getMaterial("lightGrey"), .position={-2.0, -0.75, 1.5}, .scale={0.2, 0.2, 0.2}});
 }
 
 PaperView::~PaperView() {
@@ -75,7 +87,6 @@ void PaperView::renderLevelFBO(Paper* paper) {
 void PaperView::render() {
     // Render background 3d objects
     scene->render();
-
     camera->use(paperShader);
     paperShader->use();
     paperVAO->render();
@@ -115,13 +126,31 @@ void PaperView::update(Paper* paper) {
     float height = (float)engine->getWindow()->getHeight() * engine->getWindow()->getWindowScaleY();
     float deltaTime = engine->getDeltaTime();
 
-    glm::quat defaultPosition = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-    if (paper->getCurrentSide()) {
-        defaultPosition = glm::angleAxis(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    }
+    glm::vec3 cameraPos = camera->getPosition();
 
-    std::cout << paper->getCurrentSide() << std::endl;
-    std::cout << defaultPosition.x << ", " << defaultPosition.y << ", " << defaultPosition.z << ", " << defaultPosition.w << ", " << std::endl;
+    // Calculate direction from paper to camera
+    glm::vec3 direction = glm::normalize(cameraPos - paperPosition);
+
+    // Define up vector
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    // Create a rotation matrix that looks at the camera while staying upright
+    glm::vec3 right = glm::normalize(glm::cross(up, direction));
+    glm::vec3 newUp = glm::cross(direction, right);
+
+    // Build rotation matrix from the orthonormal basis
+    glm::mat3 rotationMatrix;
+    rotationMatrix[0] = right;
+    rotationMatrix[1] = newUp;
+    rotationMatrix[2] = direction;
+
+    glm::quat defaultPosition = glm::quat_cast(rotationMatrix);
+
+    if (paper->getCurrentSide()) {
+        // Rotate 180 degrees around the UP axis to spin around and show back side
+        glm::quat flip = glm::angleAxis(glm::radians(180.0f), newUp);
+        defaultPosition = flip * defaultPosition;
+    }
 
     if (mouse->getLeftClicked()) {
         mouseStart = glm::vec2(mouse->getX(), mouse->getY());
@@ -160,8 +189,7 @@ void PaperView::update(Paper* paper) {
     float t = glm::clamp(smoothingFactor * deltaTime, 0.0f, 1.0f);
     currentRotation = glm::slerp(currentRotation, targetRotation, t);
 
-    glm::mat4 paperModel = glm::toMat4(currentRotation);
-
+    paperModel = glm::translate(glm::mat4(1), paperPosition) * glm::toMat4(currentRotation);
     paperShader->setUniform("uModel", paperModel);
 }
 
