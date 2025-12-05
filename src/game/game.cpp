@@ -320,6 +320,7 @@ void Game::update(float dt) {
             
             // Check if all enemies are defeated and set isOpen
             if (paper) {
+                bool wasOpen = paper->isOpen;
                 paper->checkAndSetOpen();
                 
                 // If paper is open, reveal all valid adjacent room directions
@@ -328,6 +329,11 @@ void Game::update(float dt) {
                     bool bottomValid = floor->getAdjacentRoom(0, 1) != nullptr;
                     bool leftValid = floor->getAdjacentRoom(1, 0) != nullptr;
                     bool rightValid = floor->getAdjacentRoom(-1, 0) != nullptr;
+                    
+                    // Play sound when squares first appear (room just opened)
+                    if (!wasOpen && paper->isOpen) {
+                        audio::SFXPlayer::Get().Play("menu_touch");
+                    }
                     
                     paperView->showDirectionalNodes(topValid, bottomValid, leftValid, rightValid);
                 } else if (paper && floor && paperView && !paper->isOpen) {

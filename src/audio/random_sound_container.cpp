@@ -45,8 +45,6 @@ void RandomSoundContainer::LoadFromFolder(const std::string& folderPath) {
 
     fs::path dir(folderPath);
     if (!fs::exists(dir) || !fs::is_directory(dir)) {
-        std::cout << "RandomSoundContainer '" << name_
-                  << "': Folder does not exist: " << folderPath << std::endl;
         return;
     }
 
@@ -61,10 +59,6 @@ void RandomSoundContainer::LoadFromFolder(const std::string& folderPath) {
             count++;
         }
     }
-
-    std::cout << "RandomSoundContainer '" << name_
-              << "': Loaded " << count
-              << " sounds from folder: " << folderPath << std::endl;
 }
 
 void RandomSoundContainer::Play() {
@@ -73,7 +67,6 @@ void RandomSoundContainer::Play() {
 
 void RandomSoundContainer::PlayWithVolume(float volume) {
     if (sounds_.empty()) {
-        std::cout << "RandomSoundContainer '" << name_ << "': Cannot play - no sounds loaded" << std::endl;
         return;
     }
     

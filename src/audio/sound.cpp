@@ -60,7 +60,6 @@ void Sound::Play() {
   instance->sound = new ma_sound;
   
   // Initialize the sound - don't stream music layers for better sync
-  std::cout << "Loading sound file: " << filepath_ << std::endl;
   ma_result result = ma_sound_init_from_file(
       engine_,
       filepath_.c_str(),
@@ -73,7 +72,6 @@ void Sound::Play() {
     std::cerr << "Failed to load sound file: " << filepath_ << " (error code: " << result << ")" << std::endl;
     return;  // Instance will be cleaned up by smart pointer
   }
-  std::cout << "Successfully loaded sound file: " << filepath_ << std::endl;
   
   // Configure and play
   ma_sound_set_looping(instance->sound, looping_);
