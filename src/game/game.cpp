@@ -302,6 +302,19 @@ void Game::update(float dt) {
             // Check if all enemies are defeated and set isOpen
             if (paper) {
                 paper->checkAndSetOpen();
+                
+                // If paper is open, reveal all valid adjacent room directions
+                if (paper->isOpen && floor && paperView) {
+                    bool topValid = floor->getAdjacentRoom(0, -1) != nullptr;
+                    bool bottomValid = floor->getAdjacentRoom(0, 1) != nullptr;
+                    bool leftValid = floor->getAdjacentRoom(-1, 0) != nullptr;
+                    bool rightValid = floor->getAdjacentRoom(1, 0) != nullptr;
+                    
+                    paperView->showDirectionalNodes(topValid, bottomValid, leftValid, rightValid);
+                } else if (paper && floor && paperView && !paper->isOpen) {
+                    // Hide all directions if paper is not open
+                    paperView->hideDirectionalNodes();
+                }
             }
         }
         // Game scene is paused if menus are active, but still rendered
@@ -392,6 +405,8 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
     // Regenerate PaperView mesh
     if (paperView) {
         paperView->regenerateMesh();
+        // Hide directions initially - they will be revealed if the room is open
+        paperView->hideDirectionalNodes();
     }
     
     // Update player nodes to the new room's nodes and update side reference

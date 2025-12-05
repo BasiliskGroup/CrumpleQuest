@@ -66,12 +66,31 @@ PaperView::PaperView(Game* game): game(game) {
         healthTokens.push_back(token);
     }
 
-    Node* isaacSquare = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position={0.5, 0.5, 0.5}, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
-
     transitionDuration = 0.4f;
     transitionDistance =  3.5f;
     transitionTimer = 0.0f;
     transitionState = 0;
+    
+    // create directional nodes
+    glm::vec3 planeNormal = direction;
+    glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 planeRight = glm::cross(worldUp, planeNormal); // NOTE not safe if planeNormal is parallel to worldUp
+    planeRight = glm::normalize(planeRight);
+    glm::vec3 planeUp = glm::normalize(glm::cross(planeNormal, planeRight));
+    float offsetAbove = 0.01f;
+    glm::vec3 offsetVector = -planeNormal * offsetAbove;
+    float quadDistance = 0.5f;
+
+    topBounds = {paperPosition + 2.0f * planeUp * quadDistance + offsetVector, paperPosition + planeUp * quadDistance + offsetVector};
+    bottomBounds = {paperPosition - 2.0f * planeUp * quadDistance + offsetVector, paperPosition - planeUp * quadDistance + offsetVector};
+    rightBounds = {paperPosition + 4.0f * planeRight * quadDistance + offsetVector, paperPosition + 2.0f * planeRight * quadDistance + offsetVector};
+    leftBounds = {paperPosition - 4.0f * planeRight * quadDistance + offsetVector, paperPosition - 2.0f * planeRight * quadDistance + offsetVector};
+    
+    // create directional nodes positioned on the plane
+    topSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=topBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+    bottomSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=bottomBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+    rightSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=rightBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+    leftSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=leftBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
 }
 
 PaperView::~PaperView() {
@@ -269,6 +288,35 @@ void PaperView::update(Paper* paper) {
 
     paperModel = glm::translate(glm::mat4(1), paperPosition) * glm::toMat4(currentRotation);
     paperShader->setUniform("uModel", paperModel);
+
+    // Smooth interpolation for directional nodes
+    float nodeSmoothingFactor = 5.0f;
+    float nodeT = glm::clamp(nodeSmoothingFactor * deltaTime, 0.0f, 1.0f);
+    
+    // Interpolate each directional node to its target position
+    if (topSign) {
+        glm::vec3 targetPos = topVisible ? topBounds.second : topBounds.first;
+        glm::vec3 currentPos = topSign->getPosition();
+        topSign->setPosition(glm::mix(currentPos, targetPos, nodeT));
+    }
+    
+    if (bottomSign) {
+        glm::vec3 targetPos = bottomVisible ? bottomBounds.second : bottomBounds.first;
+        glm::vec3 currentPos = bottomSign->getPosition();
+        bottomSign->setPosition(glm::mix(currentPos, targetPos, nodeT));
+    }
+    
+    if (rightSign) {
+        glm::vec3 targetPos = rightVisible ? rightBounds.second : rightBounds.first;
+        glm::vec3 currentPos = rightSign->getPosition();
+        rightSign->setPosition(glm::mix(currentPos, targetPos, nodeT));
+    }
+    
+    if (leftSign) {
+        glm::vec3 targetPos = leftVisible ? leftBounds.second : leftBounds.first;
+        glm::vec3 currentPos = leftSign->getPosition();
+        leftSign->setPosition(glm::mix(currentPos, targetPos, nodeT));
+    }
 }
 
 void PaperView::regenerateMesh() {
@@ -299,4 +347,19 @@ void PaperView::switchToRoom(Paper* paper, int dx, int dy) {
     transitionTimer = transitionDuration;
     transitionTarget = glm::vec3(0.0 + dx * transitionDistance, -1.0, 0.544 + dy * transitionDistance);
     nextPaper = paper;
+    this->game->switchToRoom(paper, dx, dy);
+}
+
+void PaperView::hideDirectionalNodes() {
+    topVisible = false;
+    bottomVisible = false;
+    leftVisible = false;
+    rightVisible = false;
+}
+
+void PaperView::showDirectionalNodes(bool top, bool bottom, bool left, bool right) {
+    topVisible = top;
+    bottomVisible = bottom;
+    leftVisible = left;
+    rightVisible = right;
 }

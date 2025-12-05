@@ -49,6 +49,22 @@ class PaperView {
         std::vector<glm::vec3> healthInactivePositions;
         std::vector<Node*> healthTokens;
 
+        // director nodes
+        Node* topSign;
+        Node* bottomSign;
+        Node* leftSign;
+        Node* rightSign;
+
+        std::pair<vec3, vec3> topBounds;
+        std::pair<vec3, vec3> bottomBounds;
+        std::pair<vec3, vec3> leftBounds;
+        std::pair<vec3, vec3> rightBounds;
+
+        // Directional node visibility state
+        bool topVisible = false;
+        bool bottomVisible = false;
+        bool leftVisible = false;
+        bool rightVisible = false;
 
     public:
         PaperView(Game* game);
@@ -62,6 +78,8 @@ class PaperView {
         Scene* getScene() { return scene; } 
 
         void switchToRoom(Paper* paper, int dx, int dy);
+        void hideDirectionalNodes();
+        void showDirectionalNodes(bool top, bool bottom, bool left, bool right);
 };
 
 #endif
