@@ -28,6 +28,13 @@ void SFXPlayer::Initialize(GroupHandle sfx_group) {
     foldEndConfig.pitchMin = 0.9f;
     foldEndConfig.pitchMax = 1.1f;
     LoadCollection("fold_end", "sounds/sfx/paper/move_sounds", foldEndConfig);
+
+    // Load fold end sounds
+    RandomSoundContainerConfig rotateConfig;
+    rotateConfig.avoidRepeat = true;
+    rotateConfig.pitchMin = 0.9f;
+    rotateConfig.pitchMax = 1.1f;
+    LoadCollection("rotate", "sounds/sfx/paper/move_sounds", rotateConfig);
     
     // Load flip sounds
     RandomSoundContainerConfig flipConfig;

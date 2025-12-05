@@ -1,5 +1,6 @@
 #include "game/paperView.h"
 #include "game/game.h"
+#include "audio/sfx_player.h"
 #include <iostream>
 
 PaperView::PaperView(Game* game): game(game) {
@@ -123,13 +124,16 @@ void PaperView::update(Paper* paper) {
     std::cout << paper->getCurrentSide() << std::endl;
     std::cout << defaultPosition.x << ", " << defaultPosition.y << ", " << defaultPosition.z << ", " << defaultPosition.w << ", " << std::endl;
 
-    if (mouse->getLeftClicked()) {
+    if (mouse->getMiddleClicked()) {
         mouseStart = glm::vec2(mouse->getX(), mouse->getY());
         mouseStartVector = mapToSphere(mouseStart.x, mouseStart.y, width, height);
         // Bake current rotation into lastRotation when starting a new drag
         lastRotation = currentRotation;
+
+        // Play sfx
+        audio::SFXPlayer::Get().Play("rotate");
     }
-    else if (mouse->getLeftDown()) {
+    else if (mouse->getMiddleDown()) {
         glm::vec2 mouseCurrent = glm::vec2(mouse->getX(), mouse->getY());
         glm::vec3 mouseCurrentVector = mapToSphere(mouseCurrent.x, mouseCurrent.y, width, height);
         
@@ -145,11 +149,16 @@ void PaperView::update(Paper* paper) {
         } else {
             targetRotation = lastRotation;
         }
+
+        // Play sfx if fast movement
     }
-    else if (mouse->getLeftReleased()) {
+    else if (mouse->getMiddleReleased()) {
         // Set target back to default
         targetRotation = defaultPosition;
         lastRotation = defaultPosition;
+
+        // Play sfx
+        audio::SFXPlayer::Get().Play("rotate");
     }
     else {
         targetRotation = defaultPosition;
