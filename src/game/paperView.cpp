@@ -48,7 +48,8 @@ PaperView::PaperView(Game* game): game(game) {
     targetRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
     // Set up table
-    Node* table = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("table"), .position={0.0, -1.0, 0.0}, .rotation=glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={8.0, 5.0, 1.0}});
+    Node* table = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("table"), .position={0.0, -1.0, 0.0}, .rotation=glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={5.0, 5.0, 1.0}});
+    Node* rug = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("rug"), .position={0.0, -2.0, 2.0}, .rotation=glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={12.0, 8.0, 1.0}});
     Node* mug = new Node(scene, {.mesh=game->getMesh("cube"), .material=game->getMaterial("lightGrey"), .position={-2.0, -0.75, 1.5}, .scale={0.2, 0.2, 0.2}});
 }
 
@@ -67,7 +68,7 @@ PaperView::~PaperView() {
  */
 void PaperView::renderLevelFBO(Paper* paper) {
     frame->use();
-    frame->clear(0.0, 1.0, 0.0, 1.0);
+    frame->clear(0.0, 0.0, 0.0, 0.0);
 
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
@@ -170,7 +171,13 @@ void PaperView::update(Paper* paper) {
         
         // Check for small axis vector to prevent crash on normalization
         if (glm::length2(rotationAxis) > 1e-6f) {
-            targetRotation = glm::angleAxis(angle, glm::normalize(rotationAxis)) * lastRotation;
+            // Transform rotation axis from screen space to world space
+            // Use the camera's orientation basis vectors
+            glm::vec3 worldRotationAxis = rotationAxis.x * right + 
+                                        rotationAxis.y * newUp + 
+                                        rotationAxis.z * direction;
+            
+            targetRotation = glm::angleAxis(angle, glm::normalize(worldRotationAxis)) * lastRotation;
         } else {
             targetRotation = lastRotation;
         }

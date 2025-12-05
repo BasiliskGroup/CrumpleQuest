@@ -21,7 +21,7 @@ int main() {
     // ------------------------------------------
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
@@ -33,7 +33,7 @@ int main() {
     };
     for (auto& [name, levels] : levelNames) {
         for (std::string& level : levels) {
-            game->addImage(name + "_" + level, new Image("art/maps/" + name + "/" + level + ".png"));
+            game->addImage(name + "_" + level, new Image("art/maps/" + name + "/" + level + ".PNG"));
             game->addMaterial(name + "_" + level, new Material({ 1, 1, 1 }, game->getImage(name + "_" + level)));
         }
     }
