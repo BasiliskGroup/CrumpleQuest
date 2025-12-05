@@ -92,6 +92,9 @@ Game::~Game() {
 }
 
 void Game::update(float dt) {
+    // Update elapsed time for sound cooldowns
+    elapsedTime += dt;
+    
     // Process pending return to main menu (deferred from button callback)
     if (pendingReturnToMainMenu) {
         pendingReturnToMainMenu = false;
@@ -142,6 +145,17 @@ void Game::update(float dt) {
         }
     }
     kWasDown = keys->getPressed(GLFW_KEY_F);
+    
+    // reset geometry (r key)
+    if (keys->getPressed(GLFW_KEY_R) && rWasDown == false && !MenuManager::Get().hasActiveMenu()) {
+        if (paper) {
+            paper->resetGeometry();
+            if (paperView) {
+                paperView->regenerateMesh();
+            }
+        }
+    }
+    rWasDown = keys->getPressed(GLFW_KEY_R);
     
     // pause (escape key)
     if (keys->getPressed(GLFW_KEY_ESCAPE) && escapeWasDown == false) {
@@ -206,6 +220,7 @@ void Game::update(float dt) {
     {
         if (!rightWasDown && rightIsDown) { // we just clicked
             rightStartDown = mousePos;
+            lastFoldMousePos = mousePos;
             
             if (paper) {
                 foldIsActive = paper->activateFold(mousePos);
@@ -233,6 +248,21 @@ void Game::update(float dt) {
     
         // continuous fold preview
         if (rightIsDown && paper) {
+            // Calculate mouse velocity for sound effects
+            float mouseVelocity = glm::length(mousePos - lastFoldMousePos) / dt;
+            float velocityThreshold = 15.0f; // World units per second (adjusted for 2D space)
+            float soundCooldown = 0.15f; // Minimum time between sounds
+            
+            if (mouseVelocity > velocityThreshold && (elapsedTime - lastFoldSoundTime) > soundCooldown) {
+                // Scale volume based on velocity (from threshold to 2x threshold = 0.15 to 0.65)
+                float normalizedVelocity = (mouseVelocity - velocityThreshold) / velocityThreshold;
+                float volume = glm::clamp(0.15f + normalizedVelocity * 0.5f, 0.15f, 0.65f);
+                audio::SFXPlayer::Get().PlayWithVolume("fold", volume);
+                lastFoldSoundTime = elapsedTime;
+            }
+            
+            lastFoldMousePos = mousePos;
+            
             paper->dotData();  // Update debug visualization first
             paper->previewFold(rightStartDown, mousePos);  // Show fold preview
         }
@@ -419,4 +449,5 @@ void Game::setSideToPaperSide() {
     this->player->getNode()->setMaterial(getMaterial("empty"));
     this->player->getWeaponNode()->setMaterial(getMaterial("empty"));
     this->player->setNodes(this->currentSide->getPlayerNode(), this->currentSide->getWeaponNode());
+    this->player->setSide(this->currentSide);
 }

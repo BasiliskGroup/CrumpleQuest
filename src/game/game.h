@@ -45,10 +45,16 @@ private:
 
     bool kWasDown = false;
     bool escapeWasDown = false;
+    bool rWasDown = false;
     bool upArrowWasDown = false;
     bool downArrowWasDown = false;
     bool leftArrowWasDown = false;
     bool rightArrowWasDown = false;
+
+    // Mouse tracking for velocity-based sounds
+    vec2 lastFoldMousePos;
+    float lastFoldSoundTime = 0.0f;
+    float elapsedTime = 0.0f;
 
     // menu management
     bool pendingReturnToMainMenu = false;

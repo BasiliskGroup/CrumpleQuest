@@ -1,5 +1,6 @@
 #include "game/paperView.h"
 #include "game/game.h"
+#include "audio/sfx_player.h"
 #include <iostream>
 
 PaperView::PaperView(Game* game): game(game) {
@@ -150,6 +151,7 @@ void PaperView::update(Paper* paper) {
     float width = (float)engine->getWindow()->getWidth() * engine->getWindow()->getWindowScaleX();
     float height = (float)engine->getWindow()->getHeight() * engine->getWindow()->getWindowScaleY();
     float deltaTime = engine->getDeltaTime();
+    elapsedTime += deltaTime;
 
     glm::vec3 cameraPos = camera->getPosition();
 
@@ -177,15 +179,34 @@ void PaperView::update(Paper* paper) {
         defaultPosition = flip * defaultPosition;
     }
 
-    if (mouse->getLeftClicked()) {
+    if (mouse->getMiddleClicked()) {
         mouseStart = glm::vec2(mouse->getX(), mouse->getY());
+        lastMousePos = mouseStart;
         mouseStartVector = mapToSphere(mouseStart.x, mouseStart.y, width, height);
         // Bake current rotation into lastRotation when starting a new drag
         lastRotation = currentRotation;
+
+        // Play sfx
+        audio::SFXPlayer::Get().Play("rotate");
     }
-    else if (mouse->getLeftDown()) {
+    else if (mouse->getMiddleDown()) {
         glm::vec2 mouseCurrent = glm::vec2(mouse->getX(), mouse->getY());
         glm::vec3 mouseCurrentVector = mapToSphere(mouseCurrent.x, mouseCurrent.y, width, height);
+        
+        // Calculate mouse velocity for sound effects
+        float mouseVelocity = glm::length(mouseCurrent - lastMousePos) / deltaTime;
+        float velocityThreshold = 1500.0f; // Pixels per second
+        float soundCooldown = 0.15f; // Minimum time between sounds
+        
+        if (mouseVelocity > velocityThreshold && (elapsedTime - lastSoundTime) > soundCooldown) {
+            // Scale volume based on velocity (from threshold to 2x threshold = 0.15 to 0.65)
+            float normalizedVelocity = (mouseVelocity - velocityThreshold) / velocityThreshold;
+            float volume = glm::clamp(0.15f + normalizedVelocity * 0.5f, 0.15f, 0.65f);
+            audio::SFXPlayer::Get().PlayWithVolume("fold", volume);
+            lastSoundTime = elapsedTime;
+        }
+        
+        lastMousePos = mouseCurrent;
         
         glm::vec3 rotationAxis = glm::cross(mouseStartVector, mouseCurrentVector);
         float angle = glm::acos(glm::dot(mouseStartVector, mouseCurrentVector));
@@ -205,11 +226,16 @@ void PaperView::update(Paper* paper) {
         } else {
             targetRotation = lastRotation;
         }
+
+        // Play sfx if fast movement
     }
-    else if (mouse->getLeftReleased()) {
+    else if (mouse->getMiddleReleased()) {
         // Set target back to default
         targetRotation = defaultPosition;
         lastRotation = defaultPosition;
+
+        // Play sfx
+        audio::SFXPlayer::Get().Play("rotate");
     }
     else {
         targetRotation = defaultPosition;
