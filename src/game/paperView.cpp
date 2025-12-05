@@ -19,6 +19,7 @@ PaperView::PaperView(Game* game): game(game) {
     paperVBO = new VBO(quadVertices);
     paperVAO = new VAO(paperShader, paperVBO);
     paperPosition = glm::vec3(0.0, 0.1386, 0.544);
+    transitionTarget = paperPosition;
 
     // Set up camera
     camera->use(paperShader);
@@ -66,6 +67,11 @@ PaperView::PaperView(Game* game): game(game) {
     }
 
     Node* isaacSquare = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position={0.5, 0.5, 0.5}, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+
+    transitionDuration = 0.4f;
+    transitionDistance =  3.5f;
+    transitionTimer = 0.0f;
+    transitionState = 0;
 }
 
 PaperView::~PaperView() {
@@ -134,6 +140,21 @@ glm::vec3 mapToSphere(float x, float y, float width, float height) {
  * 
  */
 void PaperView::update(Paper* paper) {
+
+    // Paper transtions
+    if (transitionTimer > 0.0f) {
+        transitionTimer -= engine->getDeltaTime();
+        if (transitionTimer < 0.0f) {
+            paperPosition = glm::vec3(0.0 - transitionDirection.x * transitionDistance, -1.0, 0.544 - transitionDirection.y * transitionDistance);
+            transitionTarget = glm::vec3(0.0, 0.1386, 0.544);
+            this->game->switchToRoom(nextPaper, transitionDirection.x, transitionDirection.y);
+        }        
+    }
+
+    glm::vec3 moveVector = paperPosition - transitionTarget;
+    paperPosition = paperPosition - 3.0f * moveVector * (float)engine->getDeltaTime();
+
+    // Health token transitions
     for (int i = 0; i < 6; i++) {
         Node* token = healthTokens.at(i);
         glm::vec3 targetPosition = healthActivePositions.at(i);
@@ -141,7 +162,7 @@ void PaperView::update(Paper* paper) {
             targetPosition.x += 1;
         }
 
-        glm::vec3 moveVector = token->getPosition() - targetPosition;
+        moveVector = token->getPosition() - targetPosition;
         token->setPosition((token->getPosition() - 5.0f * moveVector * (float)engine->getDeltaTime()));
     }
 
@@ -274,5 +295,8 @@ void PaperView::regenerateMesh() {
 }
 
 void PaperView::switchToRoom(Paper* paper, int dx, int dy) {
-    this->game->switchToRoom(paper, dx, dy);
+    transitionDirection = {dx, dy};
+    transitionTimer = transitionDuration;
+    transitionTarget = glm::vec3(0.0 + dx * transitionDistance, -1.0, 0.544 + dy * transitionDistance);
+    nextPaper = paper;
 }

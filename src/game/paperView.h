@@ -35,6 +35,15 @@ class PaperView {
         float lastSoundTime = 0.0f;
         float elapsedTime = 0.0f;
 
+        // Level transition
+        Paper* nextPaper;
+        glm::vec2 transitionDirection;
+        int  transitionState;
+        float transitionDuration;
+        float transitionDistance;
+        float transitionTimer;
+        glm::vec3 transitionTarget;
+
         // Health tokens
         std::vector<glm::vec3> healthActivePositions;
         std::vector<glm::vec3> healthInactivePositions;
