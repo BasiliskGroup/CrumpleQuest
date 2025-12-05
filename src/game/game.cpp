@@ -135,7 +135,7 @@ void Game::update(float dt) {
 
     // keyboard
     auto keys = this->engine->getKeyboard();
-    if (keys->getPressed(GLFW_KEY_F) && kWasDown == false) {
+    if (keys->getPressed(GLFW_KEY_SPACE) && kWasDown == false) {
         if (paper) {
             bool unfolded = paper->unfold(player->getPosition());
             if (unfolded) {
@@ -144,7 +144,7 @@ void Game::update(float dt) {
             }
         }
     }
-    kWasDown = keys->getPressed(GLFW_KEY_F);
+    kWasDown = keys->getPressed(GLFW_KEY_SPACE);
     
     // reset geometry (r key)
     if (keys->getPressed(GLFW_KEY_R) && rWasDown == false && !MenuManager::Get().hasActiveMenu()) {
