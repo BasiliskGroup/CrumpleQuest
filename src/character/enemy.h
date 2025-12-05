@@ -6,6 +6,7 @@
 #include "character/behavior.h"
 #include "resource/animation.h"
 #include "resource/animator.h"
+#include <optional>
 
 class Game;
 class SingleSide;
@@ -26,6 +27,7 @@ private:
     float attacking = 0.0f;  // Timer for attack animation
     Behavior* behavior = nullptr;  // Current behavior
     std::function<Behavior*(const vec2&, float)> behaviorSelector;  // Function that selects which behavior to use
+    std::optional<vec2> customDestination;  // Optional custom destination (if set, updatePathing will skip this enemy)
     
     // Status flags (updated by updateStatus)
     bool statusHasLineOfSight = false;
@@ -57,6 +59,11 @@ public:
     // Behavior selector getter/setter
     std::function<Behavior*(const vec2&, float)>& getBehaviorSelector() { return behaviorSelector; }
     void setBehaviorSelector(const std::function<Behavior*(const vec2&, float)>& func) { behaviorSelector = func; }
+    
+    // Custom destination getter/setter (used to override default pathfinding to player)
+    std::optional<vec2> getCustomDestination() const { return customDestination; }
+    void setCustomDestination(const vec2& dest) { customDestination = dest; }
+    void clearCustomDestination() { customDestination.reset(); }
     
     // Status getters
     bool hasLineOfSightStatus() const { return statusHasLineOfSight; }
