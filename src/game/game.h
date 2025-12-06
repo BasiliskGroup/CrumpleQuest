@@ -4,6 +4,7 @@
 #include "util/includes.h"
 #include "character/player.h"
 #include "character/enemy.h"
+#include "character/boss.h"
 #include "levels/paper.h"
 #include "audio/audio_manager.h"
 #include "audio/sfx_player.h"
@@ -28,6 +29,7 @@ private:
 
     Player* player;
     Floor* floor;
+    Boss* boss;  // Exactly one boss instance
 
     // rendering paper
     SingleSide* currentSide;
@@ -71,6 +73,9 @@ private:
     // enemy data
     float pathTimer = 0;
     float maxPathTimer = 0.2;
+    
+    // boss visibility
+    bool showBoss = true;
 
     // TODO maybe nove these to ui scenes
     std::vector<UIElement*> uiElements;
@@ -106,6 +111,9 @@ public:
     SingleSide*& getSide() { return currentSide; }
     Player* getPlayer() { return player; }
     Floor* getFloor() { return floor; }
+    Boss* getBoss() { return boss; }
+    bool getShowBoss() const { return showBoss; }
+    void setShowBoss(bool show) { showBoss = show; }
 
     auto& getEnemies() { return currentSide->getEnemies(); }
 

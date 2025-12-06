@@ -1,20 +1,99 @@
 #ifndef BOSS_H
 #define BOSS_H
 
-#include "character/character.h"
+#include "util/includes.h"
 
 class Game;
-class SingleSide;
-class Weapon;
+class PaperView;
 
-class Boss : public Character {
+class Boss {
 private:
-    vec2 hitboxOffset;
+    Game* game;
+    PaperView* paperView;
+    
+    // Health
+    int health;
+    int maxHealth;
+    
+    // State
     std::string stage;
+    bool vulnerable;
+    
+    // Hitbox
+    float hitboxRadius;
+    vec2 hitboxPosition;
+    
+    // Hand position offset (for vulnerability - raise/lower)
+    float handRaisedOffset = 0.0f;  // How much the hand is raised (0 when vulnerable, raised when not vulnerable)
+    float handBaseY = 0.0f;  // Base Y position of hand
+    
+    // Boss node animation
+    float bossAnimationTime = 0.0f;  // Time for back-and-forth animation
+    float bossAnimationSpeed = 1.0f;  // Speed of boss sliding animation
+    glm::vec3 currentBasePosition;  // Current base position for sliding (updated after slaps)
+    
+    // Vulnerability animation state
+    enum class VulnerableState {
+        None,        // Not vulnerable, normal sliding
+        Lowering,    // Lowering toward paper
+        Lowered,     // Lowered and vulnerable
+        Raising      // Raising back up
+    };
+    VulnerableState vulnerableState = VulnerableState::None;
+    float vulnerableLowerProgress = 0.0f;  // 0.0 to 1.0, progress through lowering animation
+    float vulnerableRaiseProgress = 0.0f;  // 0.0 to 1.0, progress through raising animation
+    float vulnerableLowerDuration = 0.3f;  // Duration of lowering animation in seconds
+    float vulnerableRaiseDuration = 0.3f;  // Duration of raising animation in seconds
+    glm::vec3 vulnerableRaisedPosition;   // Original raised position
+    glm::vec3 vulnerableLoweredPosition;   // Target lowered position (toward paper)
+    
+    // Vulnerability recovery
+    float vulnerableTime = 0.0f;  // Time spent in lowered state
+    float vulnerableDuration = 2.0f;  // How long to stay lowered before raising again
+    
+    // Scale for the hand (longer/taller - twice the size in length)
+    glm::vec3 handScale = glm::vec3(0.3f, 0.6f, 0.3f);  // Longer in Y direction (twice the size)
+    
+    // Random vulnerability timing
+    float timeSinceLastVulnerable = 0.0f;
+    float minTimeBetweenVulnerable = 2.0f;  // Minimum seconds between vulnerable periods
+    float maxTimeBetweenVulnerable = 5.0f;  // Maximum seconds between vulnerable periods
+    float nextVulnerableTime = 0.0f;  // When to trigger next vulnerable period
 
 public:
-    Boss(Game* game, Node2D* node, SingleSide* side, Weapon* weapon, float radius, vec2 scale, vec2 hitboxOffset);
+    Boss(Game* game, PaperView* paperView);
     ~Boss();
+    
+    // Getters
+    int getHealth() const { return health; }
+    int getMaxHealth() const { return maxHealth; }
+    std::string getStage() const { return stage; }
+    bool isVulnerable() const { return vulnerable; }
+    float getHitboxRadius() const { return hitboxRadius; }
+    vec2 getHitboxPosition() const { return hitboxPosition; }
+    Node* getBossNode() const;  // Get the boss node from paperView (the hand itself)
+    
+    // Setters
+    void setHealth(int health) { this->health = health; }
+    void setMaxHealth(int maxHealth) { this->maxHealth = maxHealth; }
+    void setStage(const std::string& stage) { this->stage = stage; }
+    void setVulnerable(bool vulnerable);
+    void setHitboxRadius(float radius) { this->hitboxRadius = radius; }
+    void setHitboxPosition(const vec2& position) { this->hitboxPosition = position; }
+    
+    // Update
+    void update(float dt);
+    
+    // Vulnerability animation
+    void startVulnerable();  // Start the vulnerable lowering animation
+
+    vec2 get2DPosition() const;  // Get 2D position for enemy spawn/damage zone location
+    void spawnEnemy();
+    void attack();
+    
+    // Damage
+    void onDamage(int damage);
+    bool isDead() const { return health <= 0; }
 };
 
 #endif
