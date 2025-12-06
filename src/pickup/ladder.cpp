@@ -10,5 +10,6 @@ void Ladder::onPickup() {
     std::cout << "Ladder picked up - requesting floor reset" << std::endl;
     if (game != nullptr) {
         game->requestResetFloor();
+        
     }
 }

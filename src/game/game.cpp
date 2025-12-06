@@ -516,7 +516,9 @@ void Game::startGame() {
     if (floor) {
         delete floor;
     }
-    floor = new Floor(this);
+    // First floor always starts with notebook biome
+    currentBiome = "notebook";
+    floor = new Floor(this, true, currentBiome);  // First floor uses tutorial spawn
     
     // Get the center room (spawn room) and set it as the current paper
     Paper* centerPaper = floor->getCenterRoom();
@@ -537,7 +539,7 @@ void Game::startGame() {
 
     // create player
     Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
-    Player* player = new Player(this, 3, 4, playerNode, getSide(), nullptr, 0.6f, playerNode->getScale());
+    Player* player = new Player(this, 5, 4, playerNode, getSide(), nullptr, 0.6f, playerNode->getScale());
     setPlayer(player);
     
     // Set player position to playerSpawn for first visit
@@ -572,14 +574,21 @@ void Game::resetFloor() {
     // Hide boss health bar
     showBossHealthBar(false);
     
-    // Delete the old floor (this will delete all Paper instances)
+    // Get current biome before deleting floor, then alternate
+    std::string newBiome = "notebook";  // Default
     if (floor != nullptr) {
+        std::string oldBiome = floor->getBiome();
+        // Alternate between notebook and grid
+        newBiome = (oldBiome == "notebook") ? "grid" : "notebook";
         delete floor;
         floor = nullptr;
     }
     
-    // Create a new floor
-    floor = new Floor(this);
+    // Update tracked biome
+    currentBiome = newBiome;
+    
+    // Create a new floor (subsequent floors use boss room template as spawn)
+    floor = new Floor(this, false, currentBiome);
     
     // Get the center room (spawn room) and set it as the current paper
     Paper* centerPaper = floor->getCenterRoom();
