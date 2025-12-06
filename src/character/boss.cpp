@@ -12,8 +12,8 @@
 Boss::Boss(Game* game, PaperView* paperView) : 
     game(game),
     paperView(paperView),
-    health(20),
-    maxHealth(20),
+    health(2),
+    maxHealth(2),
     stage("spawn"),
     vulnerable(false),
     hitboxRadius(0.5f),
@@ -38,7 +38,7 @@ Boss::Boss(Game* game, PaperView* paperView) :
     iframeTimer(0.0f),
     iframeDuration(0.3f),
     spawnProgress(0.0f),
-    spawnDuration(5.0f)
+    spawnDuration(6.0f)
 {
     // Create hand node in the paperView scene
     // The boss node should already exist (created in showGameElements before Boss is created)

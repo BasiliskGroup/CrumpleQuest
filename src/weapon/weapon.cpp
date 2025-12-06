@@ -2,7 +2,7 @@
 #include "levels/levels.h"
 
 Weapon::Weapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, float range) 
-    : owner(owner), maxCooldown(maxCooldown), range(range) 
+    : owner(owner), maxCooldown(maxCooldown), range(range), cooldown(maxCooldown)
 {}
 
 bool Weapon::attack(const vec2& pos, const vec2& dir) {
