@@ -127,24 +127,28 @@ Menu* MenuManager::createMainMenu() {
     background->setLayer(0.1f);
     mainMenu->addElement(background);
 
-    // Button layout
-    float buttonY = -0.2f;
-    float buttonSpacing = 2.0f;
-    float buttonWidth = 1.5f;
-    float buttonHeight = 0.8f;
+    // Button layout - lower third of paper
+    float buttonY = -3.0f;
+    float leftButtonSpacing = 2.5f;
+    float rightButtonSpacing = 2.2f;
+    float buttonWidth = 2.4f;
+    float buttonHeight = 3.1f;  // Compensate for 12:9 camera aspect ratio to achieve 1:1 screen appearance
+    float buttonOffsetX = 0.1f;  // Slight offset to the right
 
     // Settings button (left)
     Button* settingsButton = new Button(game->getMenuScene(), game, 
         {
             .mesh = game->getMesh("quad"),
-            .material = game->getMaterial("box"),
-            .position = {-buttonSpacing, buttonY},
+            .material = game->getMaterial("settingsButton"),
+            .position = {-leftButtonSpacing + buttonOffsetX, buttonY},
             .scale = {buttonWidth, buttonHeight}
         },
         {
             .onUp = [this]() {
                 this->pushSettingsMenu();
-            }
+            },
+            .hoverMaterial = game->getMaterial("settingsButtonHover"),
+            .hitboxScale = {buttonWidth, buttonHeight}
         }
     );
     settingsButton->setLayer(0.3f);
@@ -154,8 +158,8 @@ Menu* MenuManager::createMainMenu() {
     Button* startButton = new Button(game->getMenuScene(), game,
         {
             .mesh = game->getMesh("quad"),
-            .material = game->getMaterial("lightGrey"),
-            .position = {0, buttonY},
+            .material = game->getMaterial("startButton"),
+            .position = {0 + buttonOffsetX, buttonY},
             .scale = {buttonWidth, buttonHeight}
         },
         {
@@ -166,7 +170,9 @@ Menu* MenuManager::createMainMenu() {
                 this->pendingDelete.push_back(menu);
                 // Don't call startGame here - it will be triggered by a flag
                 this->game->setPendingStartGame(true);
-            }
+            },
+            .hoverMaterial = game->getMaterial("startButtonHover"),
+            .hitboxScale = {buttonWidth, buttonHeight}
         }
     );
     startButton->setLayer(0.3f);
@@ -176,14 +182,16 @@ Menu* MenuManager::createMainMenu() {
     Button* quitButton = new Button(game->getMenuScene(), game,
         {
             .mesh = game->getMesh("quad"),
-            .material = game->getMaterial("man"),
-            .position = {buttonSpacing, buttonY},
+            .material = game->getMaterial("exitButton"),
+            .position = {rightButtonSpacing + buttonOffsetX, buttonY},
             .scale = {buttonWidth, buttonHeight}
         },
         {
             .onUp = [this]() {
                 glfwSetWindowShouldClose(this->game->getEngine()->getWindow()->getWindow(), GLFW_TRUE);
-            }
+            },
+            .hoverMaterial = game->getMaterial("exitButtonHover"),
+            .hitboxScale = {buttonWidth, buttonHeight}
         }
     );
     quitButton->setLayer(0.3f);

@@ -38,6 +38,22 @@ int main() {
     game->addImage("menuPaper", new Image("art/assets/menuPaper.PNG"));
     game->addMaterial("menuPaper", new Material({ 1, 1, 1 }, game->getImage("menuPaper")));
     
+    // Load menu button images from art/assets/buttons
+    game->addImage("startButton", new Image("art/assets/buttons/start.PNG"));
+    game->addMaterial("startButton", new Material({ 1, 1, 1 }, game->getImage("startButton")));
+    game->addImage("startButtonHover", new Image("art/assets/buttons/start_hover.PNG"));
+    game->addMaterial("startButtonHover", new Material({ 1, 1, 1 }, game->getImage("startButtonHover")));
+    
+    game->addImage("settingsButton", new Image("art/assets/buttons/settings.PNG"));
+    game->addMaterial("settingsButton", new Material({ 1, 1, 1 }, game->getImage("settingsButton")));
+    game->addImage("settingsButtonHover", new Image("art/assets/buttons/settings_hover.PNG"));
+    game->addMaterial("settingsButtonHover", new Material({ 1, 1, 1 }, game->getImage("settingsButtonHover")));
+    
+    game->addImage("exitButton", new Image("art/assets/buttons/exit.PNG"));
+    game->addMaterial("exitButton", new Material({ 1, 1, 1 }, game->getImage("exitButton")));
+    game->addImage("exitButtonHover", new Image("art/assets/buttons/exit_hover.PNG"));
+    game->addMaterial("exitButtonHover", new Material({ 1, 1, 1 }, game->getImage("exitButtonHover")));
+    
     std::unordered_map<std::string, std::vector<std::string>> levelNames = {
         { "notebook", { "level1", "level2", "level3", "level4", "level5" } },
         {"tutorial", { "tutorial" } }
