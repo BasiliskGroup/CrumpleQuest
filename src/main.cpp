@@ -76,6 +76,28 @@ int main() {
     game->addMaterial("exitButtonHover", new Material({ 1, 1, 1 }, game->getImage("exitButtonHover")));
     
     refresh();
+    game->addImage("home", new Image("art/assets/buttons/home.PNG"));
+    game->addMaterial("home", new Material({ 1, 1, 1 }, game->getImage("home")));
+    game->addImage("home_hover", new Image("art/assets/buttons/home_hover.PNG"));
+    game->addMaterial("home_hover", new Material({ 1, 1, 1 }, game->getImage("home_hover")));
+    
+    refresh();
+    game->addImage("back", new Image("art/assets/buttons/back.PNG"));
+    game->addMaterial("back", new Material({ 1, 1, 1 }, game->getImage("back")));
+    game->addImage("back_hover", new Image("art/assets/buttons/back_hover.PNG"));
+    game->addMaterial("back_hover", new Material({ 1, 1, 1 }, game->getImage("back_hover")));
+    
+    refresh();
+    game->addImage("volumeicon", new Image("art/assets/volumeicon.png"));
+    game->addMaterial("volumeicon", new Material({ 1, 1, 1 }, game->getImage("volumeicon")));
+    game->addImage("musicicon", new Image("art/assets/musicicon.PNG"));
+    game->addMaterial("musicicon", new Material({ 1, 1, 1 }, game->getImage("musicicon")));
+    game->addImage("SFXicon", new Image("art/assets/SFXicon.PNG"));
+    game->addMaterial("SFXicon", new Material({ 1, 1, 1 }, game->getImage("SFXicon")));
+    game->addImage("blackCircle", new Image("art/assets/blackCircle.PNG"));
+    game->addMaterial("blackCircle", new Material({ 1, 1, 1 }, game->getImage("blackCircle")));
+    
+    refresh();
     std::unordered_map<std::string, std::vector<std::string>> levelNames = {
         { "notebook", { "blank", "level1", "level2", "level3", "level4", "level5"} },
         { "grid", { "blank", "level1", "level2", "level3", "level4", "level5"} },

@@ -207,7 +207,7 @@ Menu* MenuManager::createSettingsMenu() {
     Button* background = new Button(game->getMenuScene(), game, {
         .mesh = game->getMesh("quad"),
         .material = game->getMaterial("notebook"),
-        .scale = {9, 6.75}
+        .scale = {7.5, 7.5}  // Match main menu dimensions
     },
     {
         .onDown = [this]() {
@@ -216,29 +216,21 @@ Menu* MenuManager::createSettingsMenu() {
     });
     background->setLayer(0.4f);
     settingsMenu->addElement(background);
-    
-    // Create title
-    Node2D* title = new Node2D(game->getMenuScene(), {
-        .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("lightGrey"),
-        .position = {0, 2.4},
-        .scale = {3.5, 1.2}
-    });
-    title->setLayer(0.5f);
-    settingsMenu->addNode(title);
 
-    // Sliders layout
+    // Sliders layout - centered
     float sliderStartY = 1.3f;
     float sliderSpacing = 0.9f;
-    float iconX = -3.2f;
-    float sliderMinX = -2.5f;
-    float sliderMaxX = 2.5f;
-    float iconSize = 0.4f;
+    float iconX = -3.0f;
+    float sliderMinX = -1.5f;  // Centered slider
+    float sliderMaxX = 1.5f;   // Centered slider
+    float iconSize = 0.7f;     // Bigger icons
+    float pegSize = 0.4f;      // Circle size
+    float pegSizeCompensated = pegSize * (12.0f / 9.0f);  // Compensate for aspect ratio to make circles round
     
     // Master volume slider
     Node2D* masterIcon = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("knight"),
+        .material = game->getMaterial("volumeicon"),
         .position = {iconX, sliderStartY},
         .scale = {iconSize, iconSize}
     });
@@ -248,7 +240,10 @@ Menu* MenuManager::createSettingsMenu() {
     Slider* masterSlider = new Slider(game->getMenuScene(), game, 
         {sliderMinX, sliderStartY}, 
         {sliderMaxX, sliderStartY}, 
-        {.pegMaterial = game->getMaterial("box")}
+        {
+            .pegMaterial = game->getMaterial("blackCircle"),
+            .pegDim = {pegSize, pegSizeCompensated}
+        }
     );
     masterSlider->setProportion(game->getAudio().GetMasterVolume());
     masterSlider->getBar()->setLayer(0.54f);
@@ -261,7 +256,7 @@ Menu* MenuManager::createSettingsMenu() {
     // Music volume slider
     Node2D* musicIcon = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("sword"),
+        .material = game->getMaterial("musicicon"),
         .position = {iconX, sliderStartY - sliderSpacing},
         .scale = {iconSize, iconSize}
     });
@@ -271,7 +266,10 @@ Menu* MenuManager::createSettingsMenu() {
     Slider* musicSlider = new Slider(game->getMenuScene(), game,
         {sliderMinX, sliderStartY - sliderSpacing},
         {sliderMaxX, sliderStartY - sliderSpacing},
-        {.pegMaterial = game->getMaterial("box")}
+        {
+            .pegMaterial = game->getMaterial("blackCircle"),
+            .pegDim = {pegSize, pegSizeCompensated}
+        }
     );
     musicSlider->setProportion(game->getAudio().GetGroupVolume(game->getMusicGroup()));
     musicSlider->getBar()->setLayer(0.54f);
@@ -284,7 +282,7 @@ Menu* MenuManager::createSettingsMenu() {
     // SFX volume slider
     Node2D* sfxIcon = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("man"),
+        .material = game->getMaterial("SFXicon"),
         .position = {iconX, sliderStartY - sliderSpacing * 2},
         .scale = {iconSize, iconSize}
     });
@@ -294,7 +292,10 @@ Menu* MenuManager::createSettingsMenu() {
     Slider* sfxSlider = new Slider(game->getMenuScene(), game,
         {sliderMinX, sliderStartY - sliderSpacing * 2},
         {sliderMaxX, sliderStartY - sliderSpacing * 2},
-        {.pegMaterial = game->getMaterial("box")}
+        {
+            .pegMaterial = game->getMaterial("blackCircle"),
+            .pegDim = {pegSize, pegSizeCompensated}
+        }
     );
     sfxSlider->setProportion(game->getAudio().GetGroupVolume(game->getSFXGroup()) / 0.3f);
     sfxSlider->getBar()->setLayer(0.54f);
@@ -305,41 +306,73 @@ Menu* MenuManager::createSettingsMenu() {
     });
     settingsMenu->addElement(sfxSlider);
 
-    // Return to Main Menu button (only shown when in-game)
+    // Button layout - horizontal like main menu
+    float buttonY = -3.0f;
+    float buttonWidth = 2.4f;
+    float buttonHeight = 3.1f;  // Compensate for 12:9 camera aspect ratio
+    
+    // Determine button positions based on whether in-game or not
     if (game->getPaper() != nullptr) {
+        // In-game: show both Home and Back buttons
+        float buttonSpacing = 2.3f;
+        
+        // Back button (left)
+        Button* backButton = new Button(game->getMenuScene(), game,
+            {
+                .mesh = game->getMesh("quad"),
+                .material = game->getMaterial("back"),
+                .position = {-buttonSpacing, buttonY},
+                .scale = {buttonWidth, buttonHeight}
+            },
+            {
+                .onUp = [this]() {
+                    this->popMenu();
+                },
+                .hoverMaterial = game->getMaterial("back_hover"),
+                .hitboxScale = {buttonWidth, buttonHeight}
+            }
+        );
+        backButton->setLayer(0.6f);
+        settingsMenu->addElement(backButton);
+        
+        // Home button (right)
         Button* mainMenuButton = new Button(game->getMenuScene(), game,
             {
                 .mesh = game->getMesh("quad"),
-                .material = game->getMaterial("lightGrey"),
-                .position = {0, -1.5},
-                .scale = {2.8, 0.8}
+                .material = game->getMaterial("home"),
+                .position = {buttonSpacing, buttonY},
+                .scale = {buttonWidth, buttonHeight}
             },
             {
                 .onUp = [this]() {
                     this->game->returnToMainMenu();
-                }
+                },
+                .hoverMaterial = game->getMaterial("home_hover"),
+                .hitboxScale = {buttonWidth, buttonHeight}
             }
         );
         mainMenuButton->setLayer(0.6f);
         settingsMenu->addElement(mainMenuButton);
-    }
-
-    // Back button
-    Button* backButton = new Button(game->getMenuScene(), game,
-        {
-            .mesh = game->getMesh("quad"),
-            .material = game->getMaterial("box"),
-            .position = {0, game->getPaper() != nullptr ? -2.4f : -2.2},
-            .scale = {2.0, 0.8}
-        },
-        {
-            .onUp = [this]() {
-                this->popMenu();
+    } else {
+        // Main menu settings: only show Back button (centered)
+        Button* backButton = new Button(game->getMenuScene(), game,
+            {
+                .mesh = game->getMesh("quad"),
+                .material = game->getMaterial("back"),
+                .position = {0, buttonY},
+                .scale = {buttonWidth, buttonHeight}
+            },
+            {
+                .onUp = [this]() {
+                    this->popMenu();
+                },
+                .hoverMaterial = game->getMaterial("back_hover"),
+                .hitboxScale = {buttonWidth, buttonHeight}
             }
-        }
-    );
-    backButton->setLayer(0.6f);
-    settingsMenu->addElement(backButton);
+        );
+        backButton->setLayer(0.6f);
+        settingsMenu->addElement(backButton);
+    }
     
     return settingsMenu;
 }
@@ -351,7 +384,7 @@ Menu* MenuManager::createGameOverMenu() {
     Button* background = new Button(game->getMenuScene(), game, {
         .mesh = game->getMesh("quad"),
         .material = game->getMaterial("notebook"),
-        .scale = {9, 6.75}
+        .scale = {7.5, 7.5}  // Match main menu dimensions
     },
     {
         .onDown = [this]() {
@@ -375,14 +408,15 @@ Menu* MenuManager::createGameOverMenu() {
     Button* mainMenuButton = new Button(game->getMenuScene(), game,
         {
             .mesh = game->getMesh("quad"),
-            .material = game->getMaterial("box"),
+            .material = game->getMaterial("home"),
             .position = {0, -1.5},
-            .scale = {2.8, 0.8}
+            .scale = {0.8, 0.8}
         },
         {
             .onUp = [this]() {
                 this->game->returnToMainMenu();
-            }
+            },
+            .hoverMaterial = game->getMaterial("home_hover")
         }
     );
     mainMenuButton->setLayer(0.6f);

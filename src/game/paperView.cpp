@@ -77,6 +77,10 @@ PaperView::PaperView(Game* game): game(game) {
     rightSign = nullptr;
     leftSign = nullptr;
     bossNode = nullptr;
+
+    // Crosshair
+    crosshairScene = new Scene2D(engine);
+    crosshair = new Node2D(crosshairScene, {.mesh=game->getMesh("quad"), .material=game->getMaterial("lightGrey"), .scale={0.25f, 0.25f}});
 }
 
 PaperView::~PaperView() {
@@ -85,6 +89,7 @@ PaperView::~PaperView() {
     delete paperShader;
     delete camera;
     delete frame;
+    delete crosshairScene;
     delete scene;
 }
 
@@ -135,6 +140,11 @@ void PaperView::render() {
     camera->use(paperShader);
     paperShader->use();
     paperVAO->render();
+
+    crosshairScene->update();
+    glDisable(GL_DEPTH_TEST);
+    crosshairScene->render();
+    glEnable(GL_DEPTH_TEST);
 }
 
 glm::vec3 mapToSphere(float x, float y, float width, float height) {
@@ -164,6 +174,8 @@ glm::vec3 mapToSphere(float x, float y, float width, float height) {
  */
 void PaperView::update(Paper* paper) {
 
+    crosshair->setPosition({game->getEngine()->getMouse()->getWorldX(crosshairScene->getCamera()), game->getEngine()->getMouse()->getWorldY(crosshairScene->getCamera())});
+    
     // Paper transtions
     if (transitionTimer > 0.0f) {
         // Play outgoing paper sound at the start of transition

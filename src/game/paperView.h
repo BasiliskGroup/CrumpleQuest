@@ -46,6 +46,10 @@ class PaperView {
         glm::vec3 transitionTarget;
         int currentTrackIndex;  // Track which music track we're on (0=parchment, 1=notebook, 2=grid)
 
+        // Crosshair
+        Scene2D* crosshairScene;
+        Node2D* crosshair;
+
         // Health tokens
         std::vector<glm::vec3> healthActivePositions;
         std::vector<glm::vec3> healthInactivePositions;

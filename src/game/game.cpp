@@ -539,7 +539,7 @@ void Game::startGame() {
 
     // create player
     Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
-    Player* player = new Player(this, 3, 4, playerNode, getSide(), nullptr, 0.6f, playerNode->getScale());
+    Player* player = new Player(this, 5, 4, playerNode, getSide(), nullptr, 0.6f, playerNode->getScale());
     setPlayer(player);
     
     // Set player position to playerSpawn for first visit

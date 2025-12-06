@@ -228,7 +228,7 @@ void Player::setWeaponStapleGun() {
     setWeapon(new ProjectileWeapon(this,
         { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={projectileRadius, 2.0f * projectileRadius}},
         { .damage=1, .life=5.0f, .speed=7.0f, .radius=projectileRadius / 2.0f },
-        0.0f,  // maxCooldown
+        0.8f,  // maxCooldown
         { "stapleProjectile" },  // projectile materials
         0      // ricochet
     ));
@@ -254,7 +254,7 @@ void Player::setWeaponScissor() {
         { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={meleeRadius, meleeRadius}}, 
         { .damage=1, .life=0.2f, .radius=meleeRadius / 2.0f }, 
         0.5f,  // maxCooldown
-        6.0f   // knockback
+        4.0f   // knockback
     ));
 }
 
