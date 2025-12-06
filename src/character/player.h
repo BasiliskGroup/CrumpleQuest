@@ -29,7 +29,7 @@ private:
     bool shiftWasDown = false;
 
     bool pencilAvailible = true;
-    bool stapleGunAvailible = false;
+    bool stapleGunAvailible = true;
     bool scissorAvailible = false;
 
 public:

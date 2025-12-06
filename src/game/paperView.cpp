@@ -550,8 +550,8 @@ void PaperView::showGameElements() {
     if (bossNode == nullptr) {
         bossNode = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("empty"), .position=bossInitialPos, .rotation=(glm::angleAxis(glm::radians(90.0f), planeNormal) * basePlaneRotation), .scale={1.2, 0.72, 0.24}});
     } else {
-        // Update position if node already exists
-        bossNode->setPosition(bossInitialPos);
+        // Don't reset position if boss node exists - let Boss class manage its own position
+        // Only update rotation and scale (position is managed by Boss during spawn animation)
         bossNode->setRotation(glm::angleAxis(glm::radians(90.0f), planeNormal) * basePlaneRotation);
         bossNode->setScale(glm::vec3(1.2f, 0.72f, 0.24f));
         // Hide boss node by default (will be shown when boss is created in boss room)

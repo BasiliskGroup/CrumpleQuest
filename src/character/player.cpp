@@ -228,7 +228,7 @@ void Player::setWeaponStapleGun() {
     setWeapon(new ProjectileWeapon(this,
         { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={projectileRadius, 2.0f * projectileRadius}},
         { .damage=1, .life=5.0f, .speed=7.0f, .radius=projectileRadius / 2.0f },
-        0.8f,  // maxCooldown
+        0.0f,  // maxCooldown
         { "stapleProjectile" },  // projectile materials
         0      // ricochet
     ));
