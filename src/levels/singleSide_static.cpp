@@ -6,24 +6,18 @@ std::unordered_map<std::string, std::function<SingleSide*(float)>> SingleSide::t
 
 void SingleSide::generateTemplates(Game* game) {
 
-    // empty level
-    templates["empty0"] = [game](float difficulty) {
-        SingleSide* side = new SingleSide(game, "paper0", "tutorial_tutorialLevel", vec2(0, 0), "notebook", {}, difficulty);
-        // side->addEnemy(Enemy::templates["clipfly"]({ -5, 3 }, side));
-        side->addEnemy(Enemy::templates["glue"]({ 0, 3 }, side));
-        // side->addEnemy(Enemy::templates["staple"]({ 5, 3 }, side));
-        side->addEnemy(Enemy::templates["integral"]({ -4, 3 }, side));
-        // side->addEnemy(Enemy::templates["pi"]({ 1, 3 }, side));
-        // side->addEnemy(Enemy::templates["sigma"]({ 4, 3 }, side));
+    // Tutorial
+    templates["tutorial_front"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper0", "tutorial_tutorial", vec2(0, 0), "notebook", {}, difficulty);
+        return side;
+    };
+    templates["tutorial_back"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper1", "tutorial_tutorial", vec2(0, 0), "notebook", {}, difficulty);
+        side->addEnemy(Enemy::templates["clipfly"]({ 10.4 - 6.0, 4.43 - 4.5 }, side));
         return side;
     };
 
-    templates["empty1"] = [game](float difficulty) {
-        std::vector<vec2> enemySpawns = { { 0, 3 }, { 5, 3 }, { -4, 3 }, { 1, 3 }, { 4, 3 } };
-        SingleSide* side = new SingleSide(game, "paper1", "tutorial_tutorialLevel", vec2(0, 0), "notebook", enemySpawns, difficulty);
-        return side;
-    };
-
+    // Notebook
     templates["notebook1_front"] = [game](float difficulty) {
         std::vector<vec2> enemySpawns = { { 10,4.5 }, { 1.47,4.67 } };
         SingleSide* side = new SingleSide(game, "paper0", "notebook_level1", vec2(0, 0), "notebook", enemySpawns, difficulty);
