@@ -66,6 +66,7 @@ int main() {
     
     std::unordered_map<std::string, std::vector<std::string>> levelNames = {
         { "notebook", { "blank", "level1", "level2", "level3", "level4", "level5"} },
+        { "grid", { "blank", "level1", "level2", "level3", "level4", "level5"} },
         {"tutorial", { "tutorial" } }
     };
     for (auto& [name, levels] : levelNames) {

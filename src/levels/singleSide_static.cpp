@@ -97,16 +97,61 @@ void SingleSide::generateTemplates(Game* game) {
         return side;
     };
 
-    // templates["grid1_front"] = [game](float difficulty) {
-    //     std::vector<vec2> enemySpawns = { { 10,4.5 }, { 1.47,4.67 } };
-    //     SingleSide* side = new SingleSide(game, "paper0", "grid_level1", vec2(0, 0), "grid", enemySpawns, difficulty);
-    //     return side;
-    // };
-    // templates["grid1_back"] = [game](float difficulty) {
-    //     std::vector<vec2> enemySpawns = { { 1.44,1.7 }, { 10.13,7.25 }, { 6.03,4.42 }, { 10.3,1.77 }, { 1.74,7.47 } };
-    //     SingleSide* side = new SingleSide(game, "paper1", "grid_level1", vec2(0, 0), "grid", enemySpawns, difficulty);
-    //     return side;
-    // };
+    // Grid
+    templates["grid1_front"] = [game](float difficulty) {
+        std::vector<vec2> enemySpawns = { {2.1,4.54}, {10.1,4.53} };
+        SingleSide* side = new SingleSide(game, "paper0", "grid_level1", vec2(0, 0), "grid", enemySpawns, difficulty);
+        return side;
+    };
+    templates["grid1_back"] = [game](float difficulty) {
+        std::vector<vec2> enemySpawns = { {1.7,1.88}, {5.87,4.3}, {10,7.46} };
+        SingleSide* side = new SingleSide(game, "paper1", "grid_level1", vec2(0, 0), "grid", enemySpawns, difficulty);
+        return side;
+    };
+
+    templates["grid2_front"] = [game](float difficulty) {
+        std::vector<vec2> enemySpawns = { {1.07,6.47}, {10.94,2.62} };
+        SingleSide* side = new SingleSide(game, "paper0", "grid_level2", vec2(0, 0), "grid", enemySpawns, difficulty);
+        return side;
+    };
+    templates["grid2_back"] = [game](float difficulty) {
+        std::vector<vec2> enemySpawns = { {10.94,2.62}, {5.97,1.96}, {2.1,4.53}, {9.72,4.53} };
+        SingleSide* side = new SingleSide(game, "paper1", "grid_level2", vec2(0, 0), "grid", enemySpawns, difficulty);
+        return side;
+    };
+
+    templates["grid3_front"] = [game](float difficulty) {
+        std::vector<vec2> enemySpawns = { {3.84,0.97}, {8.8,8.15} };
+        SingleSide* side = new SingleSide(game, "paper0", "grid_level3", vec2(0, 0), "grid", enemySpawns, difficulty);
+        return side;
+    };
+    templates["grid3_back"] = [game](float difficulty) {
+        std::vector<vec2> enemySpawns = { {3.56,6.57}, {8.84,2.8}, {6.36,4.64} };
+        SingleSide* side = new SingleSide(game, "paper1", "grid_level3", vec2(0, 0), "grid", enemySpawns, difficulty);
+        return side;
+    };
+
+    templates["grid4_front"] = [game](float difficulty) {
+        std::vector<vec2> enemySpawns = { {3,5.84}, {8.87,2.8} };
+        SingleSide* side = new SingleSide(game, "paper0", "grid_level4", vec2(0, 0), "grid", enemySpawns, difficulty);
+        return side;
+    };
+    templates["grid4_back"] = [game](float difficulty) {
+        std::vector<vec2> enemySpawns = { {2.74,3.6}, {6.03,4.72}, {9.1,5.87} };
+        SingleSide* side = new SingleSide(game, "paper1", "grid_level4", vec2(0, 0), "grid", enemySpawns, difficulty);
+        return side;
+    };
+
+    templates["grid5_front"] = [game](float difficulty) {
+        std::vector<vec2> enemySpawns = { {3.05,6.68}, {8.87,2.15}, {0.9,3.42} };
+        SingleSide* side = new SingleSide(game, "paper0", "grid_level5", vec2(0, 0), "grid", enemySpawns, difficulty);
+        return side;
+    };
+    templates["grid5_back"] = [game](float difficulty) {
+        std::vector<vec2> enemySpawns = { {8,2.55}, {3.9,6.5}, {9.57,4.67} };
+        SingleSide* side = new SingleSide(game, "paper1", "grid_level5", vec2(0, 0), "grid", enemySpawns, difficulty);
+        return side;
+    };
 }
 
 Node2D* SingleSide::genPlayerNode(Game* game, SingleSide* side) {

@@ -41,6 +41,27 @@ void Paper::generateTemplates(Game* game) {
         return new Paper(game, { "notebook5_front", "notebook5_back" }, { "notebook5_front", "notebook5_back" }, difficulty);
     };
 
+    // Grid
+    templates["grid1"] = [game](float difficulty) {
+        return new Paper(game, { "grid1_front", "grid1_back" }, { "grid1_front", "grid1_back" }, difficulty);
+    };
+
+    templates["grid2"] = [game](float difficulty) {
+        return new Paper(game, { "grid2_front", "grid2_back" }, { "grid2_front", "grid2_back" }, difficulty);
+    };
+
+    templates["grid3"] = [game](float difficulty) {
+        return new Paper(game, { "grid3_front", "grid3_back" }, { "grid3_front", "grid3_back" }, difficulty);
+    };
+
+    templates["grid4"] = [game](float difficulty) {
+        return new Paper(game, { "grid4_front", "grid4_back" }, { "grid4_front", "grid4_back" }, difficulty);
+    };
+
+    templates["grid5"] = [game](float difficulty) {
+        return new Paper(game, { "grid5_front", "grid5_back" }, { "grid5_front", "grid5_back" }, difficulty);
+    };
+
     // ---------------------
     // label templates
     // ---------------------
@@ -50,13 +71,18 @@ void Paper::generateTemplates(Game* game) {
             "tutorial"
         }},
         {BASIC_ROOM, {
-            "notebook1",
-            "notebook2",
-            "notebook3",
-            "notebook4",
-            "notebook5",
-            "notebook_health",
-            "notebook_weapon",
+            // "notebook1",
+            // "notebook2",
+            // "notebook3",
+            // "notebook4",
+            // "notebook5",
+            // "notebook_health",
+            // "notebook_weapon",
+            "grid1",
+            "grid2",
+            "grid3",
+            "grid4",
+            "grid5",
         }},
         {BOSS_ROOM, {
             "tutorial"
