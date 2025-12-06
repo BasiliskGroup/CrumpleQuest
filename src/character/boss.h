@@ -33,12 +33,20 @@ private:
     
     // Vulnerability animation state
     enum class VulnerableState {
+        Spawning,    // Spawning animation - moving from off-screen to starting position
         None,        // Not vulnerable, normal sliding
         Lowering,    // Lowering toward paper
         Lowered,     // Lowered and vulnerable
         Raising      // Raising back up
     };
-    VulnerableState vulnerableState = VulnerableState::None;
+    VulnerableState vulnerableState = VulnerableState::Spawning;
+    
+    // Action type when lowered
+    enum class LoweredAction {
+        Attack,      // Attack, then wait 0.5s before raising
+        Spawn        // Spawn enemy, then immediately raise
+    };
+    LoweredAction currentAction = LoweredAction::Attack;
     float vulnerableLowerProgress = 0.0f;  // 0.0 to 1.0, progress through lowering animation
     float vulnerableRaiseProgress = 0.0f;  // 0.0 to 1.0, progress through raising animation
     float vulnerableLowerDuration = 0.3f;  // Duration of lowering animation in seconds
@@ -48,7 +56,8 @@ private:
     
     // Vulnerability recovery
     float vulnerableTime = 0.0f;  // Time spent in lowered state
-    float vulnerableDuration = 2.0f;  // How long to stay lowered before raising again
+    float vulnerableDuration = 2.0f;  // How long to stay lowered before raising again (old, may not be used)
+    float attackWaitDuration = 0.5f;  // How long to wait after attacking before raising
     
     // Scale for the hand (longer/taller - extended along finger direction)
     glm::vec3 handScale = glm::vec3(0.32f, 0.72f, 0.24f);  // Extended in Y direction (finger direction, 20% smaller)
@@ -62,6 +71,12 @@ private:
     // Invincibility frames
     float iframeTimer = 0.0f;  // Time remaining for invincibility frames
     float iframeDuration = 0.3f;  // Duration of invincibility frames after taking damage
+    
+    // Spawn animation
+    float spawnProgress = 0.0f;  // 0.0 to 1.0, progress through spawn animation
+    float spawnDuration = 5.0f;  // Duration of spawn animation in seconds
+    glm::vec3 spawnStartPosition;  // Starting position (off-screen)
+    glm::vec3 spawnTargetPosition;  // Target position (normal starting position)
 
 public:
     Boss(Game* game, PaperView* paperView);

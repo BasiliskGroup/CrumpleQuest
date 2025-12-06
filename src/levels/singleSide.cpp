@@ -328,8 +328,8 @@ void SingleSide::update(const vec2& playerPos, float dt, Player* player) {
                 if (isVulnerable && !isFriendly) {
                     // Get boss 2D position
                     vec2 bossPos = boss->get2DPosition();
-                    // Use attack radius (3.0f) for boss hitbox
-                    float bossRadius = 3.0f;
+                    // Use attack radius (2.0f) for boss hitbox
+                    float bossRadius = 2.0f;
                     float combinedRadius = bossRadius + zone->getRadius();
                     float distSq = glm::length2(bossPos - zone->getPosition());
                     

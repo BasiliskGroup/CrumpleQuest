@@ -10,15 +10,15 @@
 Boss::Boss(Game* game, PaperView* paperView) : 
     game(game),
     paperView(paperView),
-    health(20),
-    maxHealth(20),
+    health(40),
+    maxHealth(40),
     stage("spawn"),
     vulnerable(false),
     hitboxRadius(0.5f),
     hitboxPosition(0.0f, 0.0f),
     hand2DPosition(0.0f, 0.0f),
     handHeight(0.2f),
-    vulnerableState(VulnerableState::None),
+    vulnerableState(VulnerableState::Spawning),
     vulnerableLowerProgress(0.0f),
     vulnerableRaiseProgress(0.0f),
     vulnerableLowerDuration(0.3f),
@@ -27,34 +27,51 @@ Boss::Boss(Game* game, PaperView* paperView) :
     vulnerableLoweredHeight(0.2f),
     vulnerableTime(0.0f),
     vulnerableDuration(2.0f),
+    attackWaitDuration(3.0f),
     handScale(1.2f, 0.72f, 0.3f),
     timeSinceLastVulnerable(0.0f),
     minTimeBetweenVulnerable(2.0f),
     maxTimeBetweenVulnerable(5.0f),
     nextVulnerableTime(uniform(2.0f, 5.0f)),
     iframeTimer(0.0f),
-    iframeDuration(0.3f)
+    iframeDuration(0.3f),
+    spawnProgress(0.0f),
+    spawnDuration(5.0f)
 {
     // Create hand node in the paperView scene
-    // The boss node will be created later in showGameElements, so we'll initialize hand later
+    // The boss node should already exist (created in showGameElements before Boss is created)
     if (paperView && paperView->getScene()) {
-        // Get initial position from boss node if it exists, otherwise use default
         Node* bossNode = paperView->getBossNode();
-        glm::vec3 bossPos = {0.0f, 0.1386f, 0.544f};  // Default paper position
-        if (bossNode) {
-            bossPos = bossNode->getPosition();
-            // Initialize 2D position from current 3D position
-            hand2DPosition = paperView->projectToPaperPlane(bossPos);
-            // Clamp to bounds
-            hand2DPosition.x = glm::clamp(hand2DPosition.x, -0.5f, 0.5f);
-            hand2DPosition.y = glm::clamp(hand2DPosition.y, -0.4f, 0.4f);
-            std::cout << "[Boss::Boss] Boss node exists, position=(" << bossPos.x << ", " << bossPos.y << ", " << bossPos.z << ")" << std::endl;
-        } else {
-            // If boss node doesn't exist yet, start at center
-            hand2DPosition = vec2(0.0f, 0.0f);
-            std::cout << "[Boss::Boss] Boss node doesn't exist yet, using center position" << std::endl;
+        if (!bossNode) {
+            std::cout << "[Boss::Boss] WARNING: Boss node doesn't exist yet!" << std::endl;
+            return;
         }
-        std::cout << "[Boss::Boss] Boss created, vulnerable=" << vulnerable << std::endl;
+        
+        // Get the target position (normal starting position - bossBasePosition)
+        glm::vec3 bossBasePos = paperView->getBossBasePosition();
+        glm::vec3 bossPlaneNormal = paperView->getBossPlaneNormal();  // Direction from paper to camera
+        glm::vec3 bossHorizontalDir = paperView->getBossHorizontalDirection();
+        
+        // Calculate spawn start position: off-screen (to the side and further from camera)
+        // Move away from camera (in direction of plane normal, toward paper) and to the side
+        spawnStartPosition = bossBasePos + bossPlaneNormal * 1.5f + bossHorizontalDir * 2.5f;
+        spawnTargetPosition = bossBasePos;  // Target is the normal starting position
+        
+        // Immediately set boss node to spawn start position
+        bossNode->setPosition(spawnStartPosition);
+        
+        // Initialize 2D position from spawn start (will be updated during animation)
+        hand2DPosition = paperView->projectToPaperPlane(spawnStartPosition);
+        
+        // Reset spawn progress to ensure animation starts from beginning
+        spawnProgress = 0.0f;
+        // Ensure state is Spawning
+        vulnerableState = VulnerableState::Spawning;
+        
+        std::cout << "[Boss::Boss] Boss created, spawnStart=(" << spawnStartPosition.x << ", " << spawnStartPosition.y << ", " << spawnStartPosition.z 
+                  << "), spawnTarget=(" << spawnTargetPosition.x << ", " << spawnTargetPosition.y << ", " << spawnTargetPosition.z << ")" << std::endl;
+        std::cout << "[Boss::Boss] Starting spawn animation from off-screen, state=" << static_cast<int>(vulnerableState) 
+                  << " (should be 0=Spawning), spawnProgress=" << spawnProgress << std::endl;
     }
 }
 
@@ -75,6 +92,80 @@ void Boss::setVulnerable(bool vulnerable) {
 }
 
 void Boss::update(float dt) {
+    Node* bossNode = getBossNode();
+    
+    // Debug: Print state on first few frames
+    static int frameCount = 0;
+    frameCount++;
+    if (frameCount <= 5) {
+        std::cout << "[Boss::update] Frame " << frameCount << " - state=" << static_cast<int>(vulnerableState) 
+                  << " (0=Spawning, 1=None, 2=Lowering, 3=Lowered, 4=Raising), spawnProgress=" << spawnProgress << std::endl;
+    }
+    
+    // Handle spawn animation state FIRST - before any other logic
+    if (vulnerableState == VulnerableState::Spawning) {
+        if (!bossNode || !paperView) {
+            std::cout << "[Boss::update] WARNING: Spawning state but bossNode=" << (bossNode ? "valid" : "null") 
+                      << ", paperView=" << (paperView ? "valid" : "null") << std::endl;
+            return;
+        }
+        
+        // Ensure we start from spawn start position on first frame of spawn
+        // Check if this is the very first update call (spawnProgress is exactly 0.0)
+        if (spawnProgress == 0.0f) {
+            bossNode->setPosition(spawnStartPosition);
+            std::cout << "[Boss::update] First spawn frame - setting position to spawnStart=(" 
+                      << spawnStartPosition.x << ", " << spawnStartPosition.y << ", " << spawnStartPosition.z << ")" << std::endl;
+            std::cout << "[Boss::update] Current boss node position=(" 
+                      << bossNode->getPosition().x << ", " << bossNode->getPosition().y << ", " << bossNode->getPosition().z << ")" << std::endl;
+        }
+        
+        spawnProgress += dt / spawnDuration;
+        
+        if (spawnProgress >= 1.0f) {
+            // Spawn complete - transition to normal sliding
+            spawnProgress = 1.0f;
+            vulnerableState = VulnerableState::None;
+            // Set hand to target position
+            bossNode->setPosition(spawnTargetPosition);
+            // Initialize 2D position from target position
+            hand2DPosition = paperView->projectToPaperPlane(spawnTargetPosition);
+            hand2DPosition.x = glm::clamp(hand2DPosition.x, -0.5f, 0.5f);
+            hand2DPosition.y = glm::clamp(hand2DPosition.y, -0.0f, 0.45f);
+            handHeight = vulnerableRaisedHeight;
+            std::cout << "[Boss::update] Spawn animation complete, transitioning to normal sliding" << std::endl;
+            frameCount = 0;  // Reset frame counter
+        } else {
+            // Spawn animation: interpolate position from start to target
+            float smoothProgress = spawnProgress * spawnProgress * (3.0f - 2.0f * spawnProgress);  // Smoothstep
+            glm::vec3 currentPos = glm::mix(spawnStartPosition, spawnTargetPosition, smoothProgress);
+            bossNode->setPosition(currentPos);
+            
+            // Debug print every second during spawn
+            static int spawnDebugCount = 0;
+            spawnDebugCount++;
+            if (spawnDebugCount % 60 == 0) {
+                std::cout << "[Boss::update] Spawning: progress=" << spawnProgress << ", pos=(" 
+                          << currentPos.x << ", " << currentPos.y << ", " << currentPos.z << ")" << std::endl;
+            }
+        }
+        // Update material during spawn
+        if (bossNode && game) {
+            bool showBoss = game->getShowBoss();
+            if (!showBoss) {
+                bossNode->setMaterial(game->getMaterial("empty"));
+            } else {
+                bossNode->setMaterial(game->getMaterial("boss_hand_flip"));
+            }
+        }
+        
+        return;  // Don't process other states during spawn
+    }
+    
+    // Calculate speed multiplier based on health lost (1.0 at full health, 1.5 at 0 health)
+    float healthPercent = static_cast<float>(health) / static_cast<float>(maxHealth);
+    float speedMultiplier = 1.0f + 0.5f * (1.0f - healthPercent);  // 1.0 to 1.5
+    
     // Update iframe timer
     if (iframeTimer > 0.0f) {
         iframeTimer -= dt;
@@ -83,12 +174,24 @@ void Boss::update(float dt) {
         }
     }
     
-    // Update boss node material based on showBoss flag
-    Node* bossNode = getBossNode();
+    // Update boss node material based on state and action
     if (bossNode && game) {
         bool showBoss = game->getShowBoss();
-        Material* material = showBoss ? game->getMaterial("boss_hand_hover") : game->getMaterial("empty");
-        bossNode->setMaterial(material);
+        if (!showBoss) {
+            bossNode->setMaterial(game->getMaterial("empty"));
+        } else {
+            // Set material based on vulnerable state and action
+            if (vulnerableState == VulnerableState::Lowering || vulnerableState == VulnerableState::Lowered) {
+                if (currentAction == LoweredAction::Spawn) {
+                    bossNode->setMaterial(game->getMaterial("boss_hand_grab"));
+                } else {  // Attack
+                    bossNode->setMaterial(game->getMaterial("boss_hand_slam"));
+                }
+            } else {
+                // Normal sliding state
+                bossNode->setMaterial(game->getMaterial("boss_hand_hover"));
+            }
+        }
     }
     
     static int updateCount = 0;
@@ -96,7 +199,7 @@ void Boss::update(float dt) {
     if (updateCount % 60 == 0) {  // Print every 60 frames (roughly once per second at 60fps)
         std::cout << "[Boss::update] Called, dt=" << dt << ", bossNode=" << (bossNode ? "valid" : "null") 
                   << ", health=" << health << "/" << maxHealth << ", vulnerable=" << vulnerable 
-                  << ", iframeTimer=" << iframeTimer << std::endl;
+                  << ", iframeTimer=" << iframeTimer << ", state=" << static_cast<int>(vulnerableState) << std::endl;
     }
     
     // Handle vulnerable animation states
@@ -104,7 +207,7 @@ void Boss::update(float dt) {
         // Don't update sliding animation during lowering (stop sliding)
         // bossAnimationTime is NOT updated here, so sliding stops
         
-        vulnerableLowerProgress += dt / vulnerableLowerDuration;
+        vulnerableLowerProgress += dt * speedMultiplier / vulnerableLowerDuration;
         
         if (vulnerableLowerProgress >= 1.0f) {
             // Lowering complete - now lowered and vulnerable
@@ -119,11 +222,20 @@ void Boss::update(float dt) {
             currentPos = paperView->clampAbovePaperPlane(currentPos, 0.1f);
             bossNode->setPosition(currentPos);
             setVulnerable(true);
-            // Randomly spawn an enemy or attack when the hand lowers
-            if (uniform() < 0.5f) {
-                spawnEnemy();
-            } else {
+            
+            // Perform the action that was decided when lowering started
+            if (currentAction == LoweredAction::Attack) {
+                std::cout << "[Boss::update] Lowering complete - performing Attack action" << std::endl;
                 attack();
+                // Note: attack() may fail silently, but we still wait and raise
+            } else {  // Spawn
+                std::cout << "[Boss::update] Lowering complete - performing Spawn action" << std::endl;
+                spawnEnemy();
+                // For spawn, immediately start raising (even if spawn failed)
+                vulnerableState = VulnerableState::Raising;
+                vulnerableRaiseProgress = 0.0f;
+                vulnerableTime = 0.0f;
+                setVulnerable(false);  // No longer vulnerable when raising
             }
         } else {
             // Lowering animation: interpolate height from raised to lowered
@@ -139,6 +251,7 @@ void Boss::update(float dt) {
         }
     } else if (vulnerableState == VulnerableState::Lowered && bossNode && paperView) {
         // Stay in lowered position, no sliding
+        // This state only occurs for attack action (spawn immediately raises)
         handHeight = vulnerableLoweredHeight;
         
         // Convert 2D position + height to 3D
@@ -147,19 +260,20 @@ void Boss::update(float dt) {
         currentPos = paperView->clampAbovePaperPlane(currentPos, 0.1f);
         bossNode->setPosition(currentPos);
         
-        // Handle vulnerability recovery
-        vulnerableTime += dt;
-        if (vulnerableTime >= vulnerableDuration) {
-            // Start raising back up
+        // Handle attack wait duration (scaled by speed multiplier)
+        vulnerableTime += dt * speedMultiplier;
+        if (vulnerableTime >= attackWaitDuration) {
+            // Start raising back up after attack wait
             vulnerableState = VulnerableState::Raising;
             vulnerableRaiseProgress = 0.0f;
             vulnerableTime = 0.0f;
+            setVulnerable(false);  // No longer vulnerable when raising
         }
     } else if (vulnerableState == VulnerableState::Raising && bossNode && paperView) {
         // Don't update sliding animation during raising (stop sliding)
         // bossAnimationTime is NOT updated here, so sliding stops
         
-        vulnerableRaiseProgress += dt / vulnerableRaiseDuration;
+        vulnerableRaiseProgress += dt * speedMultiplier / vulnerableRaiseDuration;
         
         if (vulnerableRaiseProgress >= 1.0f) {
             // Raising complete - return to normal sliding
@@ -171,9 +285,9 @@ void Boss::update(float dt) {
             // Convert 2D position + height to 3D
             glm::vec3 currentPos = paperView->paperPlaneTo3D(hand2DPosition, handHeight);
             bossNode->setPosition(currentPos);
-            // Reset timer for next vulnerable period
+            // Reset timer for next vulnerable period (scaled by speed multiplier)
             timeSinceLastVulnerable = 0.0f;
-            nextVulnerableTime = uniform(minTimeBetweenVulnerable, maxTimeBetweenVulnerable);
+            nextVulnerableTime = uniform(minTimeBetweenVulnerable, maxTimeBetweenVulnerable) / speedMultiplier;
         } else {
             // Raising animation: interpolate height from lowered to raised
             float smoothProgress = vulnerableRaiseProgress * vulnerableRaiseProgress * (3.0f - 2.0f * vulnerableRaiseProgress);  // Smoothstep
@@ -186,8 +300,8 @@ void Boss::update(float dt) {
         }
     } else if (vulnerableState == VulnerableState::None && bossNode && paperView) {
         // Normal random movement around the plane (only when not slapping AND not vulnerable)
-        // Update animation time for movement
-        bossAnimationTime += dt * bossAnimationSpeed;
+        // Update animation time for movement (scaled by speed multiplier)
+        bossAnimationTime += dt * bossAnimationSpeed * speedMultiplier;
         
         // Use sine wave to create back-and-forth horizontal motion within bounds
         // Bounds are (-0.5, -0.4) to (0.5, 0.5)
@@ -209,8 +323,8 @@ void Boss::update(float dt) {
                       << "), height=" << handHeight << ", finalPos=(" << bossPos.x << ", " << bossPos.y << ", " << bossPos.z << ")" << std::endl;
         }
         
-        // Randomly trigger vulnerable period while moving
-        timeSinceLastVulnerable += dt;
+        // Randomly trigger vulnerable period while moving (scaled by speed multiplier)
+        timeSinceLastVulnerable += dt * speedMultiplier;
         if (timeSinceLastVulnerable >= nextVulnerableTime) {
             std::cout << "[Boss::update] Triggering vulnerable period!" << std::endl;
             startVulnerable();
@@ -244,6 +358,13 @@ void Boss::startVulnerable() {
     
     // Lowered height is 0 (at paper level)
     vulnerableLoweredHeight = 0.0f;
+    
+    // Decide action early: 50% attack, 50% spawn (so we can set the correct material during lowering)
+    if (uniform() < 0.5f) {
+        currentAction = LoweredAction::Attack;
+    } else {
+        currentAction = LoweredAction::Spawn;
+    }
     
     // Start lowering animation
     vulnerableState = VulnerableState::Lowering;
@@ -279,11 +400,19 @@ void Boss::onDamage(int damage) {
 }
 
 void Boss::spawnEnemy() {
-    if (!game) return;
+    std::cout << "[Boss::spawnEnemy] Called" << std::endl;
+    
+    if (!game) {
+        std::cout << "[Boss::spawnEnemy] FAILED - game is null" << std::endl;
+        return;
+    }
     
     // Get current side from game
     SingleSide* currentSide = game->getSide();
-    if (!currentSide) return;
+    if (!currentSide) {
+        std::cout << "[Boss::spawnEnemy] FAILED - currentSide is null" << std::endl;
+        return;
+    }
     
     // Get biome from current side
     std::string biome = currentSide->getBiome();
@@ -291,7 +420,7 @@ void Boss::spawnEnemy() {
     // Get enemy list for this biome
     auto biomeIt = Enemy::enemyBiomes.find(biome);
     if (biomeIt == Enemy::enemyBiomes.end() || biomeIt->second.empty()) {
-        std::cout << "[Boss::spawnEnemy] No enemies found for biome: " << biome << std::endl;
+        std::cout << "[Boss::spawnEnemy] FAILED - No enemies found for biome: " << biome << std::endl;
         return;
     }
     
@@ -304,7 +433,7 @@ void Boss::spawnEnemy() {
     // Check if enemy template exists
     auto templateIt = Enemy::templates.find(selectedEnemyType);
     if (templateIt == Enemy::templates.end()) {
-        std::cout << "[Boss::spawnEnemy] Enemy template not found: " << selectedEnemyType << std::endl;
+        std::cout << "[Boss::spawnEnemy] FAILED - Enemy template not found: " << selectedEnemyType << std::endl;
         return;
     }
     
@@ -315,9 +444,9 @@ void Boss::spawnEnemy() {
     Enemy* enemy = templateIt->second(spawnPos, currentSide);
     if (enemy) {
         currentSide->addEnemy(enemy);
-        std::cout << "[Boss::spawnEnemy] Spawned " << selectedEnemyType << " at (" << spawnPos.x << ", " << spawnPos.y << ")" << std::endl;
+        std::cout << "[Boss::spawnEnemy] SUCCESS - Spawned " << selectedEnemyType << " at (" << spawnPos.x << ", " << spawnPos.y << ")" << std::endl;
     } else {
-        std::cout << "[Boss::spawnEnemy] Failed to create enemy: " << selectedEnemyType << std::endl;
+        std::cout << "[Boss::spawnEnemy] FAILED - Enemy creation returned null for: " << selectedEnemyType << std::endl;
     }
 }
 
@@ -329,18 +458,26 @@ vec2 Boss::get2DPosition() const {
     
     glm::vec3 bossPos3D = bossNode->getPosition();
     // Project 3D position onto paper plane and get 2D coordinates relative to paper center
-    return paperView->projectToPaperPlane(bossPos3D) * vec2{12.0f, 9.0f} + vec2{0.0f, 0.15f};
+    return paperView->projectToPaperPlane(bossPos3D) * vec2{12.0f, 9.0f} + vec2{0.0f, -1.2f};
 }
 
 void Boss::attack() {
-    if (!game) return;
+    std::cout << "[Boss::attack] Called" << std::endl;
+    
+    if (!game) {
+        std::cout << "[Boss::attack] FAILED - game is null" << std::endl;
+        return;
+    }
     
     // Get current side from game
     SingleSide* currentSide = game->getSide();
-    if (!currentSide) return;
+    if (!currentSide) {
+        std::cout << "[Boss::attack] FAILED - currentSide is null" << std::endl;
+        return;
+    }
     
     // Get an enemy from the side to use as owner reference (boss attacks are from enemy team)
-    // If no enemies exist, we can't create a damage zone with proper team checking
+    // If no enemies exist, spawn one first so we can use it for the attack
     auto& enemies = currentSide->getEnemies();
     Enemy* ownerEnemy = nullptr;
     if (!enemies.empty()) {
@@ -353,13 +490,26 @@ void Boss::attack() {
         }
     }
     
-    // If no enemy exists, create a temporary one just for the damage zone
-    // This is a workaround since Boss is not a Character
+    // If no enemy exists, spawn one first so we can use it for the attack
     if (!ownerEnemy) {
-        // We can't easily create a dummy enemy, so we'll skip the attack
-        // In a real implementation, you might want to create a minimal Character
-        std::cout << "[Boss::attack] No enemy available as owner reference, skipping attack" << std::endl;
-        return;
+        std::cout << "[Boss::attack] No enemy available, spawning one first for attack owner reference" << std::endl;
+        spawnEnemy();
+        // Try to find the enemy we just spawned
+        enemies = currentSide->getEnemies();
+        if (!enemies.empty()) {
+            for (Enemy* enemy : enemies) {
+                if (enemy && !enemy->isDead()) {
+                    ownerEnemy = enemy;
+                    break;
+                }
+            }
+        }
+        
+        // If still no enemy (spawn failed), we can't create the attack
+        if (!ownerEnemy) {
+            std::cout << "[Boss::attack] FAILED - Could not spawn enemy for owner reference, skipping attack" << std::endl;
+            return;
+        }
     }
     
     // Get 2D position for damage zone
@@ -370,7 +520,7 @@ void Boss::attack() {
     params.damage = 1;  // Damage amount
     params.life = 0.5f;  // How long the damage zone lasts
     params.speed = 0.0f;  // Stationary
-    params.radius = 3.0f;  // Radius as requested
+    params.radius = 2.0f;  // Radius for boss attack
     params.friendlyDamage = false;  // Should damage player (enemy team)
     params.selfDamage = false;
     
@@ -388,7 +538,7 @@ void Boss::attack() {
     // Add to current side
     currentSide->addDamageZone(damageZone);
     
-    std::cout << "[Boss::attack] Created damage zone at (" << attackPos.x << ", " << attackPos.y << ")" << std::endl;
+    std::cout << "[Boss::attack] SUCCESS - Created damage zone at (" << attackPos.x << ", " << attackPos.y << ")" << std::endl;
 }
 
 glm::vec3 Boss::clampToPlaneHeight(const glm::vec3& position, bool preserveDistance) const {
