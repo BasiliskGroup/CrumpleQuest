@@ -123,6 +123,13 @@ void Game::update(float dt) {
         startGame();
         return; // Skip rest of update this frame
     }
+    
+    // Process pending floor reset (deferred from pickup callback)
+    if (pendingResetFloor) {
+        pendingResetFloor = false;
+        resetFloor();
+        return; // Skip rest of update this frame
+    }
 
     // pathing
     pathTimer -= dt;
@@ -548,6 +555,84 @@ void Game::startGame() {
     audio::MusicPlayer::Get().FadeTo("notebook", 2.0f);
     
     // Boss will be created when entering a boss room (see switchToRoom)
+}
+
+void Game::requestResetFloor() {
+    // Defer the reset until next update cycle to avoid use-after-free
+    // (resetFloor is called from within SingleSide::update which iterates pickups)
+    pendingResetFloor = true;
+}
+
+void Game::resetFloor() {
+    // Delete boss if it exists
+    if (boss != nullptr) {
+        delete boss;
+        boss = nullptr;
+    }
+    // Hide boss health bar
+    showBossHealthBar(false);
+    
+    // Delete the old floor (this will delete all Paper instances)
+    if (floor != nullptr) {
+        delete floor;
+        floor = nullptr;
+    }
+    
+    // Create a new floor
+    floor = new Floor(this);
+    
+    // Get the center room (spawn room) and set it as the current paper
+    Paper* centerPaper = floor->getCenterRoom();
+    if (!centerPaper) {
+        std::cerr << "Error: Center room not found in floor!" << std::endl;
+        return;
+    }
+    
+    // Set floor's current position to center
+    int center = FLOOR_WIDTH / 2;
+    floor->setCurrentPosition(center, center);
+    
+    this->paper = centerPaper;
+    this->currentSide = this->paper->getSingleSide();
+    
+    // Update player nodes to the new room's nodes and update side reference
+    // Note: We can't use setSideToPaperSide() here because it tries to access old deleted nodes
+    // Instead, we directly set the new nodes without trying to access old ones
+    if (player != nullptr) {
+        // Directly set the new nodes from the new side (old nodes are already deleted)
+        player->setNodes(this->currentSide->getPlayerNode(), this->currentSide->getWeaponNode());
+        player->setSide(this->currentSide);
+        
+        // Set player position to spawn position
+        vec2 spawnPos = this->currentSide->getPlayerSpawn();
+        player->setPosition(spawnPos);
+    }
+    
+    // Mark paper as visited
+    paper->hasBeenVisited = true;
+    
+    // Regenerate PaperView mesh
+    if (paperView) {
+        paperView->regenerateMesh();
+        paperView->showGameElements(); // Show health tokens and directional nodes
+        paperView->createMinimap();     // Create minimap
+        // Hide directions initially - they will be revealed if the room is open
+        paperView->hideDirectionalNodes();
+    }
+    
+    // Check room state and update directional nodes
+    if (paper && floor && paperView) {
+        bool wasOpen = paper->isOpen;
+        paper->checkAndSetOpen();
+        
+        if (paper->isOpen) {
+            bool topValid = floor->getAdjacentRoom(0, -1) != nullptr;
+            bool bottomValid = floor->getAdjacentRoom(0, 1) != nullptr;
+            bool leftValid = floor->getAdjacentRoom(1, 0) != nullptr;
+            bool rightValid = floor->getAdjacentRoom(-1, 0) != nullptr;
+            paperView->showDirectionalNodes(topValid, bottomValid, leftValid, rightValid);
+        }
+    }
 }
 
 void Game::switchToRoom(Paper* newPaper, int dx, int dy) {

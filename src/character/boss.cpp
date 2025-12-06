@@ -12,8 +12,8 @@
 Boss::Boss(Game* game, PaperView* paperView) : 
     game(game),
     paperView(paperView),
-    health(20),
-    maxHealth(20),
+    health(2),
+    maxHealth(2),
     stage("spawn"),
     vulnerable(false),
     hitboxRadius(0.5f),

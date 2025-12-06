@@ -61,6 +61,7 @@ private:
     // menu management
     bool pendingReturnToMainMenu = false;
     bool pendingStartGame = false;
+    bool pendingResetFloor = false;
 
     // audio
     audio::AudioManager& audioManager;
@@ -140,6 +141,8 @@ public:
     void returnToMainMenu();
     void setPendingStartGame(bool value) { pendingStartGame = value; }
     void switchToRoom(Paper* newPaper, int dx, int dy);
+    void requestResetFloor(); // Request floor reset (deferred to next update)
+    void resetFloor(); // Reset floor, boss, and floor-related state, keeping player
 
     // boss health bar
     void updateBossHealthBar();
