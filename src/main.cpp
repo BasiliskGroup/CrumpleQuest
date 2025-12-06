@@ -4,6 +4,7 @@
 #include "levels/levels.h"
 #include "character/behavior.h"
 #include "audio/audio_manager.h"
+#include "audio/music_player.h"
 #include "ui/menu_manager.h"
 #include "resource/animation.h"
 #include "resource/animator.h"
@@ -86,10 +87,7 @@ int main() {
     // ------------------------------------------
 
     // Setup background music
-    auto parchment_track = game->getAudio().CreateTrack();
-    game->getAudio().AddLayer(parchment_track, "parchment", "sounds/parchment.wav", "music");
-    game->getAudio().SetLayerVolume(parchment_track, "parchment", 1.0f);
-    game->getAudio().PlayTrack(parchment_track);
+    audio::MusicPlayer::Get().Initialize(game->getMusicGroup());
 
     // Initialize behavior system
     BehaviorRegistry::initialize();

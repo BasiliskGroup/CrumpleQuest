@@ -2,6 +2,7 @@
 #include "game/game.h"
 #include "levels/floor.h"
 #include "audio/sfx_player.h"
+#include "audio/music_player.h"
 #include <iostream>
 
 PaperView::PaperView(Game* game): game(game) {
@@ -70,7 +71,8 @@ PaperView::PaperView(Game* game): game(game) {
     transitionDuration = 0.4f;
     transitionDistance =  3.5f;
     transitionTimer = 0.0f;
-    transitionState = 0; 
+    transitionState = 0;
+    currentTrackIndex = 2; // Start on grid track (0=parchment, 1=notebook, 2=grid) 
 
     // create directional nodes
     glm::vec3 planeNormal = direction;
@@ -176,6 +178,11 @@ void PaperView::update(Paper* paper) {
             transitionTarget = glm::vec3(0.0, 0.1386, 0.544);
             // Play incoming paper sound when new paper starts moving in
             audio::SFXPlayer::Get().Play("pickup");
+            
+            // Cycle to next music track (for testing)
+            currentTrackIndex = (currentTrackIndex + 1) % 3;
+            const char* trackNames[] = {"parchment", "notebook", "grid"};
+            audio::MusicPlayer::Get().FadeTo(trackNames[currentTrackIndex], 2.0f);
             
             this->game->switchToRoom(nextPaper, transitionDirection.x, transitionDirection.y);
             this->regenerateMesh();

@@ -43,6 +43,7 @@ class PaperView {
         float transitionDistance;
         float transitionTimer;
         glm::vec3 transitionTarget;
+        int currentTrackIndex;  // Track which music track we're on (0=parchment, 1=notebook, 2=grid)
 
         // Health tokens
         std::vector<glm::vec3> healthActivePositions;
