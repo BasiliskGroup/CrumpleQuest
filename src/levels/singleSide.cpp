@@ -2,6 +2,7 @@
 #include "weapon/meleeZone.h"
 #include "util/random.h"
 #include "pickup/pickup.h"
+#include "pickup/heart.h"
 
 
 SingleSide::SingleSide(Game* game, std::string mesh, std::string material, vec2 playerSpawn, std::string biome, std::vector<vec2> enemySpawns, float difficulty) : 
@@ -456,4 +457,83 @@ void SingleSide::adoptEnemy(Enemy* enemy, SingleSide* fromSide) {
     
     // Add enemy to this side's enemies list
     addEnemy(enemy);
+}
+
+Pickup* SingleSide::adoptPickup(Pickup* pickup, SingleSide* fromSide) {
+    if (pickup == nullptr || fromSide == nullptr) return nullptr;
+    if (fromSide == this) return pickup; // Already in this side
+    
+    // Get essential properties before deleting - only access what we absolutely need
+    // Position is the most critical property to preserve
+    vec2 position;
+    float radius = 0.5f; // Default radius
+    Game* game = nullptr;
+    
+    // Try to get position and radius - these are the most important
+    // If the pickup is in an invalid state, we'll use defaults
+    try {
+        position = pickup->getPosition();
+        radius = pickup->getRadius();
+        game = pickup->getGame();
+    } catch (...) {
+        // If we can't access properties, we can't safely recreate the pickup
+        return nullptr;
+    }
+    
+    if (game == nullptr) {
+        return nullptr; // Need game pointer to create new pickup
+    }
+    
+    // Determine pickup type before deleting
+    bool isHeart = (dynamic_cast<Heart*>(pickup) != nullptr);
+    
+    // Remove pickup from old side's pickups list BEFORE deleting
+    auto& oldPickups = fromSide->getPickups();
+    for (auto it = oldPickups.begin(); it != oldPickups.end(); ++it) {
+        if (*it == pickup) {
+            oldPickups.erase(it);
+            break;
+        }
+    }
+    
+    // Delete the old pickup (which will remove it from the old scene)
+    delete pickup;
+    
+    // Create a new pickup instance in the new scene
+    // Use the same parameters as when hearts are created (from enemy.cpp)
+    Pickup* newPickup = nullptr;
+    Collider* collider = getCollider("quad");
+    
+    if (isHeart) {
+        // Create new Heart with same style as created in enemy.cpp
+        newPickup = new Heart(game, this, {
+            .mesh = game->getMesh("quad"),
+            .material = game->getMaterial("red"),
+            .scale = {0.25, 0.25},
+            .position = position,
+            .collider = collider,
+            .colliderScale = {1.0, 1.0},
+            .density = 0.01f
+        }, radius);
+    } else {
+        // Fallback: create generic Pickup with defaults
+        newPickup = new Pickup(game, this, {
+            .mesh = game->getMesh("quad"),
+            .material = game->getMaterial("red"),
+            .scale = {0.25, 0.25},
+            .position = position,
+            .collider = collider,
+            .colliderScale = {1.0, 1.0},
+            .density = 0.01f
+        }, radius);
+    }
+    
+    // Set manifold mask (as done in Character constructor)
+    if (newPickup != nullptr) {
+        newPickup->setManifoldMask(1, 1, 0);
+        addPickup(newPickup);
+        return newPickup;  // Return the new pickup instance
+    }
+    
+    return nullptr;  // Return null if creation failed
 }

@@ -47,6 +47,7 @@ public:
     // getters
     Scene2D* getScene() { return scene; }
     auto& getEnemies() { return enemies; }
+    auto& getPickups() { return pickups; }
     Collider* getCollider(std::string name) { return colliders[name]; }
     Node2D* getBackground() { return background; }
     Node2D* getPlayerNode() { return playerNode; }
@@ -65,6 +66,7 @@ public:
     void clearWalls();
     void loadResources();
     void adoptEnemy(Enemy* enemy, SingleSide* fromSide);
+    Pickup* adoptPickup(Pickup* pickup, SingleSide* fromSide);  // Returns the new pickup instance
 
 private:
     void clear();
