@@ -95,7 +95,7 @@ void SingleSide::generateTemplates(Game* game) {
 
     templates["notebook3_front"] = [game](float difficulty) {
         std::vector<vec2> enemySpawns = { {8.7,4.8}, {5.32,2.4} };
-        SingleSide* side = new SingleSide(game, "paper0", "notebook_level3", vec2(3.17,4.56), "notebook", enemySpawns, difficulty);
+        SingleSide* side = new SingleSide(game, "paper0", "notebook_level3", vec2(3.17 -6.0,4.56 - 4.5), "notebook", enemySpawns, difficulty);
         return side;
     };
     templates["notebook3_back"] = [game](float difficulty) {
