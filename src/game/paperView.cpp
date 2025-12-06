@@ -546,21 +546,32 @@ void PaperView::showGameElements() {
     glm::vec3 bossInitialPos = paperPosition + 0.8f * planeUp * quadDistance + offsetVector;
     // Keep z position same as paper (don't move in z direction)
     bossInitialPos.z = paperPosition.z;
+    
+    // Check if boss is currently active (node exists and is visible/not empty material)
+    bool bossActive = (bossNode != nullptr && bossNode->getMaterial() != game->getMaterial("empty"));
+    
     // Only create if it doesn't already exist (to avoid leaks if called multiple times)
     if (bossNode == nullptr) {
         bossNode = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("empty"), .position=bossInitialPos, .rotation=(glm::angleAxis(glm::radians(90.0f), planeNormal) * basePlaneRotation), .scale={1.2, 0.72, 0.24}});
-    } else {
-        // Don't reset position if boss node exists - let Boss class manage its own position
-        // Only update rotation and scale (position is managed by Boss during spawn animation)
+        // Set boss-related data when node is first created
+        bossBasePosition = bossInitialPos;  // Store base position (above paper, closer than top)
+        bossHorizontalDirection = planeRight;  // Store horizontal direction for sliding
+        bossVerticalDirection = planeUp;  // Store vertical direction on paper plane (cross of planeNormal and planeRight)
+        bossPlaneNormal = planeNormal;  // Store plane normal (direction from camera to paper)
+    } else if (!bossActive) {
+        // Boss node exists but boss is not active - safe to update rotation/scale/hide
+        // Don't reset position - let Boss class manage its own position
         bossNode->setRotation(glm::angleAxis(glm::radians(90.0f), planeNormal) * basePlaneRotation);
         bossNode->setScale(glm::vec3(1.2f, 0.72f, 0.24f));
         // Hide boss node by default (will be shown when boss is created in boss room)
         bossNode->setMaterial(game->getMaterial("empty"));
+        // Update boss-related data when boss is not active
+        bossBasePosition = bossInitialPos;  // Store base position (above paper, closer than top)
+        bossHorizontalDirection = planeRight;  // Store horizontal direction for sliding
+        bossVerticalDirection = planeUp;  // Store vertical direction on paper plane (cross of planeNormal and planeRight)
+        bossPlaneNormal = planeNormal;  // Store plane normal (direction from camera to paper)
     }
-    bossBasePosition = bossInitialPos;  // Store base position (above paper, closer than top)
-    bossHorizontalDirection = planeRight;  // Store horizontal direction for sliding
-    bossVerticalDirection = planeUp;  // Store vertical direction on paper plane (cross of planeNormal and planeRight)
-    bossPlaneNormal = planeNormal;  // Store plane normal (direction from camera to paper)
+    // If boss is active, don't touch anything - let Boss class manage everything
 }
 
 vec2 PaperView::projectToPaperPlane(const glm::vec3& worldPos) const {
