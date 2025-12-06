@@ -80,7 +80,7 @@ PaperView::PaperView(Game* game): game(game) {
 
     // Crosshair
     crosshairScene = new Scene2D(engine);
-    crosshair = new Node2D(crosshairScene, {.mesh=game->getMesh("quad"), .material=game->getMaterial("lightGrey"), .scale={0.25f, 0.25f, 0.25f}});
+    crosshair = new Node2D(crosshairScene, {.mesh=game->getMesh("quad"), .material=game->getMaterial("lightGrey"), .scale={0.25f, 0.25f}});
 }
 
 PaperView::~PaperView() {
