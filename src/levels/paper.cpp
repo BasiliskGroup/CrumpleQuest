@@ -670,6 +670,7 @@ bool Paper::pushFold(Fold& newFold) {
         this->paperMeshes = { backCopy, paperCopy };
     }
 
+    pruneSmallObstacles();
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
     paperMeshes.first->regenerateNavmesh();
@@ -863,6 +864,7 @@ bool Paper::popFold() {
     oldFold.holds.clear();
     folds.erase(folds.begin() + activeFold);
 
+    pruneSmallObstacles();
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
     paperMeshes.first->regenerateNavmesh();
@@ -968,6 +970,51 @@ void Paper::regenerateWalls(int side) {
                 .density = -1
             }));
         }
+    }
+}
+
+void Paper::pruneSmallObstacles() {
+    const float MIN_TOTAL_SIDE_LENGTH = 0.25f;
+    
+    // Helper function to calculate total side lengths (perimeter) of a polygon
+    auto calculateTotalSideLength = [](const std::vector<vec2>& positions) -> float {
+        if (positions.size() < 2) return 0.0f;
+        
+        float totalLength = 0.0f;
+        for (size_t i = 0; i < positions.size(); i++) {
+            size_t j = (i + 1) % positions.size();
+            vec2 edge = positions[j] - positions[i];
+            totalLength += glm::length(edge);
+        }
+        return totalLength;
+    };
+    
+    // Prune obstacles from first side
+    if (paperMeshes.first != nullptr) {
+        auto& regions = paperMeshes.first->regions;
+        for (auto& region : regions) {
+            if (region.isObstacle) {
+                float totalLength = calculateTotalSideLength(region.positions);
+                if (totalLength < MIN_TOTAL_SIDE_LENGTH) {
+                    region.isObstacle = false;
+                }
+            }
+        }
+        paperMeshes.first->regenerateNavmesh();
+    }
+    
+    // Prune obstacles from second side
+    if (paperMeshes.second != nullptr) {
+        auto& regions = paperMeshes.second->regions;
+        for (auto& region : regions) {
+            if (region.isObstacle) {
+                float totalLength = calculateTotalSideLength(region.positions);
+                if (totalLength < MIN_TOTAL_SIDE_LENGTH) {
+                    region.isObstacle = false;
+                }
+            }
+        }
+        paperMeshes.second->regenerateNavmesh();
     }
 }
 
