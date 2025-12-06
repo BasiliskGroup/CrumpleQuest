@@ -12,6 +12,7 @@ Game::Game() :
     engine(nullptr),
     currentSide(nullptr),
     paper(nullptr),
+    paperView(nullptr),
     audioManager(audio::AudioManager::GetInstance()),
     playerAnimator(nullptr),
     menuScene(nullptr),
@@ -344,11 +345,18 @@ void Game::update(float dt) {
         }
         // Game scene is paused if menus are active, but still rendered
 
-        // Render the level onto the paper fbo
-        paperView->renderLevelFBO(paper);
-        // Render the 3d view to the screen
+        // Render the level onto the paper fbo (only if paper exists)
+        if (paper) {
+            paperView->renderLevelFBO(paper);
+        }
+    }
+    
+    // Always render the 3D background scene (even in menu)
+    if (paperView) {
         engine->getFrame()->use();
-        paperView->update(paper);
+        if (paper) {
+            paperView->update(paper);
+        }
         paperView->render();
     }
     
@@ -388,9 +396,6 @@ void Game::startGame() {
         delete floor;
     }
     floor = new Floor(this);
-
-    // Load minimap
-    paperView->createMinimap();
     
     // Get the center room (spawn room) and set it as the current paper
     Paper* centerPaper = floor->getCenterRoom();
@@ -405,6 +410,8 @@ void Game::startGame() {
     // Regenerate PaperView mesh now that paper exists
     if (paperView) {
         paperView->regenerateMesh();
+        paperView->showGameElements(); // Show health tokens and directional nodes
+        paperView->createMinimap();     // Create minimap
     }
 
     // create player
@@ -505,6 +512,11 @@ void Game::processReturnToMainMenu() {
         player = nullptr;
     }
     
+    // Hide game elements (health tokens, directional nodes, minimap)
+    if (paperView) {
+        paperView->hideGameElements();
+    }
+    
     // Destroy the floor (this will delete all Paper instances)
     if (floor) {
         delete floor;
@@ -514,6 +526,11 @@ void Game::processReturnToMainMenu() {
     // Paper is owned by floor, so it's already deleted
     paper = nullptr;
     currentSide = nullptr;
+    
+    // Regenerate paper mesh to clear it
+    if (paperView) {
+        paperView->regenerateMesh();
+    }
     
     // Clear all menus and return to main menu
     // Pop all existing menus (they will be deleted immediately, safe now)

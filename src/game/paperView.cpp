@@ -59,41 +59,22 @@ PaperView::PaperView(Game* game): game(game) {
     glm::quat johnRotation = glm::angleAxis(glm::radians(-13.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     Node* john = new Node(scene, {.mesh=game->getMesh("john"), .material=game->getMaterial("john"), .position={1.8, -0.75, 1.8}, .rotation=johnRotation, .scale={0.15, 0.15, 0.15}});
 
-    // Health tokens
+    // Health token positions (will be created in showGameElements())
     healthActivePositions = {{2.0, -.95, 1.00}, {1.75, -.95, 0.5}, {1.9, -.95, 1.35}, {1.5, -.95, 1.15}, {1.5, -.95, 0.75}, {1.3, -.95, 0.3}};
-
-    for (glm::vec3& pos : healthActivePositions) {
-        glm::quat rotation = glm::angleAxis(glm::radians(90.0f + uniform(-25.0, 25.0)), glm::vec3(0.0f, 1.0f, 0.0f));
-        Node* token = new Node(scene, {.mesh=game->getMesh("heart"), .material=game->getMaterial("darkred"), .position=pos, .rotation=rotation, .scale={.08, .08, .08}});
-        healthTokens.push_back(token);
-    }
+    // Inactive positions are off-screen to the right (x + 1)
+    healthInactivePositions = {{3.0, -.95, 1.00}, {2.75, -.95, 0.5}, {2.9, -.95, 1.35}, {2.5, -.95, 1.15}, {2.5, -.95, 0.75}, {2.3, -.95, 0.3}};
 
     transitionDuration = 0.4f;
     transitionDistance =  3.5f;
     transitionTimer = 0.0f;
     transitionState = 0;
-    currentTrackIndex = 2; // Start on grid track (0=parchment, 1=notebook, 2=grid) 
+    currentTrackIndex = 2; // Start on grid track (0=parchment, 1=notebook, 2=grid)
 
-    // create directional nodes
-    glm::vec3 planeNormal = direction;
-    glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 planeRight = glm::cross(worldUp, planeNormal); // NOTE not safe if planeNormal is parallel to worldUp
-    planeRight = glm::normalize(planeRight);
-    glm::vec3 planeUp = glm::normalize(glm::cross(planeNormal, planeRight));
-    float offsetAbove = 0.01f;
-    glm::vec3 offsetVector = -planeNormal * offsetAbove;
-    float quadDistance = 0.5f;
-
-    topBounds = {paperPosition + 2.0f * planeUp * quadDistance + offsetVector, paperPosition + planeUp * quadDistance + offsetVector};
-    bottomBounds = {paperPosition - 2.0f * planeUp * quadDistance + offsetVector, paperPosition - planeUp * quadDistance + offsetVector};
-    rightBounds = {paperPosition + 4.0f * planeRight * quadDistance + offsetVector, paperPosition + 2.0f * planeRight * quadDistance + offsetVector};
-    leftBounds = {paperPosition - 4.0f * planeRight * quadDistance + offsetVector, paperPosition - 2.0f * planeRight * quadDistance + offsetVector};
-    
-    // create directional nodes positioned on the plane
-    topSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=topBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
-    bottomSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=bottomBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
-    rightSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=rightBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
-    leftSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=leftBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+    // Directional nodes will be created in showGameElements()
+    topSign = nullptr;
+    bottomSign = nullptr;
+    rightSign = nullptr;
+    leftSign = nullptr;
 }
 
 PaperView::~PaperView() {
@@ -129,6 +110,24 @@ void PaperView::renderLevelFBO(Paper* paper) {
  * 
  */
 void PaperView::render() {
+    // Health token transitions (animate hearts even when no game is active)
+    if (!healthTokens.empty()) {
+        for (int i = 0; i < 6; i++) {
+            Node* token = healthTokens.at(i);
+            glm::vec3 targetPosition = healthActivePositions.at(i);
+            // If player exists and doesn't have this health, move token off-screen
+            if (game->getPlayer() && (6 - i) > game->getPlayer()->getHealth()) {
+                targetPosition.x += 1;
+            }
+
+            glm::vec3 moveVector = targetPosition - token->getPosition();
+            token->setPosition((token->getPosition() + 5.0f * moveVector * (float)engine->getDeltaTime()));
+        }
+    }
+    
+    // Update scene (needed for heart animations and other node updates)
+    scene->update();
+    
     // Render background 3d objects
     scene->render();
     camera->use(paperShader);
@@ -192,20 +191,6 @@ void PaperView::update(Paper* paper) {
 
     glm::vec3 moveVector = paperPosition - transitionTarget;
     paperPosition = paperPosition - 3.0f * moveVector * (float)engine->getDeltaTime();
-
-    // Health token transitions
-    for (int i = 0; i < 6; i++) {
-        Node* token = healthTokens.at(i);
-        glm::vec3 targetPosition = healthActivePositions.at(i);
-        if ((6 - i) > game->getPlayer()->getHealth()) { // Does not have this token
-            targetPosition.x += 1;
-        }
-
-        moveVector = token->getPosition() - targetPosition;
-        token->setPosition((token->getPosition() - 5.0f * moveVector * (float)engine->getDeltaTime()));
-    }
-
-    scene->update();
 
     Mouse* mouse = engine->getMouse();
     float width = (float)engine->getWindow()->getWidth() * engine->getWindow()->getWindowScaleX();
@@ -476,4 +461,82 @@ void PaperView::createMinimap() {
             }
         }
     }
+}
+
+void PaperView::clearMinimap() {
+    // Clear and delete all minimap nodes
+    for (auto& row : minimapNodes) {
+        for (Node* node : row) {
+            if (node) {
+                delete node;
+            }
+        }
+    }
+    minimapNodes.clear();
+}
+
+void PaperView::showGameElements() {
+    // Create health tokens at inactive positions (off-screen) so they animate in
+    for (glm::vec3& pos : healthInactivePositions) {
+        glm::quat rotation = glm::angleAxis(glm::radians(90.0f + uniform(-25.0, 25.0)), glm::vec3(0.0f, 1.0f, 0.0f));
+        Node* token = new Node(scene, {.mesh=game->getMesh("heart"), .material=game->getMaterial("darkred"), .position=pos, .rotation=rotation, .scale={.08, .08, .08}});
+        healthTokens.push_back(token);
+    }
+    
+    // Create directional nodes
+    glm::vec3 cameraPos = camera->getPosition();
+    glm::vec3 direction = glm::normalize(paperPosition - cameraPos);
+    
+    // Calculate pitch for directional nodes
+    float pitch = glm::degrees(asin(-direction.y));
+    
+    glm::vec3 planeNormal = direction;
+    glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 planeRight = glm::cross(worldUp, planeNormal);
+    planeRight = glm::normalize(planeRight);
+    glm::vec3 planeUp = glm::normalize(glm::cross(planeNormal, planeRight));
+    float offsetAbove = 0.01f;
+    glm::vec3 offsetVector = -planeNormal * offsetAbove;
+    float quadDistance = 0.5f;
+
+    topBounds = {paperPosition + 2.0f * planeUp * quadDistance + offsetVector, paperPosition + planeUp * quadDistance + offsetVector};
+    bottomBounds = {paperPosition - 2.0f * planeUp * quadDistance + offsetVector, paperPosition - planeUp * quadDistance + offsetVector};
+    rightBounds = {paperPosition + 4.0f * planeRight * quadDistance + offsetVector, paperPosition + 2.0f * planeRight * quadDistance + offsetVector};
+    leftBounds = {paperPosition - 4.0f * planeRight * quadDistance + offsetVector, paperPosition - 2.0f * planeRight * quadDistance + offsetVector};
+    
+    topSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=topBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+    bottomSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=bottomBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+    rightSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=rightBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+    leftSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=leftBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
+}
+
+void PaperView::hideGameElements() {
+    // Delete health tokens
+    for (Node* token : healthTokens) {
+        if (token) {
+            delete token;
+        }
+    }
+    healthTokens.clear();
+    
+    // Delete directional nodes
+    if (topSign) {
+        delete topSign;
+        topSign = nullptr;
+    }
+    if (bottomSign) {
+        delete bottomSign;
+        bottomSign = nullptr;
+    }
+    if (rightSign) {
+        delete rightSign;
+        rightSign = nullptr;
+    }
+    if (leftSign) {
+        delete leftSign;
+        leftSign = nullptr;
+    }
+    
+    // Clear minimap
+    clearMinimap();
 }
