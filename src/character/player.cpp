@@ -18,6 +18,8 @@ Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* si
     weaponAnimator = new Animator(node->getEngine(), weaponNode, game->getAnimation("pencil_idle"));
     weaponAnimator->setFrameRate(8);
 
+    hitAnimation = game->getAnimation("player_hurt");
+
     setWeaponPencil();
 }
 
@@ -28,6 +30,10 @@ Player::~Player() {
 
 void Player::onDamage(int damage) {
     Character::onDamage(damage);
+
+    float timePerFrame = 1.0f / 8.0f;
+    unsigned int numFrames = attackAnimation->getNumberFrames();
+    beingDamaged = numFrames * timePerFrame;
 
     // End game if dead
     if (isDead())
@@ -69,7 +75,11 @@ void Player::move(float dt) {
     Keyboard* keys = node->getEngine()->getKeyboard();
 
     // Set animation based on state: attack > movement
-    if (attacking > 0.0f) {
+    if (beingDamaged > 0.0f) {
+        animator->setAnimation(hitAnimation);
+        beingDamaged -= dt;
+    }
+    else if (attacking > 0.0f) {
         if (attackAnimation != nullptr) {
             animator->setAnimation(attackAnimation);
         }
@@ -228,7 +238,7 @@ void Player::setWeaponStapleGun() {
     setWeapon(new ProjectileWeapon(this,
         { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={projectileRadius, 2.0f * projectileRadius}},
         { .damage=1, .life=5.0f, .speed=7.0f, .radius=projectileRadius / 2.0f },
-        0.8f,  // maxCooldown
+        0.0f,  // maxCooldown
         { "stapleProjectile" },  // projectile materials
         0      // ricochet
     ));

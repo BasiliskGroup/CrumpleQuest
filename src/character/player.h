@@ -12,6 +12,7 @@ class Player : public Character {
 private:
     int money = 0;
     float attacking = 0;
+    float beingDamaged = 0.0;
     unsigned int lastAttackFrame = 0;  // Track last frame of attack animation
     Animator* animator;
     Node2D* weaponNode;
@@ -19,6 +20,7 @@ private:
     Animator* weaponAnimator;
     Animation* idleAnimation;
     Animation* runAnimation;
+    Animation* hitAnimation;
     Animation* attackAnimation;
     Animation* weaponIdle;
     Animation* weaponRun;
@@ -29,7 +31,7 @@ private:
     bool shiftWasDown = false;
 
     bool pencilAvailible = true;
-    bool stapleGunAvailible = false;
+    bool stapleGunAvailible = true;
     bool scissorAvailible = false;
 
 public:

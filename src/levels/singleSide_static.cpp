@@ -53,21 +53,21 @@ void SingleSide::generateTemplates(Game* game) {
     };
 
     templates["notebook_weapon_front"] = [game](float difficulty) {
-        SingleSide* side = new SingleSide(game, "paper0", "notebook_blank", vec2(0, 0), "notebook", {}, difficulty);
-        side->addPickup(new StapleGun(game, side, { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position={-3, 0.0}, .scale={1.0, 1.0} }, 0.5f));
+        SingleSide* side = new SingleSide(game, "paper0", "notebook_weaponroom", vec2(0, 0), "notebook", {}, difficulty);
+        side->addPickup(new StapleGun(game, side, { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position={0.0, 2.3}, .scale={1.0, 1.0} }, 0.5f));
         return side;
     };
     templates["notebook_weapon_back"] = [game](float difficulty) {
-        SingleSide* side = new SingleSide(game, "paper1", "notebook_blank", vec2(0, 0), "notebook", {}, difficulty);
+        SingleSide* side = new SingleSide(game, "paper1", "notebook_weaponroom", vec2(0, 0), "notebook", {}, difficulty);
         return side;
     };
     templates["grid_weapon_front"] = [game](float difficulty) {
-        SingleSide* side = new SingleSide(game, "paper0", "grid_blank", vec2(0, 0), "grid", {}, difficulty);
-        side->addPickup(new StapleGun(game, side, { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position={-3, 0.0}, .scale={1.0, 1.0} }, 0.5f));
+        SingleSide* side = new SingleSide(game, "paper0", "grid_weaponroom", vec2(0, 0), "grid", {}, difficulty);
+        side->addPickup(new StapleGun(game, side, { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position={0.0, 2.3}, .scale={1.0, 1.0} }, 0.5f));
         return side;
     };
     templates["grid_weapon_back"] = [game](float difficulty) {
-        SingleSide* side = new SingleSide(game, "paper1", "grid_blank", vec2(0, 0), "grid", {}, difficulty);
+        SingleSide* side = new SingleSide(game, "paper1", "grid_weaponroom", vec2(0, 0), "grid", {}, difficulty);
         return side;
     };
 

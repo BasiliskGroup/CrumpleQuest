@@ -48,6 +48,15 @@ int main() {
     game->addMaterial("hand_left", new Material({ 1, 1, 1 }, game->getImage("hand_left")));
     game->addImage("hand_right", new Image("art/assets/hands/right.PNG"));
     game->addMaterial("hand_right", new Material({ 1, 1, 1 }, game->getImage("hand_right")));
+
+    // Load ladder image from art/assets
+    refresh();
+    game->addImage("ladder", new Image("art/assets/ladder.PNG"));
+    game->addMaterial("ladder", new Material({ 1, 1, 1 }, game->getImage("ladder")));
+
+    // Crosshair
+    game->addImage("crosshair", new Image("art/assets/crosshair.PNG"));
+    game->addMaterial("crosshair", new Material({ 1, 1, 1 }, game->getImage("crosshair")));
     
     // Load menu paper background from art/assets
     refresh();
@@ -92,7 +101,7 @@ int main() {
     game->addMaterial("dead", new Material({ 1, 1, 1 }, game->getImage("dead")));
     
     refresh();
-    game->addImage("volumeicon", new Image("art/assets/volumeicon.png"));
+    game->addImage("volumeicon", new Image("art/assets/volumeicon.PNG"));
     game->addMaterial("volumeicon", new Material({ 1, 1, 1 }, game->getImage("volumeicon")));
     game->addImage("musicicon", new Image("art/assets/musicicon.PNG"));
     game->addMaterial("musicicon", new Material({ 1, 1, 1 }, game->getImage("musicicon")));
@@ -103,8 +112,8 @@ int main() {
     
     refresh();
     std::unordered_map<std::string, std::vector<std::string>> levelNames = {
-        { "notebook", { "blank", "level1", "level2", "level3", "level4", "level5"} },
-        { "grid", { "blank", "level1", "level2", "level3", "level4", "level5"} },
+        { "notebook", { "blank", "level1", "level2", "level3", "level4", "level5", "weaponroom"} },
+        { "grid", { "blank", "level1", "level2", "level3", "level4", "level5", "weaponroom"} },
         {"tutorial", { "tutorial" } }
     };
     for (auto& [name, levels] : levelNames) {
@@ -140,6 +149,7 @@ int main() {
     game->addAnimation("player_run", "art/sprites/player/run/", 3);
     game->addAnimation("player_attack_pencil", "art/sprites/player/attack/attack_pencil/", 4);
     game->addAnimation("player_attack_gun", "art/sprites/player/attack/attack_gun/", 2);
+    game->addAnimation("player_hurt", "art/sprites/player/hurt/", 3);
     // Pencil
     refresh();
     game->addAnimation("pencil_idle", "art/sprites/player/weapons/pencil/idle/", 4);
