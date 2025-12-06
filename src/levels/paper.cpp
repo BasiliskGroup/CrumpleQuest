@@ -1156,6 +1156,13 @@ void Paper::updatePathing(vec2 playerPos) {
     PaperMesh* mesh = (curSide == 0) ? paperMeshes.first : paperMeshes.second;
 
     for (Enemy* enemy : side->getEnemies()) {
+        // Kill enemies that are outside the paperMesh region
+        if (!enemy->isDead() && !mesh->contains(enemy->getPosition())) {
+            // Instantly kill by dealing damage equal to max health
+            enemy->onDamage(enemy->getMaxHealth());
+            continue; // Skip pathing for dead enemies
+        }
+        
         // Determine target position: use custom destination if set, otherwise use player position
         vec2 targetPos = playerPos;
         std::optional<vec2> customDest = enemy->getCustomDestination();
@@ -1202,6 +1209,26 @@ void Paper::checkAndSetOpen() {
         isOpen = true;
         // Regenerate walls after opening (will use AABB instead of region polygon)
         regenerateWalls();
+    }
+}
+
+void Paper::killAllEnemies() {
+    // Kill all enemies on first side
+    if (sides.first) {
+        for (Enemy* enemy : sides.first->getEnemies()) {
+            if (enemy != nullptr && !enemy->isDead()) {
+                enemy->onDamage(enemy->getMaxHealth());
+            }
+        }
+    }
+    
+    // Kill all enemies on second side
+    if (sides.second) {
+        for (Enemy* enemy : sides.second->getEnemies()) {
+            if (enemy != nullptr && !enemy->isDead()) {
+                enemy->onDamage(enemy->getMaxHealth());
+            }
+        }
     }
 }
 
