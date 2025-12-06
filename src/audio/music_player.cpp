@@ -7,9 +7,11 @@ namespace audio {
 MusicPlayer::MusicPlayer() 
     : music_group_(0), 
       initialized_(false),
+      restart_on_transition_(true), // Default to restarting tracks
       parchment_track_(0),
       notebook_track_(0),
-      grid_track_(0) {
+      grid_track_(0),
+      current_track_("grid") {
 }
 
 MusicPlayer& MusicPlayer::Get() {
@@ -36,14 +38,27 @@ void MusicPlayer::Initialize(GroupHandle music_group) {
     // Create and setup notebook track
     notebook_track_ = audio.CreateTrack();
     audio.AddLayer(notebook_track_, "notebook", "sounds/notebook.wav", "music");
-    audio.SetLayerVolume(notebook_track_, "notebook", 1.0f);
+    audio.SetLayerVolume(notebook_track_, "notebook", 0.0f);
     audio.PlayTrack(notebook_track_);
     
     // Create and setup grid track
     grid_track_ = audio.CreateTrack();
     audio.AddLayer(grid_track_, "grid", "sounds/grid.wav", "music");
-    audio.SetLayerVolume(grid_track_, "grid", 0.0f);
+    audio.SetLayerVolume(grid_track_, "grid", 1.0f);
     audio.PlayTrack(grid_track_);
+    
+    current_track_ = "grid";
+}
+
+TrackHandle MusicPlayer::GetTrackHandle(const std::string& track_name) {
+    if (track_name == "parchment") {
+        return parchment_track_;
+    } else if (track_name == "notebook") {
+        return notebook_track_;
+    } else if (track_name == "grid") {
+        return grid_track_;
+    }
+    return 0;
 }
 
 void MusicPlayer::FadeTo(const std::string& track_name, float fade_duration) {
@@ -51,36 +66,61 @@ void MusicPlayer::FadeTo(const std::string& track_name, float fade_duration) {
         return;
     }
     
+    // Don't do anything if we're already on this track
+    if (track_name == current_track_) {
+        return;
+    }
+    
     AudioManager& audio = AudioManager::GetInstance();
     
-    // Determine which track to fade to
-    TrackHandle target_track = 0;
-    if (track_name == "parchment") {
-        target_track = parchment_track_;
-    } else if (track_name == "notebook") {
-        target_track = notebook_track_;
-    } else if (track_name == "grid") {
-        target_track = grid_track_;
-    } else {
+    TrackHandle target_track = GetTrackHandle(track_name);
+    if (target_track == 0) {
         return; // Unknown track
     }
     
     // Convert duration to milliseconds
     auto fade_ms = std::chrono::milliseconds(static_cast<long long>(fade_duration * 1000));
     
-    // Fade out all other tracks
-    if (target_track != parchment_track_) {
-        audio.FadeLayer(parchment_track_, "parchment", 0.0f, fade_ms);
-    }
-    if (target_track != notebook_track_) {
-        audio.FadeLayer(notebook_track_, "notebook", 0.0f, fade_ms);
-    }
-    if (target_track != grid_track_) {
-        audio.FadeLayer(grid_track_, "grid", 0.0f, fade_ms);
+    if (restart_on_transition_) {
+        // Stop and restart behavior
+        
+        // Fade out current track, then stop it
+        TrackHandle current_track_handle = GetTrackHandle(current_track_);
+        if (current_track_handle != 0) {
+            audio.FadeLayer(current_track_handle, current_track_, 0.0f, fade_ms);
+            // Note: We can't easily stop the track after the fade completes without a callback system
+            // For now, leaving it at 0 volume is sufficient
+        }
+        
+        // Start the target track from the beginning and fade it in
+        audio.StopTrack(target_track);
+        audio.PlayTrack(target_track);
+        audio.SetLayerVolume(target_track, track_name, 0.0f);
+        audio.FadeLayer(target_track, track_name, 1.0f, fade_ms);
+    } else {
+        // Continuous playback behavior - all tracks play continuously
+        
+        // Make sure all tracks are playing (calling PlayTrack on already playing track is safe)
+        audio.PlayTrack(parchment_track_);
+        audio.PlayTrack(notebook_track_);
+        audio.PlayTrack(grid_track_);
+        
+        // Fade out all other tracks
+        if (target_track != parchment_track_) {
+            audio.FadeLayer(parchment_track_, "parchment", 0.0f, fade_ms);
+        }
+        if (target_track != notebook_track_) {
+            audio.FadeLayer(notebook_track_, "notebook", 0.0f, fade_ms);
+        }
+        if (target_track != grid_track_) {
+            audio.FadeLayer(grid_track_, "grid", 0.0f, fade_ms);
+        }
+        
+        // Fade in the target track
+        audio.FadeLayer(target_track, track_name, 1.0f, fade_ms);
     }
     
-    // Fade in the target track
-    audio.FadeLayer(target_track, track_name, 1.0f, fade_ms);
+    current_track_ = track_name;
 }
 
 void MusicPlayer::SetTrackVolume(const std::string& track_name, float volume) {
@@ -90,12 +130,9 @@ void MusicPlayer::SetTrackVolume(const std::string& track_name, float volume) {
     
     AudioManager& audio = AudioManager::GetInstance();
     
-    if (track_name == "parchment") {
-        audio.SetLayerVolume(parchment_track_, "parchment", volume);
-    } else if (track_name == "notebook") {
-        audio.SetLayerVolume(notebook_track_, "notebook", volume);
-    } else if (track_name == "grid") {
-        audio.SetLayerVolume(grid_track_, "grid", volume);
+    TrackHandle track = GetTrackHandle(track_name);
+    if (track != 0) {
+        audio.SetLayerVolume(track, track_name, volume);
     }
 }
 

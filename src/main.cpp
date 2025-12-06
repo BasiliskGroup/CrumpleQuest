@@ -88,6 +88,7 @@ int main() {
 
     // Setup background music
     audio::MusicPlayer::Get().Initialize(game->getMusicGroup());
+    audio::MusicPlayer::Get().SetRestartOnTransition(true); // Restart tracks from beginning on transition
 
     // Initialize behavior system
     BehaviorRegistry::initialize();

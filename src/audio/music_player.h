@@ -17,11 +17,15 @@ class MusicPlayer {
 private:
     GroupHandle music_group_;
     bool initialized_;
+    bool restart_on_transition_; // Whether to restart tracks from beginning on transition
     
     // Track handles
     TrackHandle parchment_track_;
     TrackHandle notebook_track_;
     TrackHandle grid_track_;
+    
+    // Current active track name
+    std::string current_track_;
     
     // Private constructor for singleton
     MusicPlayer();
@@ -31,6 +35,9 @@ private:
     MusicPlayer& operator=(const MusicPlayer&) = delete;
     MusicPlayer(MusicPlayer&&) = delete;
     MusicPlayer& operator=(MusicPlayer&&) = delete;
+    
+    // Get track handle by name
+    TrackHandle GetTrackHandle(const std::string& track_name);
 
 public:
     ~MusicPlayer() = default;
@@ -40,6 +47,17 @@ public:
     
     // Initialize with music group (must be called before first use)
     void Initialize(GroupHandle music_group);
+    
+    /**
+     * @brief Set whether tracks should restart from beginning on transition
+     * @param restart If true, tracks restart from beginning; if false, they continue from current position
+     */
+    void SetRestartOnTransition(bool restart) { restart_on_transition_ = restart; }
+    
+    /**
+     * @brief Get whether tracks restart from beginning on transition
+     */
+    bool GetRestartOnTransition() const { return restart_on_transition_; }
     
     /**
      * @brief Fade to a specific music track
