@@ -148,9 +148,20 @@ void Player::move(float dt) {
     if (glm::length2(dir) < 1e-6f) return;
 
     dir = glm::normalize(dir);
-    vec2 offset = 2 * radius * dir + getPosition();
     
-    bool attackSuccessful = weapon->attack(offset, dir);
+    // Check if weapon is a projectile weapon - if so, spawn at player position (no offset)
+    // Otherwise (melee weapons), use offset
+    ProjectileWeapon* projectileWeapon = dynamic_cast<ProjectileWeapon*>(weapon);
+    vec2 attackPos;
+    if (projectileWeapon != nullptr) {
+        // Projectile weapons spawn directly at player position
+        attackPos = getPosition();
+    } else {
+        // Melee weapons use offset
+        attackPos = 2 * radius * dir + getPosition();
+    }
+    
+    bool attackSuccessful = weapon->attack(attackPos, dir);
     
     // If attack was successful (weapon was off cooldown), set attack animation duration
     if (attackSuccessful) {
@@ -217,8 +228,8 @@ void Player::setWeaponStapleGun() {
     setWeapon(new ProjectileWeapon(this,
         { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={projectileRadius, 2.0f * projectileRadius}},
         { .damage=1, .life=5.0f, .speed=7.0f, .radius=projectileRadius / 2.0f },
-        0.5f,  // maxCooldown
-        { "glueProjectile" },  // projectile materials
+        0.8f,  // maxCooldown
+        { "stapleProjectile" },  // projectile materials
         0      // ricochet
     ));
 }

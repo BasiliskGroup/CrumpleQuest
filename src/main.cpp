@@ -105,6 +105,8 @@ int main() {
     refresh();
     game->addImage("glueProjectile", new Image("art/sprites/enemies/ranged/notebook_glue/projectile_glue.PNG"));
     game->addMaterial("glueProjectile", new Material({ 1, 1, 1 }, game->getImage("glueProjectile")));
+    game->addImage("stapleProjectile", new Image("art/sprites/player/weapons/stapler/bullet.png"));
+    game->addMaterial("stapleProjectile", new Material({ 1, 1, 1 }, game->getImage("stapleProjectile")));
 
     // Player
     refresh();
@@ -149,6 +151,9 @@ int main() {
     // Heart
     refresh();
     game->addAnimation("heart", "art/assets/heart/", 7);
+    // Staple Gun Pickup
+    game->addImage("stapleGunPickup", new Image("art/sprites/player/weapons/stapler/stapler.PNG"));
+    game->addMaterial("stapleGunPickup", new Material({ 1, 1, 1 }, game->getImage("stapleGunPickup")));
 
     // mesh
     std::vector<std::string> meshNames = { "quad", "paper0", "paper1", "quad3D", "cube", "mug", "john", "heart", "sphere"};

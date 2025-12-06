@@ -2,17 +2,15 @@
 #include "pickup/stapleGun.h"
 
 StapleGun::StapleGun(Game* game, SingleSide* side, Node2D::Params node, float radius) : Pickup(game, side, node, radius) {
-    animation = game->getAnimation("integral_idle");
-    animator = new Animator(game->getEngine(), this, animation);
-    animator->setFrameRate(8);
+    this->setMaterial(game->getMaterial("stapleGunPickup"));
 }
 
 StapleGun::~StapleGun() {
-    delete animator;
+
 }
 
 void StapleGun::update(float dt) {
-    animator->update();
+    
 }
 
 void StapleGun::onPickup() {
