@@ -31,6 +31,43 @@ void SingleSide::generateTemplates(Game* game) {
         SingleSide* side = new SingleSide(game, "paper1", "notebook_level1");
         return side;
     };
+
+    templates["notebook2_front"] = [game]() {
+        SingleSide* side = new SingleSide(game, "paper0", "notebook_level2");
+        return side;
+    };
+    templates["notebook2_back"] = [game]() {
+        SingleSide* side = new SingleSide(game, "paper1", "notebook_level2");
+        return side;
+    };
+
+    templates["notebook3_front"] = [game]() {
+        SingleSide* side = new SingleSide(game, "paper0", "notebook_level3");
+        return side;
+    };
+    templates["notebook3_back"] = [game]() {
+        SingleSide* side = new SingleSide(game, "paper1", "notebook_level3");
+        return side;
+    };
+
+    templates["notebook4_front"] = [game]() {
+        SingleSide* side = new SingleSide(game, "paper0", "notebook_level4");
+        return side;
+    };
+    templates["notebook4_back"] = [game]() {
+        SingleSide* side = new SingleSide(game, "paper1", "notebook_level4");
+        return side;
+    };
+
+    templates["notebook5_front"] = [game]() {
+        SingleSide* side = new SingleSide(game, "paper0", "notebook_level5");
+        return side;
+    };
+    templates["notebook5_back"] = [game]() {
+        SingleSide* side = new SingleSide(game, "paper1", "notebook_level5");
+        return side;
+    };
+
 }
 
 Node2D* SingleSide::genPlayerNode(Game* game, SingleSide* side) {

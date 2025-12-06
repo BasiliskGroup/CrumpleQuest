@@ -21,6 +21,22 @@ void Paper::generateTemplates(Game* game) {
         return new Paper(game, { "notebook1_front", "notebook1_back" }, { "notebook1_front", "notebook1_back" });
     };
 
+    templates["notebook2"] = [game]() {
+        return new Paper(game, { "notebook2_front", "notebook2_back" }, { "notebook2_front", "notebook2_back" });
+    };
+
+    templates["notebook3"] = [game]() {
+        return new Paper(game, { "notebook3_front", "notebook3_back" }, { "notebook3_front", "notebook3_back" });
+    };
+
+    templates["notebook4"] = [game]() {
+        return new Paper(game, { "notebook4_front", "notebook4_back" }, { "notebook4_front", "notebook4_back" });
+    };
+
+    templates["notebook5"] = [game]() {
+        return new Paper(game, { "notebook5_front", "notebook5_back" }, { "notebook5_front", "notebook5_back" });
+    };
+
     // ---------------------
     // label templates
     // ---------------------
@@ -30,7 +46,11 @@ void Paper::generateTemplates(Game* game) {
             "empty"
         }},
         {BASIC_ROOM, {
-            "notebook1"
+            "notebook1",
+            "notebook2",
+            "notebook3",
+            "notebook4",
+            "notebook5"
         }},
         {BOSS_ROOM, {
             "squareMiddle"
