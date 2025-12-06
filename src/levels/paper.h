@@ -99,6 +99,7 @@ public:
     void deactivateFold();
     void regenerateWalls();
     void regenerateWalls(int side);
+    void pruneSmallObstacles(); // Remove obstacle UVRegions with total side lengths < 0.25
     void resetGeometry();
 
     void setGame(Game* game) { this->game = game; }

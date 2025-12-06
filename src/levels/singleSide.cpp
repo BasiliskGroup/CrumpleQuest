@@ -3,6 +3,9 @@
 #include "util/random.h"
 #include "pickup/pickup.h"
 #include "pickup/heart.h"
+#include "pickup/stapleGun.h"
+#include "pickup/scissor.h"
+#include "pickup/ladder.h"
 #include "character/boss.h"
 
 
@@ -520,29 +523,28 @@ Pickup* SingleSide::adoptPickup(Pickup* pickup, SingleSide* fromSide) {
     if (pickup == nullptr || fromSide == nullptr) return nullptr;
     if (fromSide == this) return pickup; // Already in this side
     
-    // Get essential properties before deleting - only access what we absolutely need
-    // Position is the most critical property to preserve
-    vec2 position;
-    float radius = 0.5f; // Default radius
-    Game* game = nullptr;
+    // Save all Node2D properties from the old pickup before deleting
+    // Pickups are static objects, so we don't need to preserve velocity
+    vec2 position = pickup->getPosition();
+    vec2 scale = pickup->getScale();
+    Mesh* mesh = pickup->getMesh();
+    Material* material = pickup->getMaterial();
+    float rotation = pickup->getRotation();
+    float layer = pickup->getLayer();
     
-    // Try to get position and radius - these are the most important
-    // If the pickup is in an invalid state, we'll use defaults
-    try {
-        position = pickup->getPosition();
-        radius = pickup->getRadius();
-        game = pickup->getGame();
-    } catch (...) {
-        // If we can't access properties, we can't safely recreate the pickup
-        return nullptr;
-    }
+    // Save pickup-specific properties
+    float radius = pickup->getRadius();
+    Game* game = pickup->getGame();
     
     if (game == nullptr) {
         return nullptr; // Need game pointer to create new pickup
     }
     
-    // Determine pickup type before deleting
-    bool isHeart = (dynamic_cast<Heart*>(pickup) != nullptr);
+    // Determine pickup type before deleting (check most specific types first)
+    Heart* heart = dynamic_cast<Heart*>(pickup);
+    StapleGun* stapleGun = dynamic_cast<StapleGun*>(pickup);
+    Scissor* scissor = dynamic_cast<Scissor*>(pickup);
+    Ladder* ladder = dynamic_cast<Ladder*>(pickup);
     
     // Remove pickup from old side's pickups list BEFORE deleting
     auto& oldPickups = fromSide->getPickups();
@@ -556,38 +558,68 @@ Pickup* SingleSide::adoptPickup(Pickup* pickup, SingleSide* fromSide) {
     // Delete the old pickup (which will remove it from the old scene)
     delete pickup;
     
-    // Create a new pickup instance in the new scene
-    // Use the same parameters as when hearts are created (from enemy.cpp)
+    // Create a new pickup instance in the new scene with preserved properties
+    // NOTE: Pickups should NOT have colliders - they are created without colliders
     Pickup* newPickup = nullptr;
-    Collider* collider = getCollider("quad");
     
-    if (isHeart) {
-        // Create new Heart with same style as created in enemy.cpp
+    if (heart != nullptr) {
+        // Create new Heart preserving all properties
         newPickup = new Heart(game, this, {
-            .mesh = game->getMesh("quad"),
-            .material = game->getMaterial("red"),
+            .mesh = mesh,
+            .material = material,
             .position = position,
-            .scale = {0.25, 0.25},
-            .collider = collider,
-            .colliderScale = {1.0, 1.0},
-            .density = 0.01f
+            .rotation = rotation,
+            .scale = scale
+            // NO collider - pickups don't have colliders
+        }, radius);
+    } else if (stapleGun != nullptr) {
+        // Create new StapleGun preserving all properties
+        newPickup = new StapleGun(game, this, {
+            .mesh = mesh,
+            .material = material,
+            .position = position,
+            .rotation = rotation,
+            .scale = scale
+            // NO collider - pickups don't have colliders
+        }, radius);
+    } else if (scissor != nullptr) {
+        // Create new Scissor preserving all properties
+        newPickup = new Scissor(game, this, {
+            .mesh = mesh,
+            .material = material,
+            .position = position,
+            .rotation = rotation,
+            .scale = scale
+            // NO collider - pickups don't have colliders
+        }, radius);
+    } else if (ladder != nullptr) {
+        // Create new Ladder preserving all properties
+        newPickup = new Ladder(game, this, {
+            .mesh = mesh,
+            .material = material,
+            .position = position,
+            .rotation = rotation,
+            .scale = scale
+            // NO collider - pickups don't have colliders
         }, radius);
     } else {
-        // Fallback: create generic Pickup with defaults
+        // Fallback: create generic Pickup preserving all properties
         newPickup = new Pickup(game, this, {
-            .mesh = game->getMesh("quad"),
-            .material = game->getMaterial("red"),
+            .mesh = mesh,
+            .material = material,
             .position = position,
-            .scale = {0.25, 0.25},
-            .collider = collider,
-            .colliderScale = {1.0, 1.0},
-            .density = 0.01f
+            .rotation = rotation,
+            .scale = scale
+            // NO collider - pickups don't have colliders
         }, radius);
     }
     
-    // Set manifold mask (as done in Character constructor)
+    // Restore additional properties
     if (newPickup != nullptr) {
-        newPickup->setManifoldMask(1, 1, 0);
+        // Pickups are static objects, so we don't set velocity (they don't move)
+        if (layer != 0.0f) { // Only set layer if it was non-zero (assuming 0 is default)
+            newPickup->setLayer(layer);
+        }
         addPickup(newPickup);
         return newPickup;  // Return the new pickup instance
     }

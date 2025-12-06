@@ -114,6 +114,9 @@ public:
     void onDamage(int damage);
     bool isDead() const { return health <= 0; }
     
+    // Death callback - called when boss dies (health reaches 0)
+    void onDeath();
+    
     // Check if boss should be deleted (leaving animation complete)
     bool shouldBeDeleted() const;
     

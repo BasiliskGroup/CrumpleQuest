@@ -6,12 +6,14 @@
 #include "game/paperView.h"
 #include "util/random.h"
 #include <iostream>
+#include "pickup/ladder.h"
+
 
 Boss::Boss(Game* game, PaperView* paperView) : 
     game(game),
     paperView(paperView),
-    health(1),
-    maxHealth(1),
+    health(20),
+    maxHealth(20),
     stage("spawn"),
     vulnerable(false),
     hitboxRadius(0.5f),
@@ -210,6 +212,10 @@ void Boss::update(float dt) {
     // Check if boss should start leaving (health <= 0)
     if (health <= 0 && vulnerableState != VulnerableState::Leaving && vulnerableState != VulnerableState::Spawning) {
         std::cout << "[Boss::update] Boss defeated! Starting leaving animation" << std::endl;
+        
+        // Call onDeath callback
+        onDeath();
+        
         vulnerableState = VulnerableState::Leaving;
         spawnProgress = 0.0f;  // Start leaving animation from beginning
         vulnerable = false;  // No longer vulnerable
@@ -469,6 +475,10 @@ void Boss::onDamage(int damage) {
     // TODO: Add damage sound, effects, etc.
 }
 
+void Boss::onDeath() {
+    game->getSide()->addPickup(new Ladder(game, game->getSide(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("red"), .position={0.0, 0.0}, .scale={1.0, 1.0} }, 0.5f));
+}
+
 bool Boss::shouldBeDeleted() const {
     // Boss should be deleted when leaving animation is complete
     return (vulnerableState == VulnerableState::Leaving && spawnProgress >= 1.0f);
@@ -602,7 +612,7 @@ void Boss::attack() {
     // Create node parameters
     Node2D::Params nodeParams;
     nodeParams.mesh = game->getMesh("quad");
-    nodeParams.material = game->getMaterial("circle");
+    nodeParams.material = game->getMaterial("empty");
     nodeParams.scale = vec2(params.radius * 2.0f, params.radius * 2.0f);  // Scale to match radius
     nodeParams.collider = currentSide->getCollider("quad");
     nodeParams.colliderScale = vec2(1.0f, 1.0f);

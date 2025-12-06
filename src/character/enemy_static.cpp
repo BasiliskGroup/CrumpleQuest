@@ -16,7 +16,7 @@ void Enemy::generateTemplates(Game* game) {
 
     // notebook
     templates["glue"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 1, node, side, nullptr, nullptr, 0.4, node->getScale(), "hit-glue", 0.75f);
         enemy->idleAnimation = game->getAnimation("glue_idle");
         enemy->runAnimation = game->getAnimation("glue_idle");
@@ -26,7 +26,7 @@ void Enemy::generateTemplates(Game* game) {
 
         enemy->setWeapon(new ProjectileWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ projectileRadius, 2.0f * projectileRadius } }, 
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={ projectileRadius, 2.0f * projectileRadius } }, 
             { .damage=1, .life=5.0f, .speed=7.0f, .radius=projectileRadius / 2.0f },
             3,
             { "glueProjectile" },
@@ -52,7 +52,7 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["staple"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 2, node, side, nullptr, nullptr, 0.5, node->getScale(), "hit-staple-remover", 0.55f);
         enemy->idleAnimation = game->getAnimation("staple_idle");
         enemy->runAnimation = game->getAnimation("staple_idle");
@@ -62,7 +62,7 @@ void Enemy::generateTemplates(Game* game) {
 
         enemy->setWeapon(new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ meleeRadius, meleeRadius } }, 
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={ meleeRadius, meleeRadius } }, 
             { .damage=1, .life=0.1f, .radius=meleeRadius / 2.0f },
             2,
             5.0f // knockback
@@ -80,7 +80,7 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["clipfly"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.5f, node->getScale(), "hit-clipfly", 0.4f);
         enemy->idleAnimation = game->getAnimation("clipfly_idle");
         enemy->runAnimation = game->getAnimation("clipfly_idle");
@@ -89,7 +89,7 @@ void Enemy::generateTemplates(Game* game) {
         float meleeRadius = 1.0f;
         enemy->setWeapon(new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ meleeRadius, meleeRadius } }, 
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={ meleeRadius, meleeRadius } }, 
             { .damage=1, .life=0.1f, .radius=meleeRadius / 2.0f },
             4.0f,
             5.0f // knockback
@@ -108,7 +108,7 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["integral"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.35, node->getScale(), "hit-clipfly", 0.0f);
         enemy->idleAnimation = game->getAnimation("integral_idle");
         enemy->runAnimation = game->getAnimation("integral_idle");
@@ -118,7 +118,7 @@ void Enemy::generateTemplates(Game* game) {
 
         MeleeWeapon* integralWeapon = new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ meleeRadius, meleeRadius } }, 
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={ meleeRadius, meleeRadius } }, 
             { .damage=1, .life=0.1f, .radius=meleeRadius / 2.0f },
             3.0f,
             5.0f // knockback
@@ -148,7 +148,7 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["sigma"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 2, node, side, nullptr, nullptr, 0.5, node->getScale(), "hit-staple-remover", 0.55f);
         enemy->idleAnimation = game->getAnimation("sigma_idle");
         enemy->runAnimation = game->getAnimation("sigma_idle");
@@ -158,7 +158,7 @@ void Enemy::generateTemplates(Game* game) {
 
         enemy->setWeapon(new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ meleeRadius, meleeRadius } }, 
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={ meleeRadius, meleeRadius } }, 
             { .damage=1, .life=0.1f, .radius=meleeRadius / 2.0f },
             2.0f,
             5.0f // knockback
@@ -175,7 +175,7 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["pi"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01, .collisionIgnoreGroups={"Character"} });
         Enemy* enemy = new Enemy(game, 3, 1, node, side, nullptr, nullptr, 0.4, node->getScale(), "hit-glue", 0.5f);
         enemy->idleAnimation = game->getAnimation("pi_idle");
         enemy->runAnimation = game->getAnimation("pi_idle");
@@ -185,11 +185,11 @@ void Enemy::generateTemplates(Game* game) {
 
         Weapon* piWeapon = new ProjectileWeapon(
             enemy,  
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ 1.5f * projectileRadius, 1.5f * projectileRadius } }, 
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={ 1.5f * projectileRadius, 1.5f * projectileRadius } }, 
             { .damage=1, .life=5.0f, .speed=4.0f, .radius=projectileRadius / 2.0f },
             2.0f,
             { "piProjectile1", "piProjectile2", "piProjectile3", "piProjectile4", "piProjectile5" },
-            // { "circle" },
+            // { "empty" },
             0 // ricochet
         );
         enemy->setWeapon(piWeapon);

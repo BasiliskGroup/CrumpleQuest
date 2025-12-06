@@ -98,6 +98,33 @@ void Floor::generateFloor() {
     }
 
     playMap[high.x][high.y] = BOSS_ROOM;
+    
+    // Find the furthest BASIC_ROOM from the boss room and replace it with TREASURE_ROOM
+    Position furthestBasicRoom = { -1, -1 };
+    int maxDistance = -1;
+    
+    for (int x = 0; x < FLOOR_WIDTH; x++) {
+        for (int y = 0; y < FLOOR_WIDTH; y++) {
+            // Only consider BASIC_ROOM positions
+            if (playMap[x][y] != BASIC_ROOM) {
+                continue;
+            }
+            
+            // Calculate Manhattan distance from boss room
+            int distance = abs(x - high.x) + abs(y - high.y);
+            
+            // Update if this is the furthest basic room found so far
+            if (distance > maxDistance) {
+                maxDistance = distance;
+                furthestBasicRoom = { x, y };
+            }
+        }
+    }
+    
+    // Replace the furthest basic room with treasure room
+    if (furthestBasicRoom.x != -1 && furthestBasicRoom.y != -1) {
+        addToMaps(furthestBasicRoom, TREASURE_ROOM);
+    }
 }
 
 // helper functions

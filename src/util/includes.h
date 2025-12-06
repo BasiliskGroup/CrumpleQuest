@@ -48,6 +48,7 @@ enum RoomTypes {
     SPAWN_ROOM,
     BASIC_ROOM,
     BOSS_ROOM,
+    TREASURE_ROOM,
     NULL_ROOM = -1
 };
 
