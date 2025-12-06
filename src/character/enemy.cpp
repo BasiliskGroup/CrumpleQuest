@@ -8,7 +8,7 @@
 
 
 Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale, std::string hitSound, float attackDelay) 
-    : Character(game, health, speed, node, side, weapon, "Enemy", radius, scale, hitSound), ai(ai), path(), attackDelay(attackDelay), attackDelayTimer(0.0f), attackPending(false)
+    : Character(game, health, speed, node, side, weapon, "Enemy", radius, scale, hitSound), ai(ai), path(), attackDelay(attackDelay), attackDelayTimer(2.0f), attackPending(false)
 {
     animator = new Animator(game->getEngine(), node, game->getAnimation("player_idle"));
     animator->setFrameRate(8);
@@ -22,6 +22,10 @@ Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side
     // Initialize default actions
     attackAction = AttackActionRegistry::getAction("Normal");
     moveAction = MoveActionRegistry::getAction("Normal");
+}
+
+Enemy::~Enemy() {
+    delete animator; animator = nullptr;
 }
 
 void Enemy::onDamage(int damage) {
@@ -51,13 +55,13 @@ void Enemy::updateStatus(const vec2& playerPos) {
         }
     }
     
-    // Update attack capability status (weapon ready, player is in range, and has line of sight)
+    // Update attack capability status (weapon ready, player is in range, and level entry delay expired)
     bool inRange = false;
     if (weapon != nullptr) {
         float distance = glm::length(playerPos - getPosition());
         inRange = distance <= weapon->getRange();
     }
-    statusCanAttack = statusWeaponReady && inRange;
+    statusCanAttack = statusWeaponReady && inRange && (levelEntryDelayTimer <= 0.0f);
     
     // Update attacking status (currently playing attack animation)
     statusIsAttacking = attacking > 0.0f;
@@ -72,6 +76,11 @@ void Enemy::move(const vec2& playerPos, float dt) {
     // Update weapon cooldown
     if (weapon != nullptr) {
         weapon->update(dt);
+    }
+    
+    // Update level entry delay timer
+    if (levelEntryDelayTimer > 0.0f) {
+        levelEntryDelayTimer -= dt;
     }
     
     // Update attack animation timer
@@ -152,6 +161,7 @@ void Enemy::move(const vec2& playerPos, float dt) {
 void Enemy::attack(const vec2& playerPos, float dt) {
     if (weapon == nullptr) return;
     if (!weapon->isReady()) return;  // Can't attack if weapon is on cooldown
+    if (levelEntryDelayTimer > 0.0f) return;  // Can't attack until level entry delay expires
 
     vec2 dir = playerPos - getPosition();
     if (glm::length2(dir) < 1e-6f) return;

@@ -117,22 +117,49 @@ bool DyMesh::cut(const std::vector<vec2>& clipRegion, bool useIntersection) {
     };
     
     for (const UVRegion& uvReg : snapshot.regions) {
-        // Obstacles should be preserved if they're still within the new paper boundary
-        // Check if obstacle is completely inside the new region
+        // For obstacles, check if they intersect with the clip region
+        // If they do, they need to be clipped (even if all vertices are inside the new region)
+        // This allows obstacles to be split when folded over
         if (uvReg.isObstacle) {
-            bool obstacleInside = true;
-            for (const vec2& pos : uvReg.positions) {
-                if (!pointInPolygon(pos, newRegion)) {
-                    obstacleInside = false;
-                    break;
+            // Check if obstacle intersects with clip region
+            Paths64 obstaclePath = makePaths64FromRegion(uvReg.positions);
+            Paths64 clipPaths = makePaths64FromRegion(clipRegion);
+            Paths64 intersectionTest;
+            
+            try {
+                intersectionTest = Intersect(obstaclePath, clipPaths, FillRule::NonZero);
+            } catch (...) {
+                intersectionTest.clear();
+            }
+            
+            bool intersectsClipRegion = false;
+            if (!intersectionTest.empty()) {
+                for (const Path64& p : intersectionTest) {
+                    if (Area(p) > 0) {
+                        intersectsClipRegion = true;
+                        break;
+                    }
                 }
             }
-            if (obstacleInside) {
-                // Preserve obstacle as-is if it's inside the new boundary
-                newRegions.push_back(uvReg);
-                continue;
+            
+            // Only preserve obstacle as-is if:
+            // 1. All vertices are inside the new region AND
+            // 2. It does NOT intersect with the clip region (not being split)
+            if (!intersectsClipRegion) {
+                bool obstacleInside = true;
+                for (const vec2& pos : uvReg.positions) {
+                    if (!pointInPolygon(pos, newRegion)) {
+                        obstacleInside = false;
+                        break;
+                    }
+                }
+                if (obstacleInside) {
+                    // Preserve obstacle as-is if it's inside the new boundary and not being split
+                    newRegions.push_back(uvReg);
+                    continue;
+                }
             }
-            // If obstacle is partially or completely outside, clip it
+            // If obstacle intersects clip region or is partially outside, clip it
         }
         
         Paths64 subj = makePaths64FromRegion(uvReg.positions);

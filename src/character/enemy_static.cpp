@@ -5,8 +5,12 @@
 #include "levels/levels.h"
 #include "weapon/weapon.h"
 
-
 std::unordered_map<std::string, std::function<Enemy*(vec2, SingleSide*)>> Enemy::templates;
+
+std::unordered_map<std::string, std::vector<std::pair<std::string, float>>> Enemy::enemyBiomes = {
+    { "notebook", { { "glue", 4.0f }, { "staple", 3.0f }, { "clipfly", 1.0f } } },
+    { "grid", { { "integral", 4.0f }, { "sigma", 1.0f }, { "pi", 3.0f } } }
+};
 
 void Enemy::generateTemplates(Game* game) {
 
@@ -105,7 +109,7 @@ void Enemy::generateTemplates(Game* game) {
 
     templates["integral"] = [game](vec2 pos, SingleSide* side) {
         Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
-        Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.15, node->getScale(), "hit-clipfly", 0.0f);
+        Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.35, node->getScale(), "hit-clipfly", 0.0f);
         enemy->idleAnimation = game->getAnimation("integral_idle");
         enemy->runAnimation = game->getAnimation("integral_idle");
         enemy->attackAnimation = game->getAnimation("integral_attack");
@@ -119,9 +123,13 @@ void Enemy::generateTemplates(Game* game) {
             3.0f,
             5.0f // knockback
         );
-        integralWeapon->setRange(5.0f);
+        integralWeapon->setRange(4.0f);
         enemy->setWeapon(integralWeapon);
 
+        // Use Slide attack action - dashes forward then attacks after delay
+        // Parameters: dashSpeed (velocity magnitude for dash), attackTimeOffset (seconds before attack)
+        enemy->setAttackAction(new SlideAttackAction(10.0f, 0.5f));
+        
         enemy->setMoveAction(new JumpMoveAction(1.5f, 10.0f));
         
         float cooldownTime = 1.5f;

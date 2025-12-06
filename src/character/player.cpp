@@ -13,8 +13,10 @@ Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* si
     animator = new Animator(node->getEngine(), node, game->getAnimation("player_idle"));
     animator->setFrameRate(8);
 
-    weaponAnimator = new Animator(node->getEngine(), weaponNode, game->getAnimation("pencil_run"));
+    weaponAnimator = new Animator(node->getEngine(), weaponNode, game->getAnimation("pencil_idle"));
     weaponAnimator->setFrameRate(8);
+
+    setWeaponPencil();
 }
 
 void Player::onDamage(int damage) {
@@ -52,19 +54,21 @@ void Player::move(float dt) {
         attacking -= dt;
     }
 
+    // Update dash timer
+    if (dashTimer > 0.0f) {
+        dashTimer -= dt;
+    }
+
     // actual movement
     Keyboard* keys = node->getEngine()->getKeyboard();
 
     // Set animation based on state: attack > movement
     if (attacking > 0.0f) {
-        Animation* attackAnim = game->getAnimation("player_attack");
-        Animation* weaponAttackAnim = game->getAnimation("pencil_attack");
-        
-        if (attackAnim != nullptr) {
-            animator->setAnimation(attackAnim);
+        if (attackAnimation != nullptr) {
+            animator->setAnimation(attackAnimation);
         }
-        if (weaponAttackAnim != nullptr) {
-            weaponAnimator->setAnimation(weaponAttackAnim);
+        if (weaponAttack != nullptr) {
+            weaponAnimator->setAnimation(weaponAttack);
         }
         
         unsigned int currentFrame = animator->getCurrentFrame();
@@ -80,12 +84,12 @@ void Player::move(float dt) {
     else {
         lastAttackFrame = 0xFFFFFFFF; // Special value to indicate we're not attacking
         if (keys->getPressed(GLFW_KEY_W) || keys->getPressed(GLFW_KEY_D) || keys->getPressed(GLFW_KEY_A) || keys->getPressed(GLFW_KEY_S)) {
-            animator->setAnimation(game->getAnimation("player_run"));
-            weaponAnimator->setAnimation(game->getAnimation("pencil_run"));
+            animator->setAnimation(runAnimation);
+            weaponAnimator->setAnimation(weaponRun);
         }
         else {
-            animator->setAnimation(game->getAnimation("player_idle"));
-            weaponAnimator->setAnimation(game->getAnimation("pencil_idle"));
+            animator->setAnimation(idleAnimation);
+            weaponAnimator->setAnimation(weaponIdle);
         }
     }
 
@@ -95,12 +99,29 @@ void Player::move(float dt) {
     if (keys->getPressed(GLFW_KEY_D)) {
         node->setScale({-scale.x, scale.y});
     }
-    
+
     moveDir = {
         keys->getPressed(GLFW_KEY_D) - keys->getPressed(GLFW_KEY_A),
         keys->getPressed(GLFW_KEY_W) - keys->getPressed(GLFW_KEY_S)
     };
+
+    if (keys->getPressed(GLFW_KEY_LEFT_SHIFT) && shiftWasDown == false && dashTimer <= 0.0f) {
+        dashTimer = maxDashTimer;
+        unstable = true;
+        node->setVelocity(node->getVelocity() + vec3(moveDir, 0) * 10.0f);
+    }
+    shiftWasDown = keys->getPressed(GLFW_KEY_LEFT_SHIFT);
     
+    if (keys->getPressed(GLFW_KEY_1) && pencilAvailible) {
+        setWeaponPencil();
+    }
+    if (keys->getPressed(GLFW_KEY_2) && stapleGunAvailible) {
+        setWeaponStapleGun();
+    }
+    if (keys->getPressed(GLFW_KEY_3) && scissorAvailible) {
+        setWeaponScissor();
+    }
+
     Character::move(dt);
     
     // Update weapon node position and scale
@@ -127,7 +148,7 @@ void Player::move(float dt) {
     
     // If attack was successful (weapon was off cooldown), set attack animation duration
     if (attackSuccessful) {
-        Animation* attackAnim = game->getAnimation("player_attack");
+        Animation* attackAnim = attackAnimation;
         if (attackAnim != nullptr) {
             // Calculate attack animation duration: number of frames * time per frame
             // Animator frame rate is 8 fps, so timePerFrame = 1.0 / 8 = 0.125
@@ -144,4 +165,44 @@ void Player::setNodes(Node2D* node, Node2D* weapon) {
 
     this->weaponNode = weapon;
     this->weaponAnimator->setNode(weapon);
+}
+
+void Player::setWeaponPencil() {
+    idleAnimation = game->getAnimation("player_idle");
+    runAnimation = game->getAnimation("player_run");
+    attackAnimation = game->getAnimation("player_attack");
+    weaponIdle = game->getAnimation("pencil_idle");
+    weaponRun = game->getAnimation("pencil_run");
+    weaponAttack = game->getAnimation("pencil_attack");
+
+    animator->setAnimation(idleAnimation);
+    weaponAnimator->setAnimation(weaponIdle);
+}
+
+void Player::setWeaponStapleGun() {
+    idleAnimation = game->getAnimation("integral_idle");
+    runAnimation = game->getAnimation("integral_idle");
+    attackAnimation = game->getAnimation("integral_attack");
+    weaponIdle = game->getAnimation("clipfly_idle");
+    weaponRun = game->getAnimation("clipfly_idle");
+    weaponAttack = game->getAnimation("clipfly_attack");
+
+    animator->setAnimation(idleAnimation);
+    weaponAnimator->setAnimation(weaponIdle);
+}
+
+void Player::setWeaponScissor() {
+    idleAnimation = game->getAnimation("player_idle");
+    runAnimation = game->getAnimation("player_run");
+    attackAnimation = game->getAnimation("player_attack");
+    weaponIdle = game->getAnimation("pencil_idle");
+    weaponRun = game->getAnimation("pencil_run");
+    weaponAttack = game->getAnimation("pencil_attack");
+
+    animator->setAnimation(idleAnimation);
+    weaponAnimator->setAnimation(weaponIdle);
+}
+
+void Player::addHealth(int amount) {
+    health = glm::clamp(health + amount, 0, maxHealth);
 }

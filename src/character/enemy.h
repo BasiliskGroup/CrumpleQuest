@@ -18,6 +18,7 @@ class Enemy : public Character {
 public:
     static std::unordered_map<std::string, std::function<Enemy*(vec2, SingleSide*)>> templates;
     static void generateTemplates(Game* game);
+    static std::unordered_map<std::string, std::vector<std::pair<std::string, float>>> enemyBiomes;
     Animation* idleAnimation;
     Animation* runAnimation;
     Animation* attackAnimation;
@@ -37,7 +38,7 @@ private:
     float finishRadius = 0.2;
     float attacking = 0.0f;  // Timer for attack animation
     float attackDelay = 0.0f;  // Delay before weapon attack is called after animation starts
-    float attackDelayTimer = 0.0f;  // Timer tracking the delay
+    float attackDelayTimer = 2.0f;  // Timer tracking the delay
     bool attackPending = false;  // Whether an attack is waiting for delay
     vec2 pendingAttackPos;  // Position to attack when delay completes
     vec2 pendingAttackDir;  // Direction to attack when delay completes
@@ -45,6 +46,7 @@ private:
     std::vector<PendingShot> pendingShots;  // Queue of shots to fire with delays
     
     float wanderDestinationTimer = 0.0f;  // Timer for wander destination refresh
+    float levelEntryDelayTimer = 2.0f;  // Timer preventing attacks for 2 seconds after level entry
     
     Behavior* behavior = nullptr;  // Current behavior
     std::function<Behavior*(const vec2&, float)> behaviorSelector;  // Function that selects which behavior to use
@@ -62,7 +64,7 @@ private:
 
 public:
     Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale, std::string hitSound = "hit", float attackDelay = 0.0f);
-    ~Enemy() = default;
+    ~Enemy();
 
     void onDamage(int damage) override;
     void onDeath() override;

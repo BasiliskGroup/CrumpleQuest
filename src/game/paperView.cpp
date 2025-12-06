@@ -53,7 +53,7 @@ PaperView::PaperView(Game* game): game(game) {
 
     // Set up table
     Node* table = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("table"), .position={0.0, -1.0, 0.0}, .rotation=glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={5.0, 5.0, 1.0}});
-    Node* rug = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("rug"), .position={0.0, -2.0, 2.0}, .rotation=glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={12.0, 8.0, 1.0}});
+    Node* rug_desaturated = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("rug_desaturated"), .position={0.0, -2.0, 2.0}, .rotation=glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={12.0, 8.0, 1.0}});
     Node* mug = new Node(scene, {.mesh=game->getMesh("mug"), .material=game->getMaterial("lightGrey"), .position={-1.8, -0.75, 1.5}, .rotation=glm::angleAxis(glm::radians(110.0f), glm::vec3(0.0f, 1.0f, 0.0f)), .scale={0.3, 0.3, 0.3}});
     
     glm::quat johnRotation = glm::angleAxis(glm::radians(-13.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));

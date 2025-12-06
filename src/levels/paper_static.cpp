@@ -1,7 +1,7 @@
 #include "levels/levels.h"
 #include "util/random.h"
 
-std::unordered_map<std::string, std::function<Paper*()>> Paper::templates;
+std::unordered_map<std::string, std::function<Paper*(float difficulty)>> Paper::templates;
 std::unordered_map<RoomTypes, std::vector<std::string>> Paper::papers;
 
 void Paper::generateTemplates(Game* game) {
@@ -9,12 +9,28 @@ void Paper::generateTemplates(Game* game) {
     // create templates
     // ---------------------
 
-    templates["empty"] = [game]() {
-        return new Paper(game, { "empty0", "empty1" }, { "empty", "empty" });
+    templates["tutorial"] = [game](float difficulty) {
+        return new Paper(game, { "tutorial_front", "tutorial_back" }, { "tutorial_front", "tutorial_back" }, difficulty);
     };
 
-    templates["squareMiddle"] = [game]() {
-        return new Paper(game, { "empty0", "empty1" }, { "squareMiddle", "squareMiddle" });
+    templates["notebook1"] = [game](float difficulty) {
+        return new Paper(game, { "notebook1_front", "notebook1_back" }, { "notebook1_front", "notebook1_back" }, difficulty);
+    };
+
+    templates["notebook2"] = [game](float difficulty) {
+        return new Paper(game, { "notebook2_front", "notebook2_back" }, { "notebook2_front", "notebook2_back" }, difficulty);
+    };
+
+    templates["notebook3"] = [game](float difficulty) {
+        return new Paper(game, { "notebook3_front", "notebook3_back" }, { "notebook3_front", "notebook3_back" }, difficulty);
+    };
+
+    templates["notebook4"] = [game](float difficulty) {
+        return new Paper(game, { "notebook4_front", "notebook4_back" }, { "notebook4_front", "notebook4_back" }, difficulty);
+    };
+
+    templates["notebook5"] = [game](float difficulty) {
+        return new Paper(game, { "notebook5_front", "notebook5_back" }, { "notebook5_front", "notebook5_back" }, difficulty);
     };
 
     // ---------------------
@@ -23,21 +39,25 @@ void Paper::generateTemplates(Game* game) {
 
     papers = {
         {SPAWN_ROOM, {
-            "empty"
+            "tutorial"
         }},
         {BASIC_ROOM, {
-            "squareMiddle"
+            "notebook1",
+            "notebook2",
+            "notebook3",
+            "notebook4",
+            "notebook5"
         }},
         {BOSS_ROOM, {
-            "squareMiddle"
+            "tutorial"
         }}
     };
 }
 
-Paper* Paper::getRandomTemplate(RoomTypes type) {
+Paper* Paper::getRandomTemplate(RoomTypes type, float difficulty) {
     uint numTemplates = papers[type].size();
     uint index = randrange(0, numTemplates);
-    return templates[papers[type][index]]();
+    return templates[papers[type][index]](difficulty);
 }
 
 void Paper::flattenVertices(const std::vector<Vert>& vertices, std::vector<float>& data) {

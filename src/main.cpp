@@ -24,7 +24,7 @@ int main() {
     // ------------------------------------------
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug", "john", "blue", "darkred", "circle" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug_desaturated", "john", "blue", "darkred", "circle" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
@@ -35,8 +35,8 @@ int main() {
     game->addMaterial("notebook", new Material({ 1, 1, 1 }, game->getImage("notebook")));
     
     std::unordered_map<std::string, std::vector<std::string>> levelNames = {
-        { "notebook", { "level1" } },
-        {"tutorial", { "tutorialLevel" } }
+        { "notebook", { "level1", "level2", "level3", "level4", "level5" } },
+        {"tutorial", { "tutorial" } }
     };
     for (auto& [name, levels] : levelNames) {
         for (std::string& level : levels) {

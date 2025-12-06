@@ -371,7 +371,7 @@ void Game::update(float dt) {
 }
 
 void Game::setPaper(std::string str) { 
-    this->paper = Paper::templates[str]();
+    this->paper = Paper::templates[str](0.0f);  // Use 0.0f difficulty for debug/test
     this->currentSide = this->paper->getSingleSide();
     this->paper->setGame(this);
     
@@ -417,13 +417,13 @@ void Game::startGame() {
 
     // create player
     Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
-    Player* player = new Player(this, 3, 6, playerNode, getSide(), nullptr, 0.6f, playerNode->getScale());
+    Player* player = new Player(this, 3, 4, playerNode, getSide(), nullptr, 0.6f, playerNode->getScale());
     setPlayer(player);
 
     float meleeRadius = 1.0f;
 
     // create weapons
-    player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("circle"), .scale={meleeRadius, meleeRadius}}, { .damage=1, .life=0.2f, .radius=meleeRadius / 2.0f }, 0.5f, 60.0f));
+    player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("circle"), .scale={meleeRadius, meleeRadius}}, { .damage=1, .life=0.2f, .radius=meleeRadius / 2.0f }, 0.5f, 6.0f));
 }
 
 void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
