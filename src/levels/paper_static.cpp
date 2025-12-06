@@ -77,27 +77,6 @@ void Paper::generateTemplates(Game* game) {
     // ---------------------
     // label templates
     // ---------------------
-
-    // papers = {
-    //     {SPAWN_ROOM, {
-    //         "tutorial"
-    //     }},
-    //     {BASIC_ROOM, {
-    //         "notebook1",
-    //         "notebook2",
-    //         "notebook3",
-    //         "notebook4",
-    //         "notebook5",
-    //     }},
-    //     {BOSS_ROOM, {
-    //         "notebook_boss"
-    //     }},
-    //     {TREASURE_ROOM, {
-    //         "notebook_weapon"
-    //     }}
-    // };
-
-    // Include both notebook and grid templates - will be filtered by biome
     papers = {
         {SPAWN_ROOM, {
             "tutorial"
@@ -108,6 +87,7 @@ void Paper::generateTemplates(Game* game) {
             "notebook3",
             "notebook4",
             "notebook5",
+            "notebook_health",
             "grid1",
             "grid2",
             "grid3",
