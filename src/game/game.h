@@ -77,6 +77,13 @@ private:
     // boss visibility
     bool showBoss = true;
 
+    // boss health bar
+    Node2D* bossHealthBarBackground = nullptr;
+    Node2D* bossHealthBarForeground = nullptr;
+    vec2 healthBarPosition = vec2(0.0f, -4.1f);  // Position at bottom, between paper and screen edge
+    float healthBarWidth = 8.0f;
+    float healthBarHeight = 0.5f;
+
     // TODO maybe nove these to ui scenes
     std::vector<UIElement*> uiElements;
 
@@ -125,6 +132,7 @@ public:
     // initialization
     void initPaperView();
     void initMenus();
+    void initBossHealthBar();
     void processReturnToMainMenu(); // Internal method to actually process the return
 
     // game flow
@@ -132,6 +140,10 @@ public:
     void returnToMainMenu();
     void setPendingStartGame(bool value) { pendingStartGame = value; }
     void switchToRoom(Paper* newPaper, int dx, int dy);
+
+    // boss health bar
+    void updateBossHealthBar();
+    void showBossHealthBar(bool show);
 
     void update(float dt);
 };
