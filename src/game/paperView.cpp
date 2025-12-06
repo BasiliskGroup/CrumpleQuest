@@ -21,6 +21,7 @@ PaperView::PaperView(Game* game): game(game) {
     paperVBO = new VBO(quadVertices);
     paperVAO = new VAO(paperShader, paperVBO);
     paperPosition = glm::vec3(0.0, 0.1386, 0.544);
+    fixedPaperPosition = paperPosition;  // Store fixed position for directional nodes (never changes)
     transitionTarget = paperPosition;
 
     // Set up camera
@@ -481,12 +482,10 @@ void PaperView::showGameElements() {
         healthTokens.push_back(token);
     }
     
-    // Create directional nodes
+    // Calculate plane vectors (needed for both directional nodes and boss node)
+    // Use fixedPaperPosition for directional nodes so they stay in fixed world space
     glm::vec3 cameraPos = camera->getPosition();
-    glm::vec3 direction = glm::normalize(paperPosition - cameraPos);
-    
-    // Calculate pitch for directional nodes
-    float pitch = glm::degrees(asin(-direction.y));
+    glm::vec3 direction = glm::normalize(fixedPaperPosition - cameraPos);
     
     glm::vec3 planeNormal = direction;
     glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -496,19 +495,35 @@ void PaperView::showGameElements() {
     float offsetAbove = 0.01f;
     glm::vec3 offsetVector = -planeNormal * offsetAbove;
     float quadDistance = 0.5f;
-
-    topBounds = {paperPosition + 2.0f * planeUp * quadDistance + offsetVector, paperPosition + planeUp * quadDistance + offsetVector + planeUp * 0.1f};
-    bottomBounds = {paperPosition - 2.0f * planeUp * quadDistance + offsetVector, paperPosition - planeUp * quadDistance + offsetVector};
-    rightBounds = {paperPosition + 3.0f * planeRight * quadDistance + offsetVector, paperPosition + 1.8f * planeRight * quadDistance + offsetVector + planeUp * 0.1f};
-    leftBounds = {paperPosition - 3.0f * planeRight * quadDistance + offsetVector, paperPosition - 1.8f * planeRight * quadDistance + offsetVector + planeUp * 0.1f};
-
+    
     glm::mat3 planeOrientation = glm::mat3(planeRight, planeUp, planeNormal);
     glm::quat basePlaneRotation = glm::quat_cast(planeOrientation);
     
-    topSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("hand_up"), .position=topBounds.first, .rotation=(glm::angleAxis(glm::radians(90.0f), planeNormal) * basePlaneRotation), .scale={0.8, 0.6, 0.1}});
-    bottomSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("hand_down"), .position=bottomBounds.first, .rotation=(glm::angleAxis(glm::radians(-90.0f), planeNormal) * basePlaneRotation), .scale={0.8, 0.6, 0.1}});
-    rightSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("hand_right"), .position=rightBounds.first, .rotation=(glm::angleAxis(glm::radians(0.0f), planeNormal) * basePlaneRotation), .scale={0.8, 0.6, 0.1}});
-    leftSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("hand_left"), .position=leftBounds.first, .rotation=(glm::angleAxis(glm::radians(180.0f), planeNormal) * basePlaneRotation), .scale={0.8, 0.6, 0.1}});
+    // Create directional nodes - only calculate bounds once when nodes are first created
+    // Bounds are fixed in world space using fixedPaperPosition (never changes)
+    if (!topSign || !bottomSign || !rightSign || !leftSign) {
+        // Calculate bounds relative to fixed paper position (fixed in world space)
+        topBounds = {fixedPaperPosition + 2.0f * planeUp * quadDistance + offsetVector, fixedPaperPosition + planeUp * quadDistance + offsetVector + planeUp * 0.1f};
+        bottomBounds = {fixedPaperPosition - 2.0f * planeUp * quadDistance + offsetVector, fixedPaperPosition - planeUp * quadDistance + offsetVector};
+        rightBounds = {fixedPaperPosition + 3.0f * planeRight * quadDistance + offsetVector, fixedPaperPosition + 1.8f * planeRight * quadDistance + offsetVector + planeUp * 0.1f};
+        leftBounds = {fixedPaperPosition - 3.0f * planeRight * quadDistance + offsetVector, fixedPaperPosition - 1.8f * planeRight * quadDistance + offsetVector + planeUp * 0.1f};
+        
+        // Create nodes if they don't exist
+        if (!topSign) {
+            topSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("hand_up"), .position=topBounds.first, .rotation=(glm::angleAxis(glm::radians(90.0f), planeNormal) * basePlaneRotation), .scale={0.8, 0.6, 0.1}});
+        }
+        if (!bottomSign) {
+            bottomSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("hand_down"), .position=bottomBounds.first, .rotation=(glm::angleAxis(glm::radians(-90.0f), planeNormal) * basePlaneRotation), .scale={0.8, 0.6, 0.1}});
+        }
+        if (!rightSign) {
+            rightSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("hand_right"), .position=rightBounds.first, .rotation=(glm::angleAxis(glm::radians(0.0f), planeNormal) * basePlaneRotation), .scale={0.8, 0.6, 0.1}});
+        }
+        if (!leftSign) {
+            leftSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("hand_left"), .position=leftBounds.first, .rotation=(glm::angleAxis(glm::radians(180.0f), planeNormal) * basePlaneRotation), .scale={0.8, 0.6, 0.1}});
+        }
+    }
+    // If nodes already exist, don't recalculate bounds or update positions
+    // They will smoothly slide between their fixed positions based on visibility flags in update()
     
     // Create boss node - position it above the paper but closer than topBounds
     // Use a position between paper and topBounds, closer to paper
@@ -517,12 +532,14 @@ void PaperView::showGameElements() {
     bossInitialPos.z = paperPosition.z;
     // Only create if it doesn't already exist (to avoid leaks if called multiple times)
     if (bossNode == nullptr) {
-        bossNode = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("boss_hand_hover"), .position=bossInitialPos, .rotation=(glm::angleAxis(glm::radians(90.0f), planeNormal) * basePlaneRotation), .scale={1.2, 0.72, 0.24}});
+        bossNode = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("empty"), .position=bossInitialPos, .rotation=(glm::angleAxis(glm::radians(90.0f), planeNormal) * basePlaneRotation), .scale={1.2, 0.72, 0.24}});
     } else {
         // Update position if node already exists
         bossNode->setPosition(bossInitialPos);
         bossNode->setRotation(glm::angleAxis(glm::radians(90.0f), planeNormal) * basePlaneRotation);
         bossNode->setScale(glm::vec3(1.2f, 0.72f, 0.24f));
+        // Hide boss node by default (will be shown when boss is created in boss room)
+        bossNode->setMaterial(game->getMaterial("empty"));
     }
     bossBasePosition = bossInitialPos;  // Store base position (above paper, closer than top)
     bossHorizontalDirection = planeRight;  // Store horizontal direction for sliding
@@ -606,7 +623,7 @@ void PaperView::hideGameElements() {
     }
     healthTokens.clear();
     
-    // Delete directional nodes
+    // Delete directional nodes (only called at game end)
     if (topSign) {
         delete topSign;
         topSign = nullptr;

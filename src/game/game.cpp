@@ -258,16 +258,14 @@ void Game::update(float dt) {
     }
     
     // Update boss
-    static int gameUpdateCount = 0;
-    gameUpdateCount++;
-    if (gameUpdateCount % 60 == 0) {
-        std::cout << "[Game::update] boss pointer: " << (boss != nullptr ? "valid" : "null") << std::endl;
-    }
     if (boss != nullptr) {
         boss->update(dt);
-    } else {
-        if (gameUpdateCount % 60 == 0) {
-            std::cout << "[Game::update] Boss is null, not calling update" << std::endl;
+        
+        // Check if boss should be deleted (leaving animation complete)
+        if (boss->shouldBeDeleted()) {
+            std::cout << "[Game::update] Deleting boss after leaving animation" << std::endl;
+            delete boss;
+            boss = nullptr;
         }
     }
 
@@ -466,20 +464,7 @@ void Game::startGame() {
     // create weapons
     player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("circle"), .scale={meleeRadius, meleeRadius}}, { .damage=1, .life=0.2f, .radius=meleeRadius / 2.0f }, 0.5f, 6.0f));
     
-    // Create boss for testing (removed BOSS_ROOM requirement)
-    // Note: bossNode is created in showGameElements() which was called above, so it should exist
-    std::cout << "[Game::startGame] paperView=" << (paperView != nullptr ? "valid" : "null") << std::endl;
-    if (paperView) {
-        std::cout << "[Game::startGame] paperView->getBossNode()=" << (paperView->getBossNode() != nullptr ? "valid" : "null") << std::endl;
-    }
-    if (paperView != nullptr && paperView->getBossNode() != nullptr) {
-        std::cout << "[Game::startGame] Creating boss!" << std::endl;
-        boss = new Boss(this, paperView);
-        std::cout << "[Game::startGame] Boss created, pointer=" << boss << std::endl;
-    } else {
-        std::cout << "[Game::startGame] NOT creating boss - paperView=" << (paperView != nullptr) 
-                  << ", bossNode=" << (paperView && paperView->getBossNode() != nullptr) << std::endl;
-    }
+    // Boss will be created when entering a boss room (see switchToRoom)
 }
 
 void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
@@ -518,22 +503,50 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
     setSideToPaperSide();
     player->setSide(this->currentSide);
     
-    // For testing: always ensure boss exists (removed BOSS_ROOM requirement)
     // Ensure game elements (including bossNode) are shown
     if (paperView) {
         paperView->showGameElements();
     }
-    // Create boss if it doesn't exist
-    std::cout << "[Game::switchToRoom] boss=" << (boss != nullptr ? "exists" : "null") 
-              << ", paperView=" << (paperView != nullptr ? "valid" : "null");
-    if (paperView) {
-        std::cout << ", bossNode=" << (paperView->getBossNode() != nullptr ? "valid" : "null");
+    
+    // Check if this is a boss room and create/delete boss accordingly
+    RoomTypes newRoomType = floor->getRoomType(newX, newY);
+    if (newRoomType == BOSS_ROOM) {
+        // Entering a boss room - create boss if it doesn't exist
+        if (boss == nullptr && paperView != nullptr && paperView->getBossNode() != nullptr) {
+            std::cout << "[Game::switchToRoom] Entering boss room - creating boss!" << std::endl;
+            boss = new Boss(this, paperView);
+            std::cout << "[Game::switchToRoom] Boss created, pointer=" << boss << std::endl;
+        }
+    } else {
+        // Not a boss room - delete boss if it exists (including if leaving animation is in progress)
+        if (boss != nullptr) {
+            std::cout << "[Game::switchToRoom] Leaving boss room - deleting boss" << std::endl;
+            delete boss;
+            boss = nullptr;
+        }
+        // Hide boss node when not in boss room
+        if (paperView && paperView->getBossNode()) {
+            paperView->getBossNode()->setMaterial(getMaterial("empty"));
+        }
     }
-    std::cout << std::endl;
-    if (boss == nullptr && paperView != nullptr && paperView->getBossNode() != nullptr) {
-        std::cout << "[Game::switchToRoom] Creating boss!" << std::endl;
-        boss = new Boss(this, paperView);
-        std::cout << "[Game::switchToRoom] Boss created, pointer=" << boss << std::endl;
+    
+    // Check room state and update directional nodes immediately
+    if (paper && floor && paperView) {
+        // Check if room is open
+        bool wasOpen = paper->isOpen;
+        paper->checkAndSetOpen();
+        
+        // Update directional nodes based on room state
+        if (paper->isOpen) {
+            bool topValid = floor->getAdjacentRoom(0, -1) != nullptr;
+            bool bottomValid = floor->getAdjacentRoom(0, 1) != nullptr;
+            bool leftValid = floor->getAdjacentRoom(1, 0) != nullptr;
+            bool rightValid = floor->getAdjacentRoom(-1, 0) != nullptr;
+            paperView->showDirectionalNodes(topValid, bottomValid, leftValid, rightValid);
+        } else {
+            // Room is closed - hide directional nodes
+            paperView->hideDirectionalNodes();
+        }
     }
     
     // Check if this is the first time visiting this paper

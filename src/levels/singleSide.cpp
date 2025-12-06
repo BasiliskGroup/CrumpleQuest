@@ -84,39 +84,8 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material, vec2 
                         }
                     }
                     
-                    if (!affordableEnemies.empty()) {
-                        // Randomly select from affordable enemies (weighted by price)
-                        // Higher price enemies are more likely to be selected
-                        float totalWeight = 0.0f;
-                        for (const auto& enemyPair : affordableEnemies) {
-                            totalWeight += enemyPair.second;
-                        }
-                        
-                        float randomValue = uniform(0.0f, totalWeight);
-                        float cumulativeWeight = 0.0f;
-                        for (const auto& enemyPair : affordableEnemies) {
-                            cumulativeWeight += enemyPair.second;
-                            if (randomValue <= cumulativeWeight) {
-                                selectedEnemy = enemyPair.first;
-                                selectedPrice = enemyPair.second;
-                                break;
-                            }
-                        }
-                    } else {
-                        // No affordable enemies, use weakest enemy
-                        selectedEnemy = weakestEnemy;
-                        selectedPrice = weakestPrice;
-                    }
-                    
-                    // Create and add the enemy
-                    auto templateIt = Enemy::templates.find(selectedEnemy);
-                    if (templateIt != Enemy::templates.end()) {
-                        Enemy* enemy = templateIt->second(spawnPos, this);
-                        if (enemy != nullptr) {
-                            addEnemy(enemy);
-                            remainingDifficulty -= selectedPrice;
-                        }
-                    }
+                    // TODO fix enemy spawning
+                    if (affordableEnemies.empty()) break; 
                 }
             }
         }

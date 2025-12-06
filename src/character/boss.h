@@ -37,7 +37,8 @@ private:
         None,        // Not vulnerable, normal sliding
         Lowering,    // Lowering toward paper
         Lowered,     // Lowered and vulnerable
-        Raising      // Raising back up
+        Raising,     // Raising back up
+        Leaving      // Leaving animation - moving from starting position to off-screen
     };
     VulnerableState vulnerableState = VulnerableState::Spawning;
     
@@ -112,6 +113,9 @@ public:
     // Damage
     void onDamage(int damage);
     bool isDead() const { return health <= 0; }
+    
+    // Check if boss should be deleted (leaving animation complete)
+    bool shouldBeDeleted() const;
     
     // Helper function to clamp position to maintain constant height above plane
     // If preserveDistance is true, preserves the distance along normal; otherwise uses baseDistance

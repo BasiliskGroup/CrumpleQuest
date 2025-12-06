@@ -21,6 +21,7 @@ class PaperView {
         VBO* paperVBO;
         VAO* paperVAO;
         glm::vec3 paperPosition;
+        glm::vec3 fixedPaperPosition;  // Fixed position for directional nodes (never changes)
         glm::mat4 paperModel;
 
         // Arcball for paper rotating

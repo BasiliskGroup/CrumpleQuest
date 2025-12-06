@@ -10,8 +10,8 @@
 Boss::Boss(Game* game, PaperView* paperView) : 
     game(game),
     paperView(paperView),
-    health(40),
-    maxHealth(40),
+    health(1),
+    maxHealth(1),
     stage("spawn"),
     vulnerable(false),
     hitboxRadius(0.5f),
@@ -68,6 +68,11 @@ Boss::Boss(Game* game, PaperView* paperView) :
         // Ensure state is Spawning
         vulnerableState = VulnerableState::Spawning;
         
+        // Show the boss node (will be set to appropriate material in update based on state)
+        if (game) {
+            bossNode->setMaterial(game->getMaterial("boss_hand_flip"));  // Show spawn animation material
+        }
+        
         std::cout << "[Boss::Boss] Boss created, spawnStart=(" << spawnStartPosition.x << ", " << spawnStartPosition.y << ", " << spawnStartPosition.z 
                   << "), spawnTarget=(" << spawnTargetPosition.x << ", " << spawnTargetPosition.y << ", " << spawnTargetPosition.z << ")" << std::endl;
         std::cout << "[Boss::Boss] Starting spawn animation from off-screen, state=" << static_cast<int>(vulnerableState) 
@@ -99,7 +104,7 @@ void Boss::update(float dt) {
     frameCount++;
     if (frameCount <= 5) {
         std::cout << "[Boss::update] Frame " << frameCount << " - state=" << static_cast<int>(vulnerableState) 
-                  << " (0=Spawning, 1=None, 2=Lowering, 3=Lowered, 4=Raising), spawnProgress=" << spawnProgress << std::endl;
+                  << " (0=Spawning, 1=None, 2=Lowering, 3=Lowered, 4=Raising, 5=Leaving), spawnProgress=" << spawnProgress << ", health=" << health << std::endl;
     }
     
     // Handle spawn animation state FIRST - before any other logic
@@ -160,6 +165,64 @@ void Boss::update(float dt) {
         }
         
         return;  // Don't process other states during spawn
+    }
+    
+    // Handle leaving animation state (when boss is defeated)
+    if (vulnerableState == VulnerableState::Leaving) {
+        if (!bossNode || !paperView) {
+            std::cout << "[Boss::update] WARNING: Leaving state but bossNode=" << (bossNode ? "valid" : "null") 
+                      << ", paperView=" << (paperView ? "valid" : "null") << std::endl;
+            return;
+        }
+        
+        spawnProgress += dt / spawnDuration;
+        
+        if (spawnProgress >= 1.0f) {
+            // Leaving complete - boss should be deleted by Game
+            std::cout << "[Boss::update] Leaving animation complete, boss ready to be deleted" << std::endl;
+        } else {
+            // Leaving animation: interpolate position from target to start (reverse of spawn)
+            float smoothProgress = spawnProgress * spawnProgress * (3.0f - 2.0f * spawnProgress);  // Smoothstep
+            glm::vec3 currentPos = glm::mix(spawnTargetPosition, spawnStartPosition, smoothProgress);
+            bossNode->setPosition(currentPos);
+            
+            // Debug print every second during leaving
+            static int leavingDebugCount = 0;
+            leavingDebugCount++;
+            if (leavingDebugCount % 60 == 0) {
+                std::cout << "[Boss::update] Leaving: progress=" << spawnProgress << ", pos=(" 
+                          << currentPos.x << ", " << currentPos.y << ", " << currentPos.z << ")" << std::endl;
+            }
+        }
+        // Update material during leaving
+        if (bossNode && game) {
+            bool showBoss = game->getShowBoss();
+            if (!showBoss) {
+                bossNode->setMaterial(game->getMaterial("empty"));
+            } else {
+                bossNode->setMaterial(game->getMaterial("boss_hand_flip"));
+            }
+        }
+        
+        return;  // Don't process other states during leaving
+    }
+    
+    // Check if boss should start leaving (health <= 0)
+    if (health <= 0 && vulnerableState != VulnerableState::Leaving && vulnerableState != VulnerableState::Spawning) {
+        std::cout << "[Boss::update] Boss defeated! Starting leaving animation" << std::endl;
+        vulnerableState = VulnerableState::Leaving;
+        spawnProgress = 0.0f;  // Start leaving animation from beginning
+        vulnerable = false;  // No longer vulnerable
+        // Store current position as where we're leaving from (target for leaving animation)
+        if (bossNode && paperView) {
+            spawnTargetPosition = bossNode->getPosition();
+            // Recalculate off-screen position for leaving destination
+            glm::vec3 bossBasePos = paperView->getBossBasePosition();
+            glm::vec3 bossPlaneNormal = paperView->getBossPlaneNormal();
+            glm::vec3 bossHorizontalDir = paperView->getBossHorizontalDirection();
+            spawnStartPosition = bossBasePos + bossPlaneNormal * 1.5f + bossHorizontalDir * 2.5f;
+        }
+        return;  // Start leaving animation next frame
     }
     
     // Calculate speed multiplier based on health lost (1.0 at full health, 1.5 at 0 health)
@@ -359,8 +422,8 @@ void Boss::startVulnerable() {
     // Lowered height is 0 (at paper level)
     vulnerableLoweredHeight = 0.0f;
     
-    // Decide action early: 50% attack, 50% spawn (so we can set the correct material during lowering)
-    if (uniform() < 0.5f) {
+    // Decide action early: 75% attack, 25% spawn (so we can set the correct material during lowering)
+    if (uniform() < 0.75f) {
         currentAction = LoweredAction::Attack;
     } else {
         currentAction = LoweredAction::Spawn;
@@ -374,7 +437,14 @@ void Boss::startVulnerable() {
 
 void Boss::onDamage(int damage) {
     std::cout << "[Boss::onDamage] Called with damage=" << damage << ", vulnerable=" << vulnerable 
-              << ", currentHealth=" << health << ", iframeTimer=" << iframeTimer << std::endl;
+              << ", currentHealth=" << health << ", iframeTimer=" << iframeTimer 
+              << ", state=" << static_cast<int>(vulnerableState) << std::endl;
+    
+    // Don't take damage if leaving or spawning
+    if (vulnerableState == VulnerableState::Leaving || vulnerableState == VulnerableState::Spawning) {
+        std::cout << "[Boss::onDamage] Ignoring damage - boss is leaving or spawning" << std::endl;
+        return;
+    }
     
     // Check iframes first
     if (iframeTimer > 0.0f) {
@@ -397,6 +467,11 @@ void Boss::onDamage(int damage) {
               << ", iframes activated for " << iframeDuration << " seconds" << std::endl;
     
     // TODO: Add damage sound, effects, etc.
+}
+
+bool Boss::shouldBeDeleted() const {
+    // Boss should be deleted when leaving animation is complete
+    return (vulnerableState == VulnerableState::Leaving && spawnProgress >= 1.0f);
 }
 
 void Boss::spawnEnemy() {
