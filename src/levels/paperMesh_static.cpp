@@ -16,14 +16,17 @@ void PaperMesh::generateTemplates(Game* game) {
         return obst; 
     };
 
-    obstacleTemplates["notebook1_level1"] = [game]() { 
+    obstacleTemplates["notebook1_front"] = [game]() { 
         std::vector<UVRegion> obst;
 
         // how to make a single line
-        std::pair<glm::vec3, glm::vec2> data = connectSquare(vec2{ 0, 0 }, vec2{ 12, 9 });
+        std::pair<glm::vec3, glm::vec2> data = connectSquare(vec2{ 3.38, 2 }, vec2{ 8.88, 2 });
         obst.push_back({ game->getMesh("quad"), data.first, data.second, true });
 
-        
+
         return obst; 
     };
+
+    // obstacleTemplates["notebook2_front"] = [game]() { 
+    
 }
