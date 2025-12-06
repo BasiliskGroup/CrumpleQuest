@@ -110,12 +110,18 @@ int main() {
     refresh();
     game->addAnimation("player_idle", "art/sprites/player/idle/", 4);
     game->addAnimation("player_run", "art/sprites/player/run/", 3);
-    game->addAnimation("player_attack", "art/sprites/player/attack/", 4);
+    game->addAnimation("player_attack_pencil", "art/sprites/player/attack/attack_pencil/", 4);
+    game->addAnimation("player_attack_gun", "art/sprites/player/attack/attack_gun/", 2);
     // Pencil
     refresh();
     game->addAnimation("pencil_idle", "art/sprites/player/weapons/pencil/idle/", 4);
     game->addAnimation("pencil_run", "art/sprites/player/weapons/pencil/run/", 3);
     game->addAnimation("pencil_attack", "art/sprites/player/weapons/pencil/attack/", 4);
+    // gun
+    refresh();
+    game->addAnimation("gun_idle", "art/sprites/player/weapons/stapler/idle/", 4);
+    game->addAnimation("gun_run", "art/sprites/player/weapons/stapler/run/", 3);
+    game->addAnimation("gun_attack", "art/sprites/player/weapons/stapler/attack/", 2);
     // Clipfly
     refresh();
     game->addAnimation("clipfly_idle", "art/sprites/enemies/contact/notebook_clipfly/idle/", 4);

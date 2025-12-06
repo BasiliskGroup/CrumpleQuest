@@ -176,7 +176,7 @@ void Player::setNodes(Node2D* node, Node2D* weapon) {
 void Player::setWeaponPencil() {
     idleAnimation = game->getAnimation("player_idle");
     runAnimation = game->getAnimation("player_run");
-    attackAnimation = game->getAnimation("player_attack");
+    attackAnimation = game->getAnimation("player_attack_pencil");
     weaponIdle = game->getAnimation("pencil_idle");
     weaponRun = game->getAnimation("pencil_run");
     weaponAttack = game->getAnimation("pencil_attack");
@@ -186,12 +186,12 @@ void Player::setWeaponPencil() {
 }
 
 void Player::setWeaponStapleGun() {
-    idleAnimation = game->getAnimation("integral_idle");
-    runAnimation = game->getAnimation("integral_idle");
-    attackAnimation = game->getAnimation("integral_attack");
-    weaponIdle = game->getAnimation("clipfly_idle");
-    weaponRun = game->getAnimation("clipfly_idle");
-    weaponAttack = game->getAnimation("clipfly_attack");
+    idleAnimation = game->getAnimation("player_idle");
+    runAnimation = game->getAnimation("player_run");
+    attackAnimation = game->getAnimation("player_attack_gun");
+    weaponIdle = game->getAnimation("gun_idle");
+    weaponRun = game->getAnimation("gun_run");
+    weaponAttack = game->getAnimation("gun_attack");
 
     animator->setAnimation(idleAnimation);
     weaponAnimator->setAnimation(weaponIdle);
@@ -200,7 +200,7 @@ void Player::setWeaponStapleGun() {
 void Player::setWeaponScissor() {
     idleAnimation = game->getAnimation("player_idle");
     runAnimation = game->getAnimation("player_run");
-    attackAnimation = game->getAnimation("player_attack");
+    attackAnimation = game->getAnimation("player_attack_pencil");
     weaponIdle = game->getAnimation("pencil_idle");
     weaponRun = game->getAnimation("pencil_run");
     weaponAttack = game->getAnimation("pencil_attack");
