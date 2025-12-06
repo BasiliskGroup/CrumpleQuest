@@ -23,6 +23,7 @@ private:
     TrackHandle parchment_track_;
     TrackHandle notebook_track_;
     TrackHandle grid_track_;
+    TrackHandle boss_track_;
     
     // Current active track name
     std::string current_track_;
