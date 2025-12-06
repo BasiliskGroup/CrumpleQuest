@@ -453,8 +453,16 @@ bool Paper::pushFold(Fold& newFold) {
         }
     }
     
-    // Check for enemies on the current side that are in the fold underside region
-    // Move them to the center of the cover region
+    // Before pushing the fold, collect which enemies/pickups need to be moved
+    // We need to save this information before the fold is pushed (which modifies the meshes)
+    // But we won't actually move them until AFTER all validation checks pass
+    std::vector<Enemy*> enemiesToMove;
+    std::vector<Pickup*> pickupsToMove;
+    
+    // Collect enemies on the current side that are in the fold underside region
+    // These will be moved to the center of the cover region (but only if fold succeeds)
+    std::vector<std::pair<Enemy*, vec2>> enemiesInUnderside;  // Enemy and target center position
+    std::vector<std::pair<Pickup*, vec2>> pickupsInUnderside;  // Pickup and target center position
     if (currentSide && newFold.underside != nullptr && newFold.cover != nullptr) {
         auto& enemies = currentSide->getEnemies();
         for (Enemy* enemy : enemies) {
@@ -469,15 +477,12 @@ bool Paper::pushFold(Fold& newFold) {
                         center += v;
                     }
                     center /= static_cast<float>(coverRegion.size());
-                    
-                    // Move enemy to center of cover region
-                    enemy->setPosition(center);
+                    enemiesInUnderside.push_back({enemy, center});
                 }
             }
         }
         
-        // Check for pickups on the current side that are in the fold underside region
-        // Move them to the center of the cover region
+        // Collect pickups on the current side that are in the fold underside region
         auto& pickups = currentSide->getPickups();
         for (Pickup* pickup : pickups) {
             if (pickup == nullptr) continue;
@@ -491,18 +496,13 @@ bool Paper::pushFold(Fold& newFold) {
                         center += v;
                     }
                     center /= static_cast<float>(coverRegion.size());
-                    
-                    // Move pickup to center of cover region
-                    pickup->setPosition(center);
+                    pickupsInUnderside.push_back({pickup, center});
                 }
             }
         }
     }
     
     // Before pushing the fold, check which enemies on the back side are in the fold backside region
-    // We need to save this information before the fold is pushed (which modifies the meshes)
-    std::vector<Enemy*> enemiesToMove;
-    std::vector<Pickup*> pickupsToMove;
     if (backSide && newFold.backside != nullptr) {
         // Check all enemies on the back side
         auto& enemies = backSide->getEnemies();
@@ -680,6 +680,20 @@ bool Paper::pushFold(Fold& newFold) {
 
     // update active fold to be what we just made so we can hold onto it
     activeFold = folds.size() - 1;
+
+    // NOW that all validation has passed, move enemies and pickups
+    // First, move enemies/pickups in the underside region to the center of cover region
+    for (const auto& [enemy, center] : enemiesInUnderside) {
+        if (enemy != nullptr && !enemy->isDead()) {
+            enemy->setPosition(center);
+        }
+    }
+    
+    for (const auto& [pickup, center] : pickupsInUnderside) {
+        if (pickup != nullptr) {
+            pickup->setPosition(center);
+        }
+    }
 
     // Move enemies that were on the back side in the fold region to the current side
     for (Enemy* enemy : enemiesToMove) {
