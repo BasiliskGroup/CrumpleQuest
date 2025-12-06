@@ -362,7 +362,7 @@ void Game::update(float dt) {
 }
 
 void Game::setPaper(std::string str) { 
-    this->paper = Paper::templates[str]();
+    this->paper = Paper::templates[str](0.0f);  // Use 0.0f difficulty for debug/test
     this->currentSide = this->paper->getSingleSide();
     this->paper->setGame(this);
     

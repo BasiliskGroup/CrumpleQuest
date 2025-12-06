@@ -1,9 +1,16 @@
 #include "levels/levels.h"
 #include "weapon/meleeZone.h"
+#include "util/random.h"
 
 
-SingleSide::SingleSide(Game* game, std::string mesh, std::string material) 
-    : scene(nullptr), camera(nullptr), background(nullptr), playerNode(nullptr), weaponNode(nullptr)
+SingleSide::SingleSide(Game* game, std::string mesh, std::string material, vec2 playerSpawn, std::string biome, std::vector<vec2> enemySpawns, float difficulty) : 
+    scene(nullptr), 
+    camera(nullptr), 
+    background(nullptr), 
+    playerNode(nullptr), 
+    weaponNode(nullptr), 
+    playerSpawn(playerSpawn),
+    biome(biome)
 {
     scene = new Scene2D(game->getEngine());
     this->camera = new StaticCamera2D(game->getEngine());
@@ -24,6 +31,87 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material)
         .scale={ 1, 1 } 
     });
     background->setLayer(-0.7);
+
+    // add enemies based on difficulty
+    if (!enemySpawns.empty() && difficulty > 0.0f) {
+        // Get enemy list for this biome
+        auto biomeIt = Enemy::enemyBiomes.find(biome);
+        if (biomeIt != Enemy::enemyBiomes.end()) {
+            const auto& biomeEnemies = biomeIt->second;
+            
+            // Find the weakest enemy (lowest price) for fallback
+            std::string weakestEnemy;
+            float weakestPrice = std::numeric_limits<float>::max();
+            if (!biomeEnemies.empty()) {
+                for (const auto& enemyPair : biomeEnemies) {
+                    if (enemyPair.second < weakestPrice) {
+                        weakestPrice = enemyPair.second;
+                        weakestEnemy = enemyPair.first;
+                    }
+                }
+            }
+            
+            // Only proceed if we have valid enemies for this biome
+            if (!weakestEnemy.empty()) {
+                float remainingDifficulty = difficulty;
+                
+                // Shuffle spawn points for randomness
+                std::vector<vec2> shuffledSpawns = enemySpawns;
+                for (size_t i = shuffledSpawns.size() - 1; i > 0; --i) {
+                    size_t j = randint(0, static_cast<int>(i));
+                    std::swap(shuffledSpawns[i], shuffledSpawns[j]);
+                }
+                
+                // Fill spawn points with enemies
+                for (const vec2& spawnPos : shuffledSpawns) {
+                    std::string selectedEnemy;
+                    float selectedPrice = 0.0f;
+                    
+                    // Filter enemies that fit in remaining difficulty
+                    std::vector<std::pair<std::string, float>> affordableEnemies;
+                    for (const auto& enemyPair : biomeEnemies) {
+                        if (enemyPair.second <= remainingDifficulty) {
+                            affordableEnemies.push_back(enemyPair);
+                        }
+                    }
+                    
+                    if (!affordableEnemies.empty()) {
+                        // Randomly select from affordable enemies (weighted by price)
+                        // Higher price enemies are more likely to be selected
+                        float totalWeight = 0.0f;
+                        for (const auto& enemyPair : affordableEnemies) {
+                            totalWeight += enemyPair.second;
+                        }
+                        
+                        float randomValue = uniform(0.0f, totalWeight);
+                        float cumulativeWeight = 0.0f;
+                        for (const auto& enemyPair : affordableEnemies) {
+                            cumulativeWeight += enemyPair.second;
+                            if (randomValue <= cumulativeWeight) {
+                                selectedEnemy = enemyPair.first;
+                                selectedPrice = enemyPair.second;
+                                break;
+                            }
+                        }
+                    } else {
+                        // No affordable enemies, use weakest enemy
+                        selectedEnemy = weakestEnemy;
+                        selectedPrice = weakestPrice;
+                    }
+                    
+                    // Create and add the enemy
+                    auto templateIt = Enemy::templates.find(selectedEnemy);
+                    if (templateIt != Enemy::templates.end()) {
+                        Enemy* enemy = templateIt->second(spawnPos, this);
+                        if (enemy != nullptr) {
+                            addEnemy(enemy);
+                            remainingDifficulty -= selectedPrice;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 SingleSide::SingleSide(const SingleSide& other) noexcept 

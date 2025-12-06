@@ -10,7 +10,7 @@ class Player;
 
 class SingleSide {  
 public:
-    static std::unordered_map<std::string, std::function<SingleSide*()>> templates;
+    static std::unordered_map<std::string, std::function<SingleSide*(float)>> templates;
     static Node2D* genPlayerNode(Game* game, SingleSide* side);
     static void generateTemplates(Game* game);
 
@@ -29,8 +29,12 @@ private:
     // point to nodes in scene so no need to delete
     std::vector<Node2D*> walls; 
 
+    // control initial room condition
+    vec2 playerSpawn;
+    std::string biome;
+
 public:
-    SingleSide(Game* game, std::string mesh, std::string material);
+    SingleSide(Game* game, std::string mesh, std::string material, vec2 playerSpawn, std::string biome, std::vector<vec2> enemySpawns = {}, float difficulty = 0.0f);
     SingleSide(const SingleSide& other) noexcept;
     SingleSide(SingleSide&& other) noexcept;
     ~SingleSide();
