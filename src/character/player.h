@@ -52,6 +52,8 @@ public:
     void setPencilAvailible() { pencilAvailible = true; } 
     void setStapleGunAvailible() { stapleGunAvailible = true; } 
     void setScissorAvailible() { scissorAvailible = true; } 
+
+    void addHealth(int amount);
 };
 
 #endif

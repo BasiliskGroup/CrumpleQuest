@@ -202,3 +202,7 @@ void Player::setWeaponScissor() {
     animator->setAnimation(idleAnimation);
     weaponAnimator->setAnimation(weaponIdle);
 }
+
+void Player::addHealth(int amount) {
+    health = glm::clamp(health + amount, 0, maxHealth);
+}
