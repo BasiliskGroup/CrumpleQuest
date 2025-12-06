@@ -497,10 +497,13 @@ void PaperView::showGameElements() {
     glm::vec3 offsetVector = -planeNormal * offsetAbove;
     float quadDistance = 0.5f;
 
-    topBounds = {paperPosition + 2.0f * planeUp * quadDistance + offsetVector, paperPosition + planeUp * quadDistance + offsetVector};
+    topBounds = {paperPosition + 2.0f * planeUp * quadDistance + offsetVector, paperPosition + planeUp * quadDistance + offsetVector + planeUp * 0.1f};
     bottomBounds = {paperPosition - 2.0f * planeUp * quadDistance + offsetVector, paperPosition - planeUp * quadDistance + offsetVector};
-    rightBounds = {paperPosition + 4.0f * planeRight * quadDistance + offsetVector, paperPosition + 2.0f * planeRight * quadDistance + offsetVector};
-    leftBounds = {paperPosition - 4.0f * planeRight * quadDistance + offsetVector, paperPosition - 2.0f * planeRight * quadDistance + offsetVector};
+    rightBounds = {paperPosition + 3.0f * planeRight * quadDistance + offsetVector, paperPosition + 1.8f * planeRight * quadDistance + offsetVector + planeUp * 0.1f};
+    leftBounds = {paperPosition - 3.0f * planeRight * quadDistance + offsetVector, paperPosition - 1.8f * planeRight * quadDistance + offsetVector + planeUp * 0.1f};
+
+    glm::mat3 planeOrientation = glm::mat3(planeRight, planeUp, planeNormal);
+    glm::quat basePlaneRotation = glm::quat_cast(planeOrientation);
     
     topSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=topBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});
     bottomSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("blue"), .position=bottomBounds.first, .rotation=glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)), .scale={0.1, 0.1, 0.1}});

@@ -38,5 +38,9 @@ void main() {
 
     vec4 textureValue = texture(textureArrays[material.albedoArray].array, vec3(uv, material.albedoIndex));
 
+    if (textureValue.a < 0.01) {
+        discard;
+    }
+
     fragColor = vec4((0.75 + brightness / 4) * textureValue.rgb, textureValue.a);
 } 
