@@ -1031,9 +1031,13 @@ void Paper::resetGeometry() {
         sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     }
     
-
-    sides.first->reset();
-    sides.second->reset();
+    if (isOpen) {
+        game->getPlayer()->setPosition(sides.first->getPlayerSpawn());
+    }
+    else {
+        sides.first->reset();
+        sides.second->reset();
+    }
     
     // Regenerate walls for both sides
     regenerateWalls();
