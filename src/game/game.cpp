@@ -462,7 +462,7 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
         vec2 aabbCenter = (aabb.first + aabb.second) * 0.5f;
         
         // Calculate direction vector based on where player is coming from
-        vec2 entryDirectionVec = vec2(-dx, -dy);
+        vec2 entryDirectionVec = vec2(-dx, dy);
         float dirLength = glm::length(entryDirectionVec);
         
         if (dirLength > 1e-6f) {

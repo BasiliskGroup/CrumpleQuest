@@ -22,6 +22,7 @@ public:
     ~Weapon() = default;
 
     bool attack(const vec2& pos, const vec2& dir);
+    bool createDamageZone(const vec2& pos, const vec2& dir);  // Create damage zone without cooldown check (for multi-shot attacks)
     void update(float dt);
 
     // getters

@@ -9,10 +9,13 @@ bool Weapon::attack(const vec2& pos, const vec2& dir) {
     if (cooldown > 0) return false;
     cooldown = maxCooldown;
 
+    return createDamageZone(pos, dir);
+}
+
+bool Weapon::createDamageZone(const vec2& pos, const vec2& dir) {
     SingleSide* side = owner->getSide();
     DamageZone* zone = damageZoneGen(pos, dir);
     side->addDamageZone(zone);
-
     return true;
 }
 
@@ -30,7 +33,7 @@ ContactWeapon::ContactWeapon(Character* owner, Node2D::Params node, DamageZone::
     };
 }
 
-MeleeWeapon::MeleeWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, float knockback) : Weapon(owner, node, params, maxCooldown, 2.0f) {
+MeleeWeapon::MeleeWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, float knockback) : Weapon(owner, node, params, maxCooldown, 1.75f) {
     damageZoneGen = [owner, node, params, knockback](const vec2& pos, const vec2& dir) {
         return new MeleeZone(owner, node, params, pos, dir, knockback);
     };

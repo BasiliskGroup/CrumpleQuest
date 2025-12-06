@@ -10,8 +10,8 @@ void Enemy::generateTemplates(Game* game) {
 
     // notebook
     templates["glue"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01, .collisionIgnoreGroups={"Character"} });
-        Enemy* enemy = new Enemy(game, 3, 1, node, side, nullptr, nullptr, 0.4, node->getScale(), "hit-glue");
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Enemy* enemy = new Enemy(game, 3, 1, node, side, nullptr, nullptr, 0.4, node->getScale(), "hit-glue", 0.75f);
         enemy->idleAnimation = game->getAnimation("glue_idle");
         enemy->runAnimation = game->getAnimation("glue_idle");
         enemy->attackAnimation = game->getAnimation("glue_attack");
@@ -20,7 +20,7 @@ void Enemy::generateTemplates(Game* game) {
 
         enemy->setWeapon(new ProjectileWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ projectileRadius, 2.0f * projectileRadius } }, 
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ projectileRadius, 2.0f * projectileRadius } }, 
             { .damage=1, .life=5.0f, .speed=7.0f, .radius=projectileRadius / 2.0f },
             3,
             { "glueProjectile" },
@@ -46,16 +46,18 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["staple"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01, .collisionIgnoreGroups={"Character"} });
-        Enemy* enemy = new Enemy(game, 3, 2, node, side, nullptr, nullptr, 0.5, node->getScale(), "hit-staple-remover");
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Enemy* enemy = new Enemy(game, 3, 2, node, side, nullptr, nullptr, 0.5, node->getScale(), "hit-staple-remover", 0.55f);
         enemy->idleAnimation = game->getAnimation("staple_idle");
         enemy->runAnimation = game->getAnimation("staple_idle");
         enemy->attackAnimation = game->getAnimation("staple_attack");
 
+        float meleeRadius = 1.0f;
+
         enemy->setWeapon(new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ enemy->getRadius(), enemy->getRadius() } }, 
-            { .damage=1, .life=5.0f, .radius=enemy->getRadius() },
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ meleeRadius, meleeRadius } }, 
+            { .damage=1, .life=0.1f, .radius=meleeRadius / 2.0f },
             2,
             50.0f // knockback
         ));
@@ -72,22 +74,27 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["clipfly"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
-        Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.15, node->getScale(), "hit-clipfly");
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.5f, node->getScale(), "hit-clipfly", 0.4f);
         enemy->idleAnimation = game->getAnimation("clipfly_idle");
         enemy->runAnimation = game->getAnimation("clipfly_idle");
         enemy->attackAnimation = game->getAnimation("clipfly_attack");
 
+        float meleeRadius = 1.0f;
         enemy->setWeapon(new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ enemy->getRadius(), enemy->getRadius() } }, 
-            { .damage=1, .life=5.0f, .radius=enemy->getRadius() },
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ meleeRadius, meleeRadius } }, 
+            { .damage=1, .life=0.1f, .radius=meleeRadius / 2.0f },
             4.0f,
             50.0f // knockback
         ));
 
-        enemy->getBehaviorSelector() = [](const vec2&, float) -> Behavior* {
-            // Test: Use only wander behavior
+        enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
+            // If weapon is ready, chase the player
+            if (enemy->weaponReadyStatus()) {
+                return BehaviorRegistry::getBehavior("ChasePlayer");
+            }
+            // Otherwise, wander
             return BehaviorRegistry::getBehavior("Wander");
         };
 
@@ -95,16 +102,16 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["integral"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
-        Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.15, node->getScale(), "hit-clipfly");
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.15, node->getScale(), "hit-clipfly", 0.0f);
         enemy->idleAnimation = game->getAnimation("integral_idle");
         enemy->runAnimation = game->getAnimation("integral_idle");
         enemy->attackAnimation = game->getAnimation("integral_attack");
 
         enemy->setWeapon(new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ enemy->getRadius(), enemy->getRadius() } }, 
-            { .damage=1, .life=5.0f, .radius=enemy->getRadius() },
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ enemy->getRadius(), enemy->getRadius() } }, 
+            { .damage=1, .life=0.1f, .radius=enemy->getRadius() },
             7.0f,
             50.0f // knockback
         ));
@@ -120,15 +127,18 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["sigma"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01, .collisionIgnoreGroups={"Character"} });
-        Enemy* enemy = new Enemy(game, 3, 2, node, side, nullptr, nullptr, 0.5, node->getScale(), "hit-staple-remover");
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 2.0, 2.0 }, .collider=side->getCollider("quad"), .colliderScale={0.7, 0.7}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Enemy* enemy = new Enemy(game, 3, 2, node, side, nullptr, nullptr, 0.5, node->getScale(), "hit-staple-remover", 0.55f);
         enemy->idleAnimation = game->getAnimation("sigma_idle");
         enemy->runAnimation = game->getAnimation("sigma_idle");
         enemy->attackAnimation = game->getAnimation("sigma_attack");
+
+        float meleeRadius = 1.0f;
+
         enemy->setWeapon(new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ enemy->getRadius(), enemy->getRadius() } }, 
-            { .damage=1, .life=5.0f, .radius=enemy->getRadius() },
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ meleeRadius, meleeRadius } }, 
+            { .damage=1, .life=0.1f, .radius=meleeRadius / 2.0f },
             2.0f,
             50.0f // knockback
         ));
@@ -144,22 +154,47 @@ void Enemy::generateTemplates(Game* game) {
     };
 
     templates["pi"] = [game](vec2 pos, SingleSide* side) {
-        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01, .collisionIgnoreGroups={"Character"} });
-        Enemy* enemy = new Enemy(game, 3, 1, node, side, nullptr, nullptr, 0.4, node->getScale(), "hit-glue");
+        Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 1.8, 1.8 }, .collider=side->getCollider("quad"), .colliderScale={0.5, 0.9}, .density=0.01, .collisionIgnoreGroups={"Character"} });
+        Enemy* enemy = new Enemy(game, 3, 1, node, side, nullptr, nullptr, 0.4, node->getScale(), "hit-glue", 0.5f);
         enemy->idleAnimation = game->getAnimation("pi_idle");
         enemy->runAnimation = game->getAnimation("pi_idle");
         enemy->attackAnimation = game->getAnimation("pi_attack");
 
-        float projectileRadius = 1.0f;
+        float projectileRadius = 0.4f;
 
-        enemy->setWeapon(new ProjectileWeapon(
+        Weapon* piWeapon = new ProjectileWeapon(
             enemy,  
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("knight"), .scale={ projectileRadius, projectileRadius } }, 
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ 1.5f * projectileRadius, 1.5f * projectileRadius } }, 
             { .damage=1, .life=5.0f, .speed=4.0f, .radius=projectileRadius / 2.0f },
             2.0f,
             { "piProjectile1", "piProjectile2", "piProjectile3", "piProjectile4", "piProjectile5" },
+            // { "circle" },
             0 // ricochet
-        ));
+        );
+        enemy->setWeapon(piWeapon);
+
+        // Custom attack action for pi: fires 5 projectiles in quick succession
+        enemy->getAttackAction() = [enemy, piWeapon](const vec2& pos, const vec2& dir) -> bool {
+            if (piWeapon == nullptr) return false;
+            if (!piWeapon->isReady()) return false;
+            
+            // Fire first projectile immediately
+            bool firstShot = piWeapon->attack(pos, dir);
+            if (!firstShot) return false;
+            
+            // Queue 4 more projectiles with 0.1s delays
+            const float delay = 0.1f;
+            for (int i = 0; i < 4; ++i) {
+                Enemy::PendingShot shot;
+                shot.pos = pos;
+                shot.dir = dir;
+                shot.timer = delay * static_cast<float>(i + 1);  // 0.1s, 0.2s, 0.3s, 0.4s
+                shot.weapon = piWeapon;  // Store weapon reference for bypassing cooldown
+                enemy->getPendingShots().push_back(shot);
+            }
+            
+            return true;
+        };
 
         enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
             // If can attack, stay and attack (stationary)

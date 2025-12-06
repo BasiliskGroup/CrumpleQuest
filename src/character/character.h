@@ -22,6 +22,7 @@ protected:
     std::string team;
     vec2 scale;
     std::string damageSound;
+    bool unstable = false;
 
     // back reference pointers
     SingleSide* side;

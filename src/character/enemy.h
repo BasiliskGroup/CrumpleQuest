@@ -10,6 +10,7 @@
 
 class Game;
 class SingleSide;
+class Weapon;
 
 class Enemy : public Character {
 public:
@@ -18,6 +19,14 @@ public:
     Animation* idleAnimation;
     Animation* runAnimation;
     Animation* attackAnimation;
+    
+    // Multi-shot attack system
+    struct PendingShot {
+        vec2 pos;
+        vec2 dir;
+        float timer;
+        Weapon* weapon;  // Weapon to use for this shot (bypasses cooldown)
+    };
 
 private:
     AI* ai;
@@ -25,8 +34,20 @@ private:
     std::vector<vec2> path;
     float finishRadius = 0.2;
     float attacking = 0.0f;  // Timer for attack animation
+    float attackDelay = 0.0f;  // Delay before weapon attack is called after animation starts
+    float attackDelayTimer = 0.0f;  // Timer tracking the delay
+    bool attackPending = false;  // Whether an attack is waiting for delay
+    vec2 pendingAttackPos;  // Position to attack when delay completes
+    vec2 pendingAttackDir;  // Direction to attack when delay completes
+    
+    std::vector<PendingShot> pendingShots;  // Queue of shots to fire with delays
+    
+    float wanderDestinationTimer = 0.0f;  // Timer for wander destination refresh
+    
     Behavior* behavior = nullptr;  // Current behavior
     std::function<Behavior*(const vec2&, float)> behaviorSelector;  // Function that selects which behavior to use
+    std::function<bool(vec2, vec2)> attackAction;  // Function that performs the attack action
+    std::function<void(const vec2&)> moveAction;  // Function that applies movement toward a destination
     std::optional<vec2> customDestination;  // Optional custom destination (if set, updatePathing will skip this enemy)
     
     // Status flags (updated by updateStatus)
@@ -38,7 +59,7 @@ private:
     bool statusWeaponReady = false;
 
 public:
-    Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale, std::string hitSound = "hit");
+    Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale, std::string hitSound = "hit", float attackDelay = 0.0f);
     ~Enemy() = default;
 
     void onDamage(int damage) override;
@@ -60,6 +81,20 @@ public:
     // Behavior selector getter/setter
     std::function<Behavior*(const vec2&, float)>& getBehaviorSelector() { return behaviorSelector; }
     void setBehaviorSelector(const std::function<Behavior*(const vec2&, float)>& func) { behaviorSelector = func; }
+    
+    // Attack action getter/setter
+    std::function<bool(vec2, vec2)>& getAttackAction() { return attackAction; }
+    void setAttackAction(const std::function<bool(vec2, vec2)>& func) { attackAction = func; }
+    
+    // Move action getter/setter
+    std::function<void(const vec2&)>& getMoveAction() { return moveAction; }
+    void setMoveAction(const std::function<void(const vec2&)>& func) { moveAction = func; }
+    
+    // Pending shots getter (for multi-shot attacks)
+    std::vector<PendingShot>& getPendingShots() { return pendingShots; }
+    
+    // Wander destination timer getter
+    float& getWanderDestinationTimer() { return wanderDestinationTimer; }
     
     // Custom destination getter/setter (used to override default pathfinding to player)
     std::optional<vec2> getCustomDestination() const { return customDestination; }

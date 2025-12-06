@@ -1,13 +1,26 @@
 #include "weapon/projectileZone.h"
+#include "util/random.h"
 #include <cmath>
 
 ProjectileZone::ProjectileZone(Character* owner, Node2D::Params node, Params params, const vec2& pos, const vec2& dir, int ricochet) :
     DamageZone(owner, node, params, pos, dir),
     ricochet(ricochet)
 {
-    this->vel = dir * params.speed;
+    // Add random spread to the direction (spread angle in radians)
+    const float spreadAngle = uniform(-0.15f, 0.15f);  // ~±8.6 degrees of spread
+    float cosAngle = std::cos(spreadAngle);
+    float sinAngle = std::sin(spreadAngle);
+    
+    // Rotate the direction vector by the spread angle
+    vec2 spreadDir = {
+        dir.x * cosAngle - dir.y * sinAngle,
+        dir.x * sinAngle + dir.y * cosAngle
+    };
+    
+    this->vel = spreadDir * params.speed;
     
     // Calculate rotation angle so that (-1, 0) is 0 degrees
+    // Use the spread direction for rotation so the sprite faces the actual travel direction
     // Standard atan2(y, x): (1,0)=0°, (0,1)=90°, (-1,0)=180°, (0,-1)=270°
     // We want: (-1,0)=0°, (0,1)=90°, (1,0)=180°, (0,-1)=270°
     // Solution: use atan2(dir.y, -dir.x) which correctly maps:
@@ -15,7 +28,7 @@ ProjectileZone::ProjectileZone(Character* owner, Node2D::Params node, Params par
     //   (0,1) → atan2(1, 0) = 90° ✓
     //   (1,0) → atan2(0, -1) = 180° ✓
     //   (0,-1) → atan2(-1, 0) = 270° ✓
-    float angle = std::atan2(dir.y, dir.x);
+    float angle = std::atan2(spreadDir.y, spreadDir.x);
     if (angle < 0) angle += 2.0f * 3.14159265358979323846f;
     angle += 3.14159265358979323846f;
     

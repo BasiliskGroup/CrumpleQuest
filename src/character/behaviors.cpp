@@ -45,12 +45,16 @@ static void updatePathFollowing(Enemy* enemy, const vec2& fallbackDir = vec2(0, 
         path.erase(path.begin());
     }
     
-    // Set movement direction towards next waypoint
+    // Use moveAction to set movement direction towards next waypoint
     if (path.size() > 0) {
-        vec2 direction = path[0] - enemyPos;
-        enemy->getMoveDir() = direction;
+        enemy->getMoveAction()(path[0]);
     } else {
-        enemy->getMoveDir() = fallbackDir;
+        // If no path, use fallback direction (or stop if fallback is zero)
+        if (glm::length2(fallbackDir) > 1e-6f) {
+            enemy->getMoveAction()(enemyPos + fallbackDir);
+        } else {
+            enemy->getMoveDir() = vec2(0, 0);
+        }
     }
 }
 
@@ -61,22 +65,35 @@ static void updateDestinationWandering(
     PaperMesh* paperMesh, 
     const vec2& playerPos,
     std::function<vec2(PaperMesh*, const vec2&, const vec2&)> destinationSelector,
-    const vec2& fallbackDir = vec2(0, 0)
+    const vec2& fallbackDir = vec2(0, 0),
+    float refreshTime = 0.0f  // Time in seconds before refreshing destination (0 = no refresh)
 ) {
     if (!paperMesh) {
-        enemy->getMoveDir() = fallbackDir;
+        if (glm::length2(fallbackDir) > 1e-6f) {
+            enemy->getMoveAction()(enemy->getPosition() + fallbackDir);
+        } else {
+            enemy->getMoveDir() = vec2(0, 0);
+        }
         enemy->clearCustomDestination();
         return;
     }
     
     std::vector<vec2>& path = enemy->getPath();
     
+    // Update wander destination timer if refresh time is set
+    if (refreshTime > 0.0f) {
+        // Get dt from somewhere - we'll need to pass it or track it differently
+        // For now, we'll track it in the behavior update function
+    }
+    
     // Check if we need a new destination
     bool needsNewDestination = false;
     if (!enemy->getCustomDestination().has_value()) {
         needsNewDestination = true;
+        enemy->getWanderDestinationTimer() = 0.0f;  // Reset timer when setting new destination
     } else if (isDestinationReached(enemy, path)) {
         needsNewDestination = true;
+        enemy->getWanderDestinationTimer() = 0.0f;  // Reset timer when destination reached
     }
     
     // Pick a new destination if needed
@@ -85,6 +102,7 @@ static void updateDestinationWandering(
         vec2 enemyPos = enemy->getPosition();
         vec2 targetPos = destinationSelector(paperMesh, enemyPos, playerPos);
         enemy->setCustomDestination(targetPos);
+        enemy->getWanderDestinationTimer() = 0.0f;  // Reset timer
     }
     
     // Update path following
@@ -109,13 +127,14 @@ void ChasePlayerBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) 
     
     // Remove waypoints we've already passed
     float finishRadius = enemy->getFinishRadius();
-    while (path.size() > 0 && glm::length2(path[0] - enemy->getPosition()) < finishRadius * finishRadius) {
+    vec2 enemyPos = enemy->getPosition();
+    while (path.size() > 0 && glm::length2(path[0] - enemyPos) < finishRadius * finishRadius) {
         path.erase(path.begin());
     }
     
-    // Set movement direction towards next waypoint
+    // Use moveAction to set movement direction towards next waypoint
     if (path.size() > 0) {
-        enemy->getMoveDir() = path[0] - enemy->getPosition();
+        enemy->getMoveAction()(path[0]);
     } else {
         enemy->getMoveDir() = vec2(0, 0);
     }
@@ -131,13 +150,6 @@ void RunawayBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) {
     vec2 toPlayer = playerPos - enemyPos;
     float distance = glm::length(toPlayer);
     
-    // Only run away if player is too close
-    if (distance > minDistance) {
-        enemy->getMoveDir() = vec2(0, 0);
-        enemy->clearCustomDestination();
-        return;
-    }
-    
     // Get the paper mesh for pathfinding
     PaperMesh* paperMesh = enemy->getPaperMeshForSide();
     
@@ -147,28 +159,66 @@ void RunawayBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) {
         fallbackDir = -glm::normalize(toPlayer);
     }
     
-    // Destination selector: pick furthest of 3 random positions from player
+    // Destination selector: pick furthest position from player that doesn't require moving toward player
     auto destinationSelector = [](PaperMesh* mesh, const vec2& enemyPos, const vec2& playerPos) -> vec2 {
-        // Generate 3 random non-obstacle positions
-        std::vector<vec2> candidatePositions;
-        for (int i = 0; i < 3; ++i) {
+        // Calculate direction from enemy to player
+        vec2 toPlayer = playerPos - enemyPos;
+        float toPlayerLen = glm::length(toPlayer);
+        
+        // Generate candidate positions and filter out those that require moving toward player
+        std::vector<vec2> validCandidates;
+        for (int i = 0; i < 10; ++i) { // Try more candidates to find valid ones
             vec2 candidate = mesh->getRandomNonObstaclePosition();
-            candidatePositions.push_back(candidate);
-        }
-        
-        // Find the furthest position from the player
-        vec2 targetPos = candidatePositions[0];
-        float maxDistance = glm::length(candidatePositions[0] - playerPos);
-        
-        for (size_t i = 1; i < candidatePositions.size(); ++i) {
-            float distToPlayer = glm::length(candidatePositions[i] - playerPos);
-            if (distToPlayer > maxDistance) {
-                maxDistance = distToPlayer;
-                targetPos = candidatePositions[i];
+            vec2 toCandidate = candidate - enemyPos;
+            
+            // Check if moving toward candidate would move us toward player
+            // Dot product <= 0 means we're moving away or perpendicular to player
+            if (toPlayerLen > 1e-6f) {
+                vec2 toPlayerNormalized = toPlayer / toPlayerLen;
+                float dotProduct = glm::dot(toCandidate, toPlayerNormalized);
+                
+                // Only accept candidates that don't move toward player
+                if (dotProduct <= 0.0f) {
+                    validCandidates.push_back(candidate);
+                }
+            } else {
+                // Player is at same position, any direction is fine
+                validCandidates.push_back(candidate);
             }
         }
         
-        return targetPos;
+        // If we found valid candidates, pick the furthest one from player
+        if (!validCandidates.empty()) {
+            vec2 targetPos = validCandidates[0];
+            float maxDistance = glm::length(validCandidates[0] - playerPos);
+            
+            for (size_t i = 1; i < validCandidates.size(); ++i) {
+                float distToPlayer = glm::length(validCandidates[i] - playerPos);
+                if (distToPlayer > maxDistance) {
+                    maxDistance = distToPlayer;
+                    targetPos = validCandidates[i];
+                }
+            }
+            
+            return targetPos;
+        }
+        
+        // No valid candidates found - try to find a position directly away from player
+        // Try multiple positions in the direction away from player
+        if (toPlayerLen > 1e-6f) {
+            vec2 awayFromPlayer = -glm::normalize(toPlayer);
+            
+            // Try positions at different distances away from player
+            for (float dist = 3.0f; dist <= 10.0f; dist += 2.0f) {
+                vec2 candidate = enemyPos + awayFromPlayer * dist;
+                // Check if this position is valid (we'll let pathfinding handle obstacles)
+                // For now, just return it - pathfinding will find the closest valid path
+                return candidate;
+            }
+        }
+        
+        // Ultimate fallback: return enemy position (will use fallback direction for movement)
+        return enemyPos;
     };
     
     // Update destination-based wandering
@@ -196,6 +246,10 @@ void WanderBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) {
     // Get the paper mesh for pathfinding
     PaperMesh* paperMesh = enemy->getPaperMeshForSide();
     
+    // Update wander destination timer
+    float& wanderTimer = enemy->getWanderDestinationTimer();
+    wanderTimer += dt;
+    
     // Destination selector: pick a random position, ensuring it's not too close to player
     auto destinationSelector = [](PaperMesh* mesh, const vec2& enemyPos, const vec2& playerPos) -> vec2 {
         // Get a random non-obstacle position
@@ -211,7 +265,13 @@ void WanderBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) {
         return targetPos;
     };
     
-    // Update destination-based wandering
+    // Check if we need to refresh destination after 3 seconds
+    if (wanderTimer >= 3.0f && enemy->getCustomDestination().has_value()) {
+        enemy->clearCustomDestination();
+        wanderTimer = 0.0f;  // Reset timer - updateDestinationWandering will set new destination
+    }
+    
+    // Update destination-based wandering (this will set a new destination if needed and reset timer)
     updateDestinationWandering(enemy, paperMesh, playerPos, destinationSelector);
     
     // Attack if we can attack (weapon ready, in range, and have line of sight)
