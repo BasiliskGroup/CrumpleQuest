@@ -18,10 +18,29 @@ Floor::Floor(Game* game) : roomMap(), game(game) {
 }
 
 void Floor::loadRooms() {
+    // Find maximum distance from spawn to scale difficulty
+    int maxDistance = 0;
+    for (uint x = 0; x < FLOOR_WIDTH; x++) {
+        for (uint y = 0; y < FLOOR_WIDTH; y++) {
+            if (distMap[x][y] != distMax && distMap[x][y] > maxDistance) {
+                maxDistance = distMap[x][y];
+            }
+        }
+    }
+    
+    // Load rooms with difficulty based on distance from spawn
     for (uint x = 0; x < FLOOR_WIDTH; x++) {
         for (uint y = 0; y < FLOOR_WIDTH; y++) {
             if (playMap[x][y] == NULL_ROOM) continue;
-            roomMap[x][y] = Paper::getRandomTemplate(playMap[x][y]);
+            
+            // Calculate difficulty based on distance from spawn
+            // Scale so furthest room is around difficulty 10
+            float difficulty = 0.0f;
+            if (maxDistance > 0 && distMap[x][y] != distMax) {
+                difficulty = (static_cast<float>(distMap[x][y]) / static_cast<float>(maxDistance)) * 10.0f;
+            }
+            
+            roomMap[x][y] = Paper::getRandomTemplate(playMap[x][y], difficulty);
             if (roomMap[x][y]) {
                 roomMap[x][y]->setGame(game);
                 roomMap[x][y]->regenerateWalls();
@@ -101,7 +120,7 @@ void Floor::addToMaps(const Position& pos, RoomTypes type) {
     std::vector<Position> around;
     getAround(pos, around);
     for (const auto& adj : around) {
-        distMap[adj.x][adj.y] = glm::min(distMap[pos.x][pos.y], distMap[adj.x][adj.y] + 1);
+        distMap[adj.x][adj.y] = glm::min(distMap[adj.x][adj.y], distMap[pos.x][pos.y] + 1);
 
         // we have already added this room
         if (tempMap[adj.x][adj.y] == -1) continue;

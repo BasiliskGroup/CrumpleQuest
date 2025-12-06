@@ -18,6 +18,7 @@ class Enemy : public Character {
 public:
     static std::unordered_map<std::string, std::function<Enemy*(vec2, SingleSide*)>> templates;
     static void generateTemplates(Game* game);
+    static std::unordered_map<std::string, std::vector<std::pair<std::string, float>>> enemyBiomes;
     Animation* idleAnimation;
     Animation* runAnimation;
     Animation* attackAnimation;

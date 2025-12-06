@@ -5,8 +5,12 @@
 #include "levels/levels.h"
 #include "weapon/weapon.h"
 
-
 std::unordered_map<std::string, std::function<Enemy*(vec2, SingleSide*)>> Enemy::templates;
+
+std::unordered_map<std::string, std::vector<std::pair<std::string, float>>> Enemy::enemyBiomes = {
+    { "notebook", { { "glue", 4.0f }, { "staple", 3.0f }, { "clipfly", 1.0f } } },
+    { "grid", { { "integral", 4.0f }, { "sigma", 1.0f }, { "pi", 3.0f } } }
+};
 
 void Enemy::generateTemplates(Game* game) {
 

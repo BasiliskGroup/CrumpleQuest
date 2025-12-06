@@ -12,10 +12,10 @@ class Game;
 
 class Paper {
 public:
-    static std::unordered_map<std::string, std::function<Paper*()>> templates;
+    static std::unordered_map<std::string, std::function<Paper*(float)>> templates;
     static std::unordered_map<RoomTypes, std::vector<std::string>> papers;
     static void generateTemplates(Game* game);
-    static Paper* getRandomTemplate(RoomTypes type);
+    static Paper* getRandomTemplate(RoomTypes type, float difficulty);
     static void flattenVertices(const std::vector<Vert>& vertices, std::vector<float>& data); // TODO move to generic helper
 
 private:
@@ -70,7 +70,7 @@ public: // DEBUG
 
 public:
     Paper();
-    Paper(Game* game, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames);
+    Paper(Game* game, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames, float difficulty = 0.0f);
     
     // Rule of 5
     Paper(const Paper& other);

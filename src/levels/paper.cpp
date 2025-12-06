@@ -12,7 +12,7 @@ Paper::Paper() :
     hasCreationParams(false)
 {}
 
-Paper::Paper(Game* game, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames) : 
+Paper::Paper(Game* game, std::pair<std::string, std::string> sideNames, std::pair<std::string, std::string> obstacleNames, float difficulty) : 
     curSide(0), 
     isOpen(false),
     activeFold(NULL_FOLD),
@@ -43,8 +43,8 @@ Paper::Paper(Game* game, std::pair<std::string, std::string> sideNames, std::pai
     paperMeshes.second->regions.insert(paperMeshes.second->regions.begin(), obst.begin(), obst.end());
     paperMeshes.second->regenerateNavmesh();  // Regenerate after adding obstacles
 
-    sides.first  = SingleSide::templates[sideNames.first]();
-    sides.second = SingleSide::templates[sideNames.second]();
+    sides.first  = SingleSide::templates[sideNames.first](difficulty);
+    sides.second = SingleSide::templates[sideNames.second](difficulty);
 }
 
 Paper::Paper(const Paper& other)
