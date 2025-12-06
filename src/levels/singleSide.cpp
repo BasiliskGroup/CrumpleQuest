@@ -509,8 +509,8 @@ Pickup* SingleSide::adoptPickup(Pickup* pickup, SingleSide* fromSide) {
         newPickup = new Heart(game, this, {
             .mesh = game->getMesh("quad"),
             .material = game->getMaterial("red"),
-            .scale = {0.25, 0.25},
             .position = position,
+            .scale = {0.25, 0.25},
             .collider = collider,
             .colliderScale = {1.0, 1.0},
             .density = 0.01f
@@ -520,8 +520,8 @@ Pickup* SingleSide::adoptPickup(Pickup* pickup, SingleSide* fromSide) {
         newPickup = new Pickup(game, this, {
             .mesh = game->getMesh("quad"),
             .material = game->getMaterial("red"),
-            .scale = {0.25, 0.25},
             .position = position,
+            .scale = {0.25, 0.25},
             .collider = collider,
             .colliderScale = {1.0, 1.0},
             .density = 0.01f

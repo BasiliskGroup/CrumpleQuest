@@ -116,8 +116,8 @@ Menu* MenuManager::createMainMenu() {
     // Create background (clickable to play paper touch sound)
     Button* background = new Button(game->getMenuScene(), game, {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("notebook"),
-        .scale = {9, 6.75}
+        .material = game->getMaterial("menuPaper"),
+        .scale = {7.5, 7.5}  // Keep square scale to preserve menuPaper.PNG aspect ratio (4:3)
     },
     {
         .onDown = [this]() {
@@ -126,16 +126,6 @@ Menu* MenuManager::createMainMenu() {
     });
     background->setLayer(0.1f);
     mainMenu->addElement(background);
-    
-    // Create title
-    Node2D* title = new Node2D(game->getMenuScene(), {
-        .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("paper"),
-        .position = {0, 2.2},
-        .scale = {4, 1.2}
-    });
-    title->setLayer(0.2f);
-    mainMenu->addNode(title);
 
     // Button layout
     float buttonY = -0.2f;

@@ -34,6 +34,10 @@ int main() {
     game->addImage("notebook", new Image("art/assets/notebook.PNG"));
     game->addMaterial("notebook", new Material({ 1, 1, 1 }, game->getImage("notebook")));
     
+    // Load menu paper background from art/assets
+    game->addImage("menuPaper", new Image("art/assets/menuPaper.PNG"));
+    game->addMaterial("menuPaper", new Material({ 1, 1, 1 }, game->getImage("menuPaper")));
+    
     std::unordered_map<std::string, std::vector<std::string>> levelNames = {
         { "notebook", { "level1", "level2", "level3", "level4", "level5" } },
         {"tutorial", { "tutorial" } }
