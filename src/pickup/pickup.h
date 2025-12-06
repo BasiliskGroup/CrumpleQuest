@@ -15,7 +15,7 @@ protected:
 
 public:
     Pickup(Game* game, SingleSide* side, Node2D::Params node, float radius);
-    ~Pickup() = default;
+    virtual ~Pickup() = default;
 
     virtual void update(float dt) {}
 

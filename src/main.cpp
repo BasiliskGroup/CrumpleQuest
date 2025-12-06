@@ -79,6 +79,8 @@ int main() {
     // Pi
     game->addAnimation("pi_idle", "art/sprites/enemies/ranged/grid_pi/idle/", 6);
     game->addAnimation("pi_attack", "art/sprites/enemies/ranged/grid_pi/attack/", 7);
+    // Heart
+    game->addAnimation("heart", "art/assets/heart/", 7);
 
     // mesh
     std::vector<std::string> meshNames = { "quad", "paper0", "paper1", "quad3D", "cube", "mug", "john", "heart", "sphere"};
