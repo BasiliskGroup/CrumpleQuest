@@ -93,7 +93,7 @@ int main() {
     game->addMaterial("back_hover", new Material({ 1, 1, 1 }, game->getImage("back_hover")));
     
     refresh();
-    game->addImage("volumeicon", new Image("art/assets/volumeicon.png"));
+    game->addImage("volumeicon", new Image("art/assets/volumeicon.PNG"));
     game->addMaterial("volumeicon", new Material({ 1, 1, 1 }, game->getImage("volumeicon")));
     game->addImage("musicicon", new Image("art/assets/musicicon.PNG"));
     game->addMaterial("musicicon", new Material({ 1, 1, 1 }, game->getImage("musicicon")));
