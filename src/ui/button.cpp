@@ -1,4 +1,5 @@
 #include "ui/ui.h"
+#include "audio/sfx_player.h"
 
 Button::Button(Scene2D* scene, Game* game, Node2D::Params params, Button::Params callbacks) : 
     Node2D(scene, params),
@@ -113,11 +114,13 @@ void Button::event(const vec2& pos, bool mouseDown) {
         if (hoverMaterial) {
             this->setMaterial(hoverMaterial);
         }
+        audio::SFXPlayer::Get().PlayWithVolume("move", 0.3f);
     } else if (!hovered && isCurrentlyHovered) {
         isCurrentlyHovered = false;
         if (normalMaterial) {
             this->setMaterial(normalMaterial);
         }
+        audio::SFXPlayer::Get().PlayWithVolume("move", 0.3f);
     }
     
     if (!hovered) {
