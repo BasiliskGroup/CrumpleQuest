@@ -476,7 +476,7 @@ void Boss::onDamage(int damage) {
 }
 
 void Boss::onDeath() {
-    game->getSide()->addPickup(new Ladder(game, game->getSide(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("red"), .position={0.0, 0.0}, .scale={1.0, 1.0} }, 0.5f));
+    game->getSide()->addPickup(new Ladder(game, game->getSide(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("ladder"), .position={0.0, 0.0}, .scale={1.0, 2.0} }, 1.0f));
 }
 
 bool Boss::shouldBeDeleted() const {

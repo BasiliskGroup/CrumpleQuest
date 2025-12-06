@@ -48,6 +48,11 @@ int main() {
     game->addMaterial("hand_left", new Material({ 1, 1, 1 }, game->getImage("hand_left")));
     game->addImage("hand_right", new Image("art/assets/hands/right.PNG"));
     game->addMaterial("hand_right", new Material({ 1, 1, 1 }, game->getImage("hand_right")));
+
+    // Load ladder image from art/assets
+    refresh();
+    game->addImage("ladder", new Image("art/assets/ladder.PNG"));
+    game->addMaterial("ladder", new Material({ 1, 1, 1 }, game->getImage("ladder")));
     
     // Load menu paper background from art/assets
     refresh();
