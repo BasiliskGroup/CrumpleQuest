@@ -5,7 +5,7 @@
 #include "game/game.h"
 #include <iostream>
 
-MenuManager::MenuManager() : game(nullptr) {
+MenuManager::MenuManager() : game(nullptr), isGameOverMenuActive(false) {
     menuStack = new MenuStack();
 }
 
@@ -51,6 +51,7 @@ void MenuManager::pushGameOverMenu() {
     }
     Menu* gameOverMenu = createGameOverMenu();
     menuStack->push(gameOverMenu);
+    isGameOverMenuActive = true;
 }
 
 void MenuManager::popMenu() {
@@ -71,6 +72,8 @@ void MenuManager::popMenuDeferred() {
     Menu* menu = menuStack->top();
     menuStack->pop();
     pendingDelete.push_back(menu);  // Defer deletion until next frame
+    // Clear game over flag when menu is popped
+    isGameOverMenuActive = false;
 }
 
 void MenuManager::deletePendingMenus() {
@@ -105,6 +108,8 @@ void MenuManager::update(float dt) {
             std::cout << "[MenuManager] Menu finished closing animation, removing from stack" << std::endl;
             menuStack->pop();
             delete topMenu;
+            // Clear game over flag when menu is actually removed
+            isGameOverMenuActive = false;
         }
     }
 }
@@ -384,7 +389,7 @@ Menu* MenuManager::createGameOverMenu() {
     Button* background = new Button(game->getMenuScene(), game, {
         .mesh = game->getMesh("quad"),
         .material = game->getMaterial("notebook"),
-        .scale = {7.5, 7.5}  // Match main menu dimensions
+        .scale = {7.5, 7.5}  // Match settings menu dimensions
     },
     {
         .onDown = [this]() {
@@ -397,9 +402,9 @@ Menu* MenuManager::createGameOverMenu() {
     // Create game over image/title
     Node2D* gameOverImage = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("lightGrey"),
-        .position = {0, 1.0},
-        .scale = {4, 2}
+        .material = game->getMaterial("dead"),
+        .position = {0, 1.5},
+        .scale = {4.5, 6.0}
     });
     gameOverImage->setLayer(0.5f);
     gameOverMenu->addNode(gameOverImage);
@@ -409,8 +414,8 @@ Menu* MenuManager::createGameOverMenu() {
         {
             .mesh = game->getMesh("quad"),
             .material = game->getMaterial("home"),
-            .position = {0, -1.5},
-            .scale = {0.8, 0.8}
+            .position = {0, -2.5},
+            .scale = {2.4, 3.1}
         },
         {
             .onUp = [this]() {

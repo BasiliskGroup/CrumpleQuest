@@ -61,6 +61,12 @@ public:
     bool GetRestartOnTransition() const { return restart_on_transition_; }
     
     /**
+     * @brief Get the name of the currently playing track
+     * @return Name of the current track (empty string if none)
+     */
+    std::string GetCurrentTrack() const { return current_track_; }
+    
+    /**
      * @brief Fade to a specific music track
      * @param track_name Name of the track ("parchment", "notebook", "grid")
      * @param fade_duration Duration of the fade in seconds

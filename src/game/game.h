@@ -63,6 +63,7 @@ private:
     bool pendingReturnToMainMenu = false;
     bool pendingStartGame = false;
     bool pendingResetFloor = false;
+    bool firstRoomEntry = true;  // Skip music transition on first room entry after game start
 
     // audio
     audio::AudioManager& audioManager;

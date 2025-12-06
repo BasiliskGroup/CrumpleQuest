@@ -93,8 +93,8 @@ public:
     // Get biome type based on paper name
     std::string getBiome() const {
         if (!hasCreationParams) {
-            std::cout << "[Paper::getBiome] No creation params, returning parchment" << std::endl;
-            return "parchment";
+            std::cout << "[Paper::getBiome] No creation params, returning notebook (default)" << std::endl;
+            return "notebook";  // Default to notebook instead of parchment
         }
         const std::string& name = sideNames.first;
         std::cout << "[Paper::getBiome] Checking side name: " << name << std::endl;
@@ -106,8 +106,8 @@ public:
             std::cout << "[Paper::getBiome] Found grid, returning grid" << std::endl;
             return "grid";
         }
-        std::cout << "[Paper::getBiome] No match, returning parchment" << std::endl;
-        return "parchment";
+        std::cout << "[Paper::getBiome] No specific biome match, returning notebook (default)" << std::endl;
+        return "notebook";  // Default to notebook instead of parchment
     }
 
     void flip();

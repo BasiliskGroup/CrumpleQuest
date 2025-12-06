@@ -188,18 +188,21 @@ void Game::update(float dt) {
     
     // pause (escape key)
     if (keys->getPressed(GLFW_KEY_ESCAPE) && escapeWasDown == false) {
-        if (player == nullptr) {
-            if (MenuManager::Get().getMenuStackSize() > 1) {
-                MenuManager::Get().popMenu();
+        // Don't allow ESC to close game over menu
+        if (!MenuManager::Get().isGameOverActive()) {
+            if (player == nullptr) {
+                if (MenuManager::Get().getMenuStackSize() > 1) {
+                    MenuManager::Get().popMenu();
+                } else {
+                    MenuManager::Get().pushSettingsMenu();
+                }
             } else {
-                MenuManager::Get().pushSettingsMenu();
-            }
-        } else {
-            // in game
-            if (MenuManager::Get().hasActiveMenu()) {
-                MenuManager::Get().popMenu();
-            } else {
-                MenuManager::Get().pushSettingsMenu();
+                // in game
+                if (MenuManager::Get().hasActiveMenu()) {
+                    MenuManager::Get().popMenu();
+                } else {
+                    MenuManager::Get().pushSettingsMenu();
+                }
             }
         }
     }
@@ -556,6 +559,9 @@ void Game::startGame() {
     std::cout << "[Game::startGame] Starting game with notebook music" << std::endl;
     audio::MusicPlayer::Get().FadeTo("notebook", 2.0f);
     
+    // Mark that next room entry is the first one (skip music transition)
+    firstRoomEntry = true;
+    
     // Boss will be created when entering a boss room (see switchToRoom)
 }
 
@@ -589,6 +595,15 @@ void Game::resetFloor() {
     
     // Create a new floor (subsequent floors use boss room template as spawn)
     floor = new Floor(this, false, currentBiome);
+    
+    // Transition to new biome music immediately only if different
+    std::string currentMusic = audio::MusicPlayer::Get().GetCurrentTrack();
+    if (currentMusic != newBiome) {
+        std::cout << "[Game::resetFloor] Transitioning from '" << currentMusic << "' to " << newBiome << " music" << std::endl;
+        audio::MusicPlayer::Get().FadeTo(newBiome, 2.0f);
+    } else {
+        std::cout << "[Game::resetFloor] Already playing " << newBiome << " music, skipping transition" << std::endl;
+    }
     
     // Get the center room (spawn room) and set it as the current paper
     Paper* centerPaper = floor->getCenterRoom();
@@ -645,6 +660,7 @@ void Game::resetFloor() {
 }
 
 void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
+    std::cout << "[Game::switchToRoom] ENTER - firstRoomEntry=" << firstRoomEntry << std::endl;
     if (!newPaper || !floor || !player) {
         std::cout << "[Game] switchToRoom: Invalid parameters (newPaper=" << (newPaper ? "valid" : "null") 
                   << ", floor=" << (floor ? "valid" : "null") << ", player=" << (player ? "valid" : "null") << ")" << std::endl;
@@ -699,9 +715,14 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
         }
         // Show boss health bar
         showBossHealthBar(true);
-        // Transition to boss music
-        std::cout << "[Game::switchToRoom] Transitioning to boss music" << std::endl;
-        audio::MusicPlayer::Get().FadeTo("boss", 2.0f);
+        // Transition to boss music only if not already playing boss music
+        std::string currentMusic = audio::MusicPlayer::Get().GetCurrentTrack();
+        if (currentMusic != "boss") {
+            std::cout << "[Game::switchToRoom] Transitioning to boss music" << std::endl;
+            audio::MusicPlayer::Get().FadeTo("boss", 2.0f);
+        } else {
+            std::cout << "[Game::switchToRoom] Already playing boss music, skipping transition" << std::endl;
+        }
     } else {
         // Not a boss room - delete boss if it exists (including if leaving animation is in progress)
         if (boss != nullptr) {
@@ -716,10 +737,23 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
         // Hide boss health bar
         showBossHealthBar(false);
         
-        // Transition to biome music based on new paper
+        // Transition to biome music based on new paper only if different
         std::string biome = newPaper->getBiome();
-        std::cout << "[Game::switchToRoom] Not boss room - transitioning to biome music: " << biome << std::endl;
-        audio::MusicPlayer::Get().FadeTo(biome, 2.0f);
+        std::string currentMusic = audio::MusicPlayer::Get().GetCurrentTrack();
+        std::cout << "[Game::switchToRoom] Current music: '" << currentMusic << "', New biome: '" << biome << "'" << std::endl;
+        
+        // Skip transition on first room entry after game start
+        if (firstRoomEntry) {
+            std::cout << "[Game::switchToRoom] First room entry after game start, skipping music transition" << std::endl;
+            firstRoomEntry = false;
+        } else if (currentMusic.empty()) {
+            std::cout << "[Game::switchToRoom] No current music, skipping transition (game just started)" << std::endl;
+        } else if (currentMusic != biome) {
+            std::cout << "[Game::switchToRoom] Music different - transitioning from '" << currentMusic << "' to biome music: " << biome << std::endl;
+            audio::MusicPlayer::Get().FadeTo(biome, 2.0f);
+        } else {
+            std::cout << "[Game::switchToRoom] Already playing " << biome << " music, skipping transition" << std::endl;
+        }
     }
     
     // Check room state and update directional nodes immediately
