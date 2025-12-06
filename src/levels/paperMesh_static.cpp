@@ -33,6 +33,11 @@ void PaperMesh::generateTemplates(Game* game) {
         return obst; 
     };
 
+    obstacleTemplates["empty"] = [game]() { 
+        std::vector<UVRegion> obst;
+        return obst; 
+    };
+
     obstacleTemplates["notebook1_front"] = [game]() { 
         std::vector<UVRegion> obst;
 

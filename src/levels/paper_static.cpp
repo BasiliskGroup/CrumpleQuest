@@ -13,6 +13,14 @@ void Paper::generateTemplates(Game* game) {
         return new Paper(game, { "tutorial_front", "tutorial_back" }, { "tutorial_front", "tutorial_back" }, difficulty);
     };
 
+    templates["notebook_health"] = [game](float difficulty) {
+        return new Paper(game, { "notebook_health_front", "notebook_health_back" }, { "empty", "empty" }, difficulty);
+    };
+
+    templates["notebook_weapon"] = [game](float difficulty) {
+        return new Paper(game, { "notebook_weapon_front", "notebook_weapon_back" }, { "empty", "empty" }, difficulty);
+    };
+
     templates["notebook1"] = [game](float difficulty) {
         return new Paper(game, { "notebook1_front", "notebook1_back" }, { "notebook1_front", "notebook1_back" }, difficulty);
     };
@@ -46,6 +54,8 @@ void Paper::generateTemplates(Game* game) {
             "notebook2",
             "notebook3",
             "notebook4",
+            "notebook_health",
+            "notebook_weapon",
             // "notebook5"
         }},
         {BOSS_ROOM, {

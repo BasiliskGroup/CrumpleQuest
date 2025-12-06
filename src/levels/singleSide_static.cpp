@@ -12,9 +12,6 @@ void SingleSide::generateTemplates(Game* game) {
     // Tutorial
     templates["tutorial_front"] = [game](float difficulty) {
         SingleSide* side = new SingleSide(game, "paper0", "tutorial_tutorial", vec2(0, 0), "notebook", {}, difficulty);
-
-        side->addPickup(new StapleGun(game, side, { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position={2.0 - 6.0, 2.0 - 4.5}, .scale={1.0, 1.0} }, 0.5f));
-
         return side;
     };
     templates["tutorial_back"] = [game](float difficulty) {
@@ -24,6 +21,26 @@ void SingleSide::generateTemplates(Game* game) {
     };
 
     // Notebook
+    templates["notebook_health_front"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper0", "notebook_blank", vec2(0, 0), "notebook", {}, difficulty);
+        // side->addPickup(new Heart(game, side, { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position={0.0 - 6.0, 0.0 - 4.5}, .scale={1.0, 1.0} }, 0.5f));
+        return side;
+    };
+    templates["notebook_health_back"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper1", "notebook_blank", vec2(0, 0), "notebook", {}, difficulty);
+        return side;
+    };
+
+    templates["notebook_weapon_front"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper0", "notebook_blank", vec2(0, 0), "notebook", {}, difficulty);
+        side->addPickup(new StapleGun(game, side, { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position={0.0 - 6.0, 0.0 - 4.5}, .scale={1.0, 1.0} }, 0.5f));
+        return side;
+    };
+    templates["notebook_weapon_back"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper1", "notebook_blank", vec2(0, 0), "notebook", {}, difficulty);
+        return side;
+    };
+
     templates["notebook1_front"] = [game](float difficulty) {
         std::vector<vec2> enemySpawns = { { 10,4.5 }, { 1.47,4.67 } };
         SingleSide* side = new SingleSide(game, "paper0", "notebook_level1", vec2(0, 0), "notebook", enemySpawns, difficulty);
