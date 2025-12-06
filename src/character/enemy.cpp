@@ -24,6 +24,10 @@ Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side
     moveAction = MoveActionRegistry::getAction("Normal");
 }
 
+Enemy::~Enemy() {
+    delete animator; animator = nullptr;
+}
+
 void Enemy::onDamage(int damage) {
     Character::onDamage(damage);
 }
@@ -51,13 +55,13 @@ void Enemy::updateStatus(const vec2& playerPos) {
         }
     }
     
-    // Update attack capability status (weapon ready, player is in range, and has line of sight)
+    // Update attack capability status (weapon ready, player is in range, and level entry delay expired)
     bool inRange = false;
     if (weapon != nullptr) {
         float distance = glm::length(playerPos - getPosition());
         inRange = distance <= weapon->getRange();
     }
-    statusCanAttack = statusWeaponReady && inRange;
+    statusCanAttack = statusWeaponReady && inRange && (levelEntryDelayTimer <= 0.0f);
     
     // Update attacking status (currently playing attack animation)
     statusIsAttacking = attacking > 0.0f;
