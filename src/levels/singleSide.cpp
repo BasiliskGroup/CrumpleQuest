@@ -33,6 +33,12 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material, vec2 
     });
     background->setLayer(-0.7);
 
+    // transform enemy spawns
+    vec2 offset = {6.0f, 4.5f};
+    for (vec2& spawn : enemySpawns) {
+        spawn -= offset;
+    }
+
     // add enemies based on difficulty
     if (!enemySpawns.empty() && difficulty > 0.0f) {
         // Get enemy list for this biome
