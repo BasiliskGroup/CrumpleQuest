@@ -89,6 +89,9 @@ class PaperView {
         void showDirectionalNodes(bool top, bool bottom, bool left, bool right);
 
         void createMinimap();
+        void clearMinimap();
+        void showGameElements(); // Create health tokens and directional nodes
+        void hideGameElements(); // Delete health tokens and directional nodes
         bool isTransitioning() const { return transitionTimer > 0.0f; }
 };
 

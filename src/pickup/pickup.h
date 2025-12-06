@@ -23,6 +23,10 @@ public:
 
     float getRadius() const { return radius; }
     virtual void onPickup();
+    
+    void setSide(SingleSide* side) { this->side = side; }
+    SingleSide* getSide() { return side; }
+    Game* getGame() { return game; }
 };
 
 #endif

@@ -334,6 +334,7 @@ bool Paper::unfold(const vec2& pos) {
     // Before popping the fold, check which enemies are in the fold underside region
     // We need to save this information before popFold() erases the fold
     std::vector<Enemy*> enemiesToMove;
+    std::vector<Pickup*> pickupsToMove;
     SingleSide* currentSide = getSingleSide();
     SingleSide* otherSide = getBackSide();
     
@@ -351,6 +352,16 @@ bool Paper::unfold(const vec2& pos) {
                 vec2 enemyPos = enemy->getPosition();
                 if (activeFoldRef.underside->contains(enemyPos)) {
                     enemiesToMove.push_back(enemy);
+                }
+            }
+            
+            // Check all pickups on the current side
+            auto& pickups = currentSide->getPickups();
+            for (Pickup* pickup : pickups) {
+                if (pickup == nullptr) continue;
+                vec2 pickupPos = pickup->getPosition();
+                if (activeFoldRef.underside->contains(pickupPos)) {
+                    pickupsToMove.push_back(pickup);
                 }
             }
         }
@@ -396,6 +407,34 @@ bool Paper::unfold(const vec2& pos) {
             vec2 newPos = { -reflectedPos.x, reflectedPos.y };
             enemy->setPosition(newPos);
         }
+        
+        // Move pickups that were in the fold
+        for (Pickup* pickup : pickupsToMove) {
+            if (pickup == nullptr) continue;
+            
+            // Get the pickup's position before adopting
+            vec2 pickupPos = pickup->getPosition();
+            
+            // Reflect the position over the crease line (same as enemies and player in popFold)
+            // This undoes the reflection that happened when the fold was created
+            vec2 reflectedPos = pickupPos;
+            if (hasCrease) {
+                vec2 creaseDir = creaseEnd - creaseStart;
+                float creaseLen = glm::length(creaseDir);
+                if (creaseLen > EPSILON) {
+                    reflectedPos = reflectPointOverLine(creaseStart, creaseDir, pickupPos);
+                }
+            }
+            
+            // Adopt the pickup to the other side (this deletes the old pickup and creates a new one)
+            Pickup* newPickup = otherSide->adoptPickup(pickup, currentSide);
+            
+            // Flip the position to the other side (same as player transformation after flip())
+            if (newPickup != nullptr) {
+                vec2 newPos = { -reflectedPos.x, reflectedPos.y };
+                newPickup->setPosition(newPos);
+            }
+        }
     }
     deactivateFold();
     return check;
@@ -414,8 +453,16 @@ bool Paper::pushFold(Fold& newFold) {
         }
     }
     
-    // Check for enemies on the current side that are in the fold underside region
-    // Move them to the center of the cover region
+    // Before pushing the fold, collect which enemies/pickups need to be moved
+    // We need to save this information before the fold is pushed (which modifies the meshes)
+    // But we won't actually move them until AFTER all validation checks pass
+    std::vector<Enemy*> enemiesToMove;
+    std::vector<Pickup*> pickupsToMove;
+    
+    // Collect enemies on the current side that are in the fold underside region
+    // These will be moved to the center of the cover region (but only if fold succeeds)
+    std::vector<std::pair<Enemy*, vec2>> enemiesInUnderside;  // Enemy and target center position
+    std::vector<std::pair<Pickup*, vec2>> pickupsInUnderside;  // Pickup and target center position
     if (currentSide && newFold.underside != nullptr && newFold.cover != nullptr) {
         auto& enemies = currentSide->getEnemies();
         for (Enemy* enemy : enemies) {
@@ -430,17 +477,32 @@ bool Paper::pushFold(Fold& newFold) {
                         center += v;
                     }
                     center /= static_cast<float>(coverRegion.size());
-                    
-                    // Move enemy to center of cover region
-                    enemy->setPosition(center);
+                    enemiesInUnderside.push_back({enemy, center});
+                }
+            }
+        }
+        
+        // Collect pickups on the current side that are in the fold underside region
+        auto& pickups = currentSide->getPickups();
+        for (Pickup* pickup : pickups) {
+            if (pickup == nullptr) continue;
+            vec2 pickupPos = pickup->getPosition();
+            if (newFold.underside->contains(pickupPos)) {
+                // Calculate center of cover region as average of vertices
+                const std::vector<vec2>& coverRegion = newFold.cover->region;
+                if (!coverRegion.empty()) {
+                    vec2 center(0.0f, 0.0f);
+                    for (const vec2& v : coverRegion) {
+                        center += v;
+                    }
+                    center /= static_cast<float>(coverRegion.size());
+                    pickupsInUnderside.push_back({pickup, center});
                 }
             }
         }
     }
     
     // Before pushing the fold, check which enemies on the back side are in the fold backside region
-    // We need to save this information before the fold is pushed (which modifies the meshes)
-    std::vector<Enemy*> enemiesToMove;
     if (backSide && newFold.backside != nullptr) {
         // Check all enemies on the back side
         auto& enemies = backSide->getEnemies();
@@ -451,6 +513,18 @@ bool Paper::pushFold(Fold& newFold) {
             // So we can check directly if the enemy position is in the backside region
             if (newFold.backside->contains(enemyPos)) {
                 enemiesToMove.push_back(enemy);
+            }
+        }
+        
+        // Check all pickups on the back side
+        auto& pickups = backSide->getPickups();
+        for (Pickup* pickup : pickups) {
+            if (pickup == nullptr) continue;
+            vec2 pickupPos = pickup->getPosition();
+            // The backside region is in the back side's coordinate system (x is negated)
+            // So we can check directly if the pickup position is in the backside region
+            if (newFold.backside->contains(pickupPos)) {
+                pickupsToMove.push_back(pickup);
             }
         }
     }
@@ -607,6 +681,20 @@ bool Paper::pushFold(Fold& newFold) {
     // update active fold to be what we just made so we can hold onto it
     activeFold = folds.size() - 1;
 
+    // NOW that all validation has passed, move enemies and pickups
+    // First, move enemies/pickups in the underside region to the center of cover region
+    for (const auto& [enemy, center] : enemiesInUnderside) {
+        if (enemy != nullptr && !enemy->isDead()) {
+            enemy->setPosition(center);
+        }
+    }
+    
+    for (const auto& [pickup, center] : pickupsInUnderside) {
+        if (pickup != nullptr) {
+            pickup->setPosition(center);
+        }
+    }
+
     // Move enemies that were on the back side in the fold region to the current side
     for (Enemy* enemy : enemiesToMove) {
         if (enemy == nullptr || enemy->isDead()) continue;
@@ -639,6 +727,44 @@ bool Paper::pushFold(Fold& newFold) {
             newPos = { -enemyPos.x, enemyPos.y };
         }
         enemy->setPosition(newPos);
+    }
+    
+    // Move pickups that were on the back side in the fold region to the current side
+    for (Pickup* pickup : pickupsToMove) {
+        if (pickup == nullptr) continue;
+        
+        // Get the pickup's position before adopting
+        vec2 pickupPos = pickup->getPosition();
+        
+        // Adopt the pickup to the current side (where the player is)
+        // This deletes the old pickup and creates a new one
+        Pickup* newPickup = currentSide->adoptPickup(pickup, backSide);
+        
+        // Reflect the position over the crease line
+        if (newPickup != nullptr) {
+            vec2 newPos;
+            if (newFold.crease.size() == 2) {
+                vec2 creaseStart = newFold.crease[0];
+                vec2 creaseEnd = newFold.crease[1];
+                vec2 creaseDir = creaseEnd - creaseStart;
+                float creaseLen = glm::length(creaseDir);
+                
+                if (creaseLen > EPSILON) {
+                    // First flip to the front side
+                    vec2 flippedPos = { -pickupPos.x, pickupPos.y };
+                    // Then reflect over the crease line
+                    newPos = reflectPointOverLine(creaseStart, creaseDir, flippedPos);
+                } else {
+                    // Fallback to simple flip if crease is invalid
+                    newPos = { -pickupPos.x, pickupPos.y };
+                }
+            } else {
+                // Fallback to simple flip if no crease information
+                newPos = { -pickupPos.x, pickupPos.y };
+            }
+            
+            newPickup->setPosition(newPos);
+        }
     }
 
     // DEBUG

@@ -12,6 +12,7 @@ Game::Game() :
     engine(nullptr),
     currentSide(nullptr),
     paper(nullptr),
+    paperView(nullptr),
     audioManager(audio::AudioManager::GetInstance()),
     playerAnimator(nullptr),
     menuScene(nullptr),
@@ -99,6 +100,15 @@ void Game::update(float dt) {
     if (pendingReturnToMainMenu) {
         pendingReturnToMainMenu = false;
         processReturnToMainMenu();
+        return; // Skip rest of update this frame
+    }
+    
+    // Process pending start game (deferred from button callback)
+    if (pendingStartGame) {
+        pendingStartGame = false;
+        // Delete pending menus BEFORE recreating menuScene
+        MenuManager::Get().deletePendingMenus();
+        startGame();
         return; // Skip rest of update this frame
     }
 
@@ -344,16 +354,24 @@ void Game::update(float dt) {
         }
         // Game scene is paused if menus are active, but still rendered
 
-        // Render the level onto the paper fbo
-        paperView->renderLevelFBO(paper);
-        // Render the 3d view to the screen
+        // Render the level onto the paper fbo (only if paper exists)
+        if (paper) {
+            paperView->renderLevelFBO(paper);
+        }
+    }
+    
+    // Always render the 3D background scene (even in menu)
+    if (paperView) {
         engine->getFrame()->use();
-        paperView->update(paper);
+        if (paper) {
+            paperView->update(paper);
+        }
         paperView->render();
     }
     
     if (MenuManager::Get().hasActiveMenu()) {
         // Menu scene renders on top
+        MenuManager::Get().update(engine->getDeltaTime());
         menuScene->update();
         menuScene->render();
     }
@@ -383,14 +401,19 @@ void Game::initPaperView() {
 
 // Spawn in player, enemies, etc
 void Game::startGame() {
+    // Clear and recreate menu scene to remove any lingering menu nodes
+    if (menuScene) {
+        delete menuScene;
+        menuScene = new Scene2D(engine);
+        menuScene->setCamera(menuCamera);
+        menuScene->getSolver()->setGravity(0);
+    }
+    
     // Create the floor (this will generate rooms and create Paper instances)
     if (floor) {
         delete floor;
     }
     floor = new Floor(this);
-
-    // Load minimap
-    paperView->createMinimap();
     
     // Get the center room (spawn room) and set it as the current paper
     Paper* centerPaper = floor->getCenterRoom();
@@ -405,6 +428,8 @@ void Game::startGame() {
     // Regenerate PaperView mesh now that paper exists
     if (paperView) {
         paperView->regenerateMesh();
+        paperView->showGameElements(); // Show health tokens and directional nodes
+        paperView->createMinimap();     // Create minimap
     }
 
     // create player
@@ -520,6 +545,11 @@ void Game::processReturnToMainMenu() {
         player = nullptr;
     }
     
+    // Hide game elements (health tokens, directional nodes, minimap)
+    if (paperView) {
+        paperView->hideGameElements();
+    }
+    
     // Destroy the floor (this will delete all Paper instances)
     if (floor) {
         delete floor;
@@ -530,10 +560,26 @@ void Game::processReturnToMainMenu() {
     paper = nullptr;
     currentSide = nullptr;
     
+    // Regenerate paper mesh to clear it
+    if (paperView) {
+        paperView->regenerateMesh();
+    }
+    
     // Clear all menus and return to main menu
     // Pop all existing menus (they will be deleted immediately, safe now)
     while (MenuManager::Get().getMenuStackSize() > 0) {
-        MenuManager::Get().popMenu();
+        MenuManager::Get().popMenuDeferred();
+    }
+    
+    // Delete pending menus BEFORE recreating menuScene
+    MenuManager::Get().deletePendingMenus();
+    
+    // Clear and recreate menu scene to remove any lingering menu nodes
+    if (menuScene) {
+        delete menuScene;
+        menuScene = new Scene2D(engine);
+        menuScene->setCamera(menuCamera);
+        menuScene->getSolver()->setGravity(0);
     }
     
     // Then push the main menu (which will be the only menu)
