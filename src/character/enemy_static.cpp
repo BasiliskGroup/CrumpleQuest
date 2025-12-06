@@ -119,9 +119,13 @@ void Enemy::generateTemplates(Game* game) {
             3.0f,
             5.0f // knockback
         );
-        integralWeapon->setRange(5.0f);
+        integralWeapon->setRange(4.0f);
         enemy->setWeapon(integralWeapon);
 
+        // Use Slide attack action - dashes forward then attacks after delay
+        // Parameters: dashSpeed (velocity magnitude for dash), attackTimeOffset (seconds before attack)
+        enemy->setAttackAction(new SlideAttackAction(10.0f, 0.5f));
+        
         enemy->setMoveAction(new JumpMoveAction(1.5f, 10.0f));
         
         float cooldownTime = 1.5f;

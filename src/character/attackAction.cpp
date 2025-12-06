@@ -19,6 +19,7 @@ void AttackActionRegistry::initialize() {
     // Register all available attack actions
     registerAction("Normal", new NormalAttackAction());
     registerAction("Burst", new BurstAttackAction());
+    registerAction("Slide", new SlideAttackAction());
 }
 
 void AttackActionRegistry::cleanup() {
