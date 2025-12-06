@@ -17,6 +17,10 @@ void Paper::generateTemplates(Game* game) {
         return new Paper(game, { "empty0", "empty1" }, { "squareMiddle", "squareMiddle" });
     };
 
+    templates["notebook1"] = [game]() {
+        return new Paper(game, { "notebook1_front", "notebook1_back" }, { "notebook1_front", "notebook1_back" });
+    };
+
     // ---------------------
     // label templates
     // ---------------------
@@ -26,7 +30,7 @@ void Paper::generateTemplates(Game* game) {
             "empty"
         }},
         {BASIC_ROOM, {
-            "squareMiddle"
+            "notebook1"
         }},
         {BOSS_ROOM, {
             "squareMiddle"

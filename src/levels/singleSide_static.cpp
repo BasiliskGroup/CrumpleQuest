@@ -22,6 +22,15 @@ void SingleSide::generateTemplates(Game* game) {
         SingleSide* side = new SingleSide(game, "paper1", "tutorial_tutorialLevel");
         return side;
     };
+
+    templates["notebook1_front"] = [game]() {
+        SingleSide* side = new SingleSide(game, "paper0", "notebook_level1");
+        return side;
+    };
+    templates["notebook1_back"] = [game]() {
+        SingleSide* side = new SingleSide(game, "paper1", "notebook_level1");
+        return side;
+    };
 }
 
 Node2D* SingleSide::genPlayerNode(Game* game, SingleSide* side) {
