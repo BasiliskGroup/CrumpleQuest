@@ -15,7 +15,7 @@ public:
     static std::unordered_map<std::string, std::function<Paper*(float)>> templates;
     static std::unordered_map<RoomTypes, std::vector<std::string>> papers;
     static void generateTemplates(Game* game);
-    static Paper* getRandomTemplate(RoomTypes type, float difficulty);
+    static Paper* getRandomTemplate(RoomTypes type, float difficulty, const std::string& biome = "notebook");
     static void flattenVertices(const std::vector<Vert>& vertices, std::vector<float>& data); // TODO move to generic helper
 
 private:

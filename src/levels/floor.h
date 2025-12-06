@@ -57,9 +57,11 @@ private:
     Position playerPos;
     SquareMap<Paper*> roomMap;
     Game* game;
+    std::string biome;  // Biome for this floor (determines room types and enemy spawns)
+    bool isFirstFloor;  // True if this is the first floor (uses tutorial spawn), false otherwise (uses boss room spawn)
 
 public:
-    Floor(Game* game);
+    Floor(Game* game, bool isFirstFloor = true, const std::string& biome = "notebook");
     ~Floor();
 
     void getOptions(std::vector<Position> directions);
@@ -72,6 +74,7 @@ public:
     Paper* getAdjacentRoom(int dx, int dy) const;
     void setCurrentPosition(int x, int y);
     RoomTypes getRoomType(int x, int y) const;
+    std::string getBiome() const { return biome; }
 
 private:
     void generateFloor();

@@ -30,6 +30,7 @@ private:
     Player* player;
     Floor* floor;
     Boss* boss;  // Exactly one boss instance
+    std::string currentBiome = "notebook";  // Track current biome for floor alternation
 
     // rendering paper
     SingleSide* currentSide;

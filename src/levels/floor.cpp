@@ -1,7 +1,7 @@
 #include "levels/levels.h"
 #include "game/game.h"
 
-Floor::Floor(Game* game) : roomMap(), game(game) {
+Floor::Floor(Game* game, bool isFirstFloor, const std::string& biome) : roomMap(), game(game), biome(biome), isFirstFloor(isFirstFloor) {
     for (uint x = 0; x < FLOOR_WIDTH; x++) {
         for (uint y = 0; y < FLOOR_WIDTH; y++) {
             playMap[x][y] = NULL_ROOM;
@@ -40,7 +40,13 @@ void Floor::loadRooms() {
                 difficulty = (static_cast<float>(distMap[x][y]) / static_cast<float>(maxDistance)) * 10.0f;
             }
             
-            roomMap[x][y] = Paper::getRandomTemplate(playMap[x][y], difficulty);
+            // For spawn room (center), use boss room template if not first floor
+            RoomTypes roomType = playMap[x][y];
+            if (x == center && y == center && playMap[x][y] == SPAWN_ROOM && !isFirstFloor) {
+                roomType = BOSS_ROOM;
+            }
+            
+            roomMap[x][y] = Paper::getRandomTemplate(roomType, difficulty, biome);
             if (roomMap[x][y]) {
                 roomMap[x][y]->setGame(game);
                 roomMap[x][y]->regenerateWalls();

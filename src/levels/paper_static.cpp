@@ -97,11 +97,17 @@ void Paper::generateTemplates(Game* game) {
     //     }}
     // };
 
+    // Include both notebook and grid templates - will be filtered by biome
     papers = {
         {SPAWN_ROOM, {
             "tutorial"
         }},
         {BASIC_ROOM, {
+            "notebook1",
+            "notebook2",
+            "notebook3",
+            "notebook4",
+            "notebook5",
             "grid1",
             "grid2",
             "grid3",
@@ -109,18 +115,38 @@ void Paper::generateTemplates(Game* game) {
             "grid5",
         }},
         {BOSS_ROOM, {
+            "notebook_boss",
             "grid_boss"
         }},
         {TREASURE_ROOM, {
+            "notebook_weapon",
             "grid_weapon"
         }}
     };
 }
 
-Paper* Paper::getRandomTemplate(RoomTypes type, float difficulty) {
-    uint numTemplates = papers[type].size();
+Paper* Paper::getRandomTemplate(RoomTypes type, float difficulty, const std::string& biome) {
+    // Filter templates by biome
+    std::vector<std::string> filteredTemplates;
+    for (const auto& templateName : papers[type]) {
+        // For SPAWN_ROOM, always allow tutorial regardless of biome
+        if (type == SPAWN_ROOM && templateName == "tutorial") {
+            filteredTemplates.push_back(templateName);
+        }
+        // For other rooms, only allow if template name starts with biome prefix
+        else if (templateName.find(biome) == 0) {
+            filteredTemplates.push_back(templateName);
+        }
+    }
+    
+    // Fallback: if no templates match biome, use all templates (shouldn't happen)
+    if (filteredTemplates.empty()) {
+        filteredTemplates = papers[type];
+    }
+    
+    uint numTemplates = filteredTemplates.size();
     uint index = randrange(0, numTemplates);
-    return templates[papers[type][index]](difficulty);
+    return templates[filteredTemplates[index]](difficulty);
 }
 
 void Paper::flattenVertices(const std::vector<Vert>& vertices, std::vector<float>& data) {
