@@ -1022,6 +1022,7 @@ void Paper::resetGeometry() {
     paperMeshes.first->regenerateMesh();
     paperMeshes.second->regenerateMesh();
 
+    
     // Update background mesh references in SingleSides (they should already exist, don't recreate them)
     if (sides.first) {
         sides.first->getBackground()->setMesh(paperMeshes.first->mesh);
@@ -1029,7 +1030,11 @@ void Paper::resetGeometry() {
     if (sides.second) {
         sides.second->getBackground()->setMesh(paperMeshes.second->mesh);
     }
+    
 
+    sides.first->reset();
+    sides.second->reset();
+    
     // Regenerate walls for both sides
     regenerateWalls();
 }

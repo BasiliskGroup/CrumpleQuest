@@ -33,7 +33,9 @@ private:
 
     // control initial room condition
     vec2 playerSpawn;
+    std::vector<vec2> enemySpawns;
     std::string biome;
+    float difficulty;
 
 public:
     SingleSide(Game* game, std::string mesh, std::string material, vec2 playerSpawn, std::string biome, std::vector<vec2> enemySpawns = {}, float difficulty = 0.0f);
@@ -59,6 +61,8 @@ public:
     void addPickup(Pickup* pickup) { this->pickups.push_back(pickup); }
     void addCollider(std::string name, Collider* collider) { this->colliders[name] = collider; }
     
+    void reset();
+
     vec2 getPlayerSpawn() const { return playerSpawn; }
 
     void generateNavmesh();

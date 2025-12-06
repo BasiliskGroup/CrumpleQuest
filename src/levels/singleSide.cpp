@@ -12,7 +12,9 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material, vec2 
     playerNode(nullptr), 
     weaponNode(nullptr), 
     playerSpawn(playerSpawn),
-    biome(biome)
+    enemySpawns(enemySpawns),
+    biome(biome),
+    difficulty(difficulty)
 {
     scene = new Scene2D(game->getEngine());
     this->camera = new StaticCamera2D(game->getEngine());
@@ -130,6 +132,8 @@ SingleSide::SingleSide(const SingleSide& other) noexcept
     enemies = other.enemies;
     damageZones = other.damageZones;
     pickups = other.pickups;
+    enemySpawns = other.enemySpawns;
+    difficulty = other.difficulty;
 
     loadResources();
     
@@ -190,7 +194,10 @@ SingleSide::SingleSide(SingleSide&& other) noexcept :
     damageZones(std::move(other.damageZones)), 
     background(nullptr),
     playerNode(nullptr),
-    weaponNode(nullptr)
+    playerSpawn(other.playerSpawn),
+    enemySpawns(other.enemySpawns),
+    weaponNode(nullptr),
+    difficulty(other.difficulty)
     // TODO copy over player and weapon node
 {
     other.scene = nullptr;
@@ -215,6 +222,9 @@ SingleSide& SingleSide::operator=(const SingleSide& other) noexcept {
 
     enemies = other.enemies;
     damageZones = other.damageZones;
+    playerSpawn = other.playerSpawn;
+    enemySpawns = other.enemySpawns;
+    difficulty = other.difficulty;
     return *this;
 }
 
@@ -228,6 +238,9 @@ SingleSide& SingleSide::operator=(SingleSide&& other) noexcept {
     enemies = std::move(other.enemies);
     damageZones = std::move(other.damageZones);
     pickups = std::move(other.pickups);
+    playerSpawn = other.playerSpawn;
+    enemySpawns = other.enemySpawns;
+    difficulty = other.difficulty;
 
     // clear other
     other.scene = nullptr;
@@ -536,4 +549,106 @@ Pickup* SingleSide::adoptPickup(Pickup* pickup, SingleSide* fromSide) {
     }
     
     return nullptr;  // Return null if creation failed
+}
+
+void SingleSide::reset() {
+    // create player node
+    playerNode->setPosition(playerSpawn);
+
+    for (Enemy* enemy : enemies) {
+        delete enemy;
+    }
+    enemies.clear();
+    
+    for (Pickup* pickup : pickups) {
+        delete pickup;
+    }
+    pickups.clear();
+
+    // transform enemy spawns
+    vec2 offset = {6.0f, 4.5f};
+    for (vec2& spawn : enemySpawns) {
+        spawn -= offset;
+    }
+
+    // add enemies based on difficulty
+    if (!enemySpawns.empty() && difficulty > 0.0f) {
+        // Get enemy list for this biome
+        auto biomeIt = Enemy::enemyBiomes.find(biome);
+        if (biomeIt != Enemy::enemyBiomes.end()) {
+            const auto& biomeEnemies = biomeIt->second;
+            
+            // Find the weakest enemy (lowest price) for fallback
+            std::string weakestEnemy;
+            float weakestPrice = std::numeric_limits<float>::max();
+            if (!biomeEnemies.empty()) {
+                for (const auto& enemyPair : biomeEnemies) {
+                    if (enemyPair.second < weakestPrice) {
+                        weakestPrice = enemyPair.second;
+                        weakestEnemy = enemyPair.first;
+                    }
+                }
+            }
+            
+            // Only proceed if we have valid enemies for this biome
+            if (!weakestEnemy.empty()) {
+                float remainingDifficulty = difficulty;
+                
+                // Shuffle spawn points for randomness
+                std::vector<vec2> shuffledSpawns = enemySpawns;
+                for (size_t i = shuffledSpawns.size() - 1; i > 0; --i) {
+                    size_t j = randint(0, static_cast<int>(i));
+                    std::swap(shuffledSpawns[i], shuffledSpawns[j]);
+                }
+                
+                // Fill spawn points with enemies
+                for (const vec2& spawnPos : shuffledSpawns) {
+                    std::string selectedEnemy;
+                    float selectedPrice = 0.0f;
+                    
+                    // Filter enemies that fit in remaining difficulty
+                    std::vector<std::pair<std::string, float>> affordableEnemies;
+                    for (const auto& enemyPair : biomeEnemies) {
+                        if (enemyPair.second <= remainingDifficulty) {
+                            affordableEnemies.push_back(enemyPair);
+                        }
+                    }
+                    
+                    if (!affordableEnemies.empty()) {
+                        // Randomly select from affordable enemies (weighted by price)
+                        // Higher price enemies are more likely to be selected
+                        float totalWeight = 0.0f;
+                        for (const auto& enemyPair : affordableEnemies) {
+                            totalWeight += enemyPair.second;
+                        }
+                        
+                        float randomValue = uniform(0.0f, totalWeight);
+                        float cumulativeWeight = 0.0f;
+                        for (const auto& enemyPair : affordableEnemies) {
+                            cumulativeWeight += enemyPair.second;
+                            if (randomValue <= cumulativeWeight) {
+                                selectedEnemy = enemyPair.first;
+                                selectedPrice = enemyPair.second;
+                                break;
+                            }
+                        }
+                    } else {
+                        // No affordable enemies, use weakest enemy
+                        selectedEnemy = weakestEnemy;
+                        selectedPrice = weakestPrice;
+                    }
+                    
+                    // Create and add the enemy
+                    auto templateIt = Enemy::templates.find(selectedEnemy);
+                    if (templateIt != Enemy::templates.end()) {
+                        Enemy* enemy = templateIt->second(spawnPos, this);
+                        if (enemy != nullptr) {
+                            addEnemy(enemy);
+                            remainingDifficulty -= selectedPrice;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
