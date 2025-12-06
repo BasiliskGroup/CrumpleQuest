@@ -2,6 +2,11 @@
 #include "game/game.h"
 #include "ui/slider.h"
 
+// Ease-in-out function (smooth acceleration and deceleration)
+static float easeInOutCubic(float t) {
+    return t < 0.5f ? 4.0f * t * t * t : 1.0f - pow(-2.0f * t + 2.0f, 3.0f) / 2.0f;
+}
+
 Menu::Menu(Game* game) : game(game), visible(true), animationTimer(-1.0f), animationDuration(0.35f), slideDistance(8.0f), animatingOut(false), isClosing(false) {
 }
 
@@ -114,7 +119,8 @@ void Menu::update(float dt) {
         }
         
         // Calculate animation progress (0 to 1)
-        float progress = std::min(animationTimer / animationDuration, 1.0f);
+        float rawProgress = std::min(animationTimer / animationDuration, 1.0f);
+        float progress = easeInOutCubic(rawProgress);
         
         // Animate UI elements
         for (size_t i = 0; i < uiElements.size(); i++) {
