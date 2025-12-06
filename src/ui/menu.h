@@ -20,6 +20,7 @@ protected:
     float slideDistance; // How far below screen to start/end
     bool animatingOut; // True if animating out (closing), false if animating in (opening)
     bool isClosing; // True if menu has been marked for closing
+    bool soundPlayed; // True if slide sound has been played for current animation
 
 public:
     Menu(Game* game);
