@@ -17,14 +17,19 @@ void addLines(std::vector<UVRegion>& obst, std::vector<vec2> points, Game* game)
 
 void PaperMesh::generateTemplates(Game* game) {
 
-    obstacleTemplates["empty"] = [game]() { 
+    obstacleTemplates["tutorial_front"] = [game]() { 
         std::vector<UVRegion> obst;
         return obst; 
     };
 
-    obstacleTemplates["squareMiddle"] = [game]() { 
+    obstacleTemplates["tutorial_back"] = [game]() { 
         std::vector<UVRegion> obst;
-        obst.push_back({ game->getMesh("quad"), { 0, 0, 0 }, { 12, 9 }, true });
+
+        std::vector<vec2> points = { 
+            vec2(7.67,0.1), vec2(7.57,8.85),
+        };
+
+        addLines(obst, points, game);
         return obst; 
     };
 
