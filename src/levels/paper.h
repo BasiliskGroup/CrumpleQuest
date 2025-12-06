@@ -89,6 +89,26 @@ public:
     SingleSide* getSecondSide() { return sides.second; }
 
     int getCurrentSide() { return curSide; }
+    
+    // Get biome type based on paper name
+    std::string getBiome() const {
+        if (!hasCreationParams) {
+            std::cout << "[Paper::getBiome] No creation params, returning parchment" << std::endl;
+            return "parchment";
+        }
+        const std::string& name = sideNames.first;
+        std::cout << "[Paper::getBiome] Checking side name: " << name << std::endl;
+        if (name.find("notebook") != std::string::npos) {
+            std::cout << "[Paper::getBiome] Found notebook, returning notebook" << std::endl;
+            return "notebook";
+        }
+        if (name.find("grid") != std::string::npos) {
+            std::cout << "[Paper::getBiome] Found grid, returning grid" << std::endl;
+            return "grid";
+        }
+        std::cout << "[Paper::getBiome] No match, returning parchment" << std::endl;
+        return "parchment";
+    }
 
     void flip();
     void open();

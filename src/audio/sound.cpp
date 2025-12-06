@@ -59,19 +59,23 @@ void Sound::Play() {
   auto instance = std::make_unique<SoundInstance>();
   instance->sound = new ma_sound;
   
-  // Initialize the sound - don't stream music layers for better sync
+  // Stream large music files, don't stream small SFX for better sync
+  // Use streaming for files in music group or looping files (likely music)
+  uint32_t flags = (group_ != nullptr || looping_) ? MA_SOUND_FLAG_STREAM : 0;
+  std::cout << "[Sound::Play] Loading sound file: " << filepath_ << " (streaming: " << (flags ? "yes" : "no") << ")" << std::endl;
   ma_result result = ma_sound_init_from_file(
       engine_,
       filepath_.c_str(),
-      0,  // No streaming for better synchronization
+      flags,
       group_,
       nullptr,
       instance->sound);
       
   if (result != MA_SUCCESS) {
-    std::cerr << "Failed to load sound file: " << filepath_ << " (error code: " << result << ")" << std::endl;
+    std::cerr << "[Sound::Play] FAILED to load sound file: " << filepath_ << " (error code: " << result << ")" << std::endl;
     return;  // Instance will be cleaned up by smart pointer
   }
+  std::cout << "[Sound::Play] Successfully loaded: " << filepath_ << std::endl;
   
   // Configure and play
   ma_sound_set_looping(instance->sound, looping_);
@@ -104,6 +108,8 @@ void Sound::SetLooping(bool should_loop) {
 void Sound::SetVolume(float volume) {
   // Clamp volume between 0 and 1
   volume_ = (std::min)(1.0f, (std::max)(0.0f, volume));
+  
+  std::cout << "[Sound::SetVolume] " << filepath_ << " -> " << volume_ << " (instances: " << sound_instances_.size() << ")" << std::endl;
             
   for (auto& instance : sound_instances_) {
     if (instance->sound) {
