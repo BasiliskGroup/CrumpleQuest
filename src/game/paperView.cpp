@@ -446,6 +446,10 @@ void PaperView::createMinimap() {
                 else if (roomType == BOSS_ROOM) {
                     material = game->getMaterial("darkred");
                 }
+                // Check if this is the treasure room
+                else if (roomType == TREASURE_ROOM) {
+                    material = game->getMaterial("yellow");
+                }
                 
                 // Create cube node with appropriate material
                 Node* cube = new Node(scene, {

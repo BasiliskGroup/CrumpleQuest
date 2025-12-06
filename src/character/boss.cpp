@@ -6,6 +6,8 @@
 #include "game/paperView.h"
 #include "util/random.h"
 #include <iostream>
+#include "pickup/ladder.h"
+
 
 Boss::Boss(Game* game, PaperView* paperView) : 
     game(game),
@@ -210,6 +212,10 @@ void Boss::update(float dt) {
     // Check if boss should start leaving (health <= 0)
     if (health <= 0 && vulnerableState != VulnerableState::Leaving && vulnerableState != VulnerableState::Spawning) {
         std::cout << "[Boss::update] Boss defeated! Starting leaving animation" << std::endl;
+        
+        // Call onDeath callback
+        onDeath();
+        
         vulnerableState = VulnerableState::Leaving;
         spawnProgress = 0.0f;  // Start leaving animation from beginning
         vulnerable = false;  // No longer vulnerable
@@ -467,6 +473,10 @@ void Boss::onDamage(int damage) {
               << ", iframes activated for " << iframeDuration << " seconds" << std::endl;
     
     // TODO: Add damage sound, effects, etc.
+}
+
+void Boss::onDeath() {
+    game->getSide()->addPickup(new Ladder(game, game->getSide(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("red"), .position={0.0, 0.0}, .scale={1.0, 1.0} }, 0.5f));
 }
 
 bool Boss::shouldBeDeleted() const {
