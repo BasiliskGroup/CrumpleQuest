@@ -36,5 +36,11 @@ void main() {
     vec3 globalLight = normalize(vec3(.5, 1, .25));
     float brightness = (dot(normal, globalLight) + 1) / 2;
 
-    fragColor = brightness * texture(textureArrays[material.albedoArray].array, vec3(uv, material.albedoIndex));;
+    vec4 textureValue = texture(textureArrays[material.albedoArray].array, vec3(uv, material.albedoIndex));
+
+    if (textureValue.a < 0.01) {
+        discard;
+    }
+
+    fragColor = brightness * textureValue;
 } 

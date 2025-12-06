@@ -33,6 +33,16 @@ int main() {
     // Load notebook background from art/assets
     game->addImage("notebook", new Image("art/assets/notebook.PNG"));
     game->addMaterial("notebook", new Material({ 1, 1, 1 }, game->getImage("notebook")));
+
+    // Load Hands
+    game->addImage("hand_up", new Image("art/assets/hands/up.PNG"));
+    game->addMaterial("hand_up", new Material({ 1, 1, 1 }, game->getImage("hand_up")));
+    game->addImage("hand_down", new Image("art/assets/hands/down.PNG"));
+    game->addMaterial("hand_down", new Material({ 1, 1, 1 }, game->getImage("hand_down")));
+    game->addImage("hand_left", new Image("art/assets/hands/left.PNG"));
+    game->addMaterial("hand_left", new Material({ 1, 1, 1 }, game->getImage("hand_left")));
+    game->addImage("hand_right", new Image("art/assets/hands/right.PNG"));
+    game->addMaterial("hand_right", new Material({ 1, 1, 1 }, game->getImage("hand_right")));
     
     std::unordered_map<std::string, std::vector<std::string>> levelNames = {
         { "notebook", { "level1", "level2", "level3", "level4", "level5" } },
