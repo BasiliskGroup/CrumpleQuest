@@ -23,17 +23,32 @@ void MenuManager::playMenuTouchSound() {
 }
 
 void MenuManager::pushMainMenu() {
+    // Don't push if top menu is animating out
+    if (menuStack && menuStack->top() && menuStack->top()->isAnimatingOut()) {
+        std::cout << "[MenuManager] Blocked push - menu is animating out" << std::endl;
+        return;
+    }
     std::cout << "[MenuManager] Creating main menu..." << std::endl;
     Menu* mainMenu = createMainMenu();
     menuStack->push(mainMenu);
 }
 
 void MenuManager::pushSettingsMenu() {
+    // Don't push if top menu is animating out
+    if (menuStack && menuStack->top() && menuStack->top()->isAnimatingOut()) {
+        std::cout << "[MenuManager] Blocked push - menu is animating out" << std::endl;
+        return;
+    }
     Menu* settingsMenu = createSettingsMenu();
     menuStack->push(settingsMenu);
 }
 
 void MenuManager::pushGameOverMenu() {
+    // Don't push if top menu is animating out
+    if (menuStack && menuStack->top() && menuStack->top()->isAnimatingOut()) {
+        std::cout << "[MenuManager] Blocked push - menu is animating out" << std::endl;
+        return;
+    }
     Menu* gameOverMenu = createGameOverMenu();
     menuStack->push(gameOverMenu);
 }
@@ -56,6 +71,13 @@ void MenuManager::popMenuDeferred() {
     Menu* menu = menuStack->top();
     menuStack->pop();
     pendingDelete.push_back(menu);  // Defer deletion until next frame
+}
+
+void MenuManager::deletePendingMenus() {
+    for (Menu* menu : pendingDelete) {
+        delete menu;
+    }
+    pendingDelete.clear();
 }
 
 bool MenuManager::isInGame() const {
@@ -152,7 +174,8 @@ Menu* MenuManager::createMainMenu() {
                 Menu* menu = this->menuStack->top();
                 this->menuStack->clear();
                 this->pendingDelete.push_back(menu);
-                this->game->startGame();
+                // Don't call startGame here - it will be triggered by a flag
+                this->game->setPendingStartGame(true);
             }
         }
     );

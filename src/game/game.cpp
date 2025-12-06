@@ -102,6 +102,15 @@ void Game::update(float dt) {
         processReturnToMainMenu();
         return; // Skip rest of update this frame
     }
+    
+    // Process pending start game (deferred from button callback)
+    if (pendingStartGame) {
+        pendingStartGame = false;
+        // Delete pending menus BEFORE recreating menuScene
+        MenuManager::Get().deletePendingMenus();
+        startGame();
+        return; // Skip rest of update this frame
+    }
 
     // pathing
     pathTimer -= dt;
@@ -392,6 +401,14 @@ void Game::initPaperView() {
 
 // Spawn in player, enemies, etc
 void Game::startGame() {
+    // Clear and recreate menu scene to remove any lingering menu nodes
+    if (menuScene) {
+        delete menuScene;
+        menuScene = new Scene2D(engine);
+        menuScene->setCamera(menuCamera);
+        menuScene->getSolver()->setGravity(0);
+    }
+    
     // Create the floor (this will generate rooms and create Paper instances)
     if (floor) {
         delete floor;
@@ -537,6 +554,17 @@ void Game::processReturnToMainMenu() {
     // Pop all existing menus (they will be deleted immediately, safe now)
     while (MenuManager::Get().getMenuStackSize() > 0) {
         MenuManager::Get().popMenuDeferred();
+    }
+    
+    // Delete pending menus BEFORE recreating menuScene
+    MenuManager::Get().deletePendingMenus();
+    
+    // Clear and recreate menu scene to remove any lingering menu nodes
+    if (menuScene) {
+        delete menuScene;
+        menuScene = new Scene2D(engine);
+        menuScene->setCamera(menuCamera);
+        menuScene->getSolver()->setGravity(0);
     }
     
     // Then push the main menu (which will be the only menu)
