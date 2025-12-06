@@ -5,6 +5,7 @@
 
 class SingleSide;
 class Game;
+class Player;
 
 class Pickup : public Node2D {
 protected:
@@ -18,7 +19,7 @@ public:
 
     virtual void update(float dt) {}
 
-    virtual bool canPickup() { return true; }
+    virtual bool canPickup(Player* player) { return true; }
 
     float getRadius() const { return radius; }
     virtual void onPickup();

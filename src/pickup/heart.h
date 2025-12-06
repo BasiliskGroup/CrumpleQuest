@@ -4,6 +4,7 @@
 #include "pickup/pickup.h"
 
 class Game;
+class Player;
 
 class Heart : public Pickup {
 public:
@@ -11,7 +12,7 @@ public:
     ~Heart() = default;
 
     void onPickup() override;
-    bool canPickup() override;
+    bool canPickup(Player* player) override;
     void update(float dt) override;
 };
 

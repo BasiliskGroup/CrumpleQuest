@@ -4,8 +4,10 @@
 #include "audio/sfx_player.h"
 
 Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, float radius, vec2 scale)
-    : Character(game, health, speed, node, side, weapon, "Ally", radius, scale, "hit-player")
+    : Character(game, 6, speed, node, side, weapon, "Ally", radius, scale, "hit-player")
 {
+
+    this->health = health;
     this->accel = 30;
     weaponNode = side->getWeaponNode();
     weaponNode->setLayer(0.1f);
@@ -21,7 +23,6 @@ Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* si
 
 void Player::onDamage(int damage) {
     Character::onDamage(damage);
-    std::cout << "Player Health: " << health << std::endl;
 
     // End game if dead
     if (isDead())

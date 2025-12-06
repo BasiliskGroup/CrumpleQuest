@@ -69,7 +69,7 @@ class PaperView {
 
         // minimap
         std::vector<std::vector<Node*>> minimapNodes;
-        vec3 minimapCenter={-1.4, -0.75, 0.5};
+        vec3 minimapCenter={-1.4, -0.9, 0.5};
         float minimapScale=0.03;
         float minimapSpacing=0.01;
 

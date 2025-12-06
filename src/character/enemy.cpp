@@ -5,7 +5,7 @@
 #include "game/game.h"
 #include "weapon/weapon.h"
 #include "audio/sfx_player.h"
-
+#include "pickup/heart.h"
 
 Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, AI* ai, float radius, vec2 scale, std::string hitSound, float attackDelay) 
     : Character(game, health, speed, node, side, weapon, "Enemy", radius, scale, hitSound), ai(ai), path(), attackDelay(attackDelay), attackDelayTimer(2.0f), attackPending(false)
@@ -33,7 +33,10 @@ void Enemy::onDamage(int damage) {
 }
 
 void Enemy::onDeath() {
-    std::cout << "Enemy died" << std::endl;
+    if (uniform(0.0f, 1.0f) < 1.0f) {
+        side->addPickup(new Heart(game, side, { .mesh=game->getMesh("quad"), .material=game->getMaterial("red"), .scale={0.25, 0.25}, .position=getPosition() }, 0.5f));
+    }
+
     Character::onDeath();
 }
 

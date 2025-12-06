@@ -6,13 +6,17 @@ Heart::Heart(Game* game, SingleSide* side, Node2D::Params node, float radius) : 
 }
 
 void Heart::update(float dt) {
-    
+
 }
 
 void Heart::onPickup() {
-    game->getPlayer()->addHealth(1);
+    Player* player = game->getPlayer();
+    if (player != nullptr) {
+        player->addHealth(1);
+    }
 }
 
-bool Heart::canPickup() {
-    return game->getPlayer()->getHealth() < game->getPlayer()->getMaxHealth();
+bool Heart::canPickup(Player* player) {
+    if (player == nullptr) return false;
+    return player->getHealth() < player->getMaxHealth();
 }

@@ -8,6 +8,7 @@
 Character::Character(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team, float radius, vec2 scale, std::string damageSound) : 
     game(game),
     health(health), 
+    maxHealth(health),
     speed(speed), 
     node(node), 
     side(side), 
