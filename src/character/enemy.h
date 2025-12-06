@@ -37,7 +37,7 @@ private:
     float finishRadius = 0.2;
     float attacking = 0.0f;  // Timer for attack animation
     float attackDelay = 0.0f;  // Delay before weapon attack is called after animation starts
-    float attackDelayTimer = 0.0f;  // Timer tracking the delay
+    float attackDelayTimer = 2.0f;  // Timer tracking the delay
     bool attackPending = false;  // Whether an attack is waiting for delay
     vec2 pendingAttackPos;  // Position to attack when delay completes
     vec2 pendingAttackDir;  // Direction to attack when delay completes
@@ -45,6 +45,7 @@ private:
     std::vector<PendingShot> pendingShots;  // Queue of shots to fire with delays
     
     float wanderDestinationTimer = 0.0f;  // Timer for wander destination refresh
+    float levelEntryDelayTimer = 2.0f;  // Timer preventing attacks for 2 seconds after level entry
     
     Behavior* behavior = nullptr;  // Current behavior
     std::function<Behavior*(const vec2&, float)> behaviorSelector;  // Function that selects which behavior to use

@@ -105,7 +105,7 @@ void Enemy::generateTemplates(Game* game) {
 
     templates["integral"] = [game](vec2 pos, SingleSide* side) {
         Node2D* node = new Node2D(side->getScene(), { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .position=pos, .scale={ 1.5, 1.5 }, .collider=side->getCollider("quad"), .colliderScale={0.6, 0.6}, .density=0.01, .collisionIgnoreGroups={"Character"} });
-        Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.15, node->getScale(), "hit-clipfly", 0.0f);
+        Enemy* enemy = new Enemy(game, 3, 4, node, side, nullptr, nullptr, 0.35, node->getScale(), "hit-clipfly", 0.0f);
         enemy->idleAnimation = game->getAnimation("integral_idle");
         enemy->runAnimation = game->getAnimation("integral_idle");
         enemy->attackAnimation = game->getAnimation("integral_attack");

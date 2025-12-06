@@ -10,7 +10,7 @@ void SingleSide::generateTemplates(Game* game) {
     templates["empty0"] = [game]() {
         SingleSide* side = new SingleSide(game, "paper0", "tutorial_tutorialLevel");
         // side->addEnemy(Enemy::templates["clipfly"]({ -5, 3 }, side));
-        // side->addEnemy(Enemy::templates["glue"]({ 0, 3 }, side));
+        side->addEnemy(Enemy::templates["glue"]({ 0, 3 }, side));
         // side->addEnemy(Enemy::templates["staple"]({ 5, 3 }, side));
         side->addEnemy(Enemy::templates["integral"]({ -4, 3 }, side));
         // side->addEnemy(Enemy::templates["pi"]({ 1, 3 }, side));
