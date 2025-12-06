@@ -336,21 +336,31 @@ void SingleSide::update(const vec2& playerPos, float dt, Player* player) {
         enemy->move(playerPos, dt);
     }
 
+    // update all pickups
+    for (Pickup* pickup : pickups) {
+        if (pickup != nullptr) {
+            pickup->update(dt);
+        }
+    }
+
     // Check for collisions between player and pickups
     if (player != nullptr && !player->isDead()) {
         for (int i = 0; i < pickups.size(); i++) {
             Pickup* pickup = pickups[i];
             if (pickup == nullptr) continue;
             
+            // Check collision first
             float combinedRadius = player->getRadius() + pickup->getRadius();
             float distSq = glm::length2(player->getPosition() - pickup->getPosition());
             
             if (distSq <= combinedRadius * combinedRadius) {
-                // Player collided with pickup
-                pickup->onPickup();
-                delete pickup;
-                pickups.erase(pickups.begin() + i);
-                i--; // Adjust index after removal
+                // Player collided with pickup - check if it can be picked up
+                if (pickup->canPickup(player)) {
+                    pickup->onPickup();
+                    delete pickup;
+                    pickups.erase(pickups.begin() + i);
+                    i--; // Adjust index after removal
+                }
             }
         }
     }
