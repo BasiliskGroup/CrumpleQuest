@@ -4,11 +4,13 @@
 #include "resource/animator.h"
 #include "weapon/weapon.h"
 #include "audio/sfx_player.h"
+#include "character/boss.h"
 #include <iostream>
 
 Game::Game() : 
     player(nullptr), 
     floor(nullptr),
+    boss(nullptr),
     engine(nullptr),
     currentSide(nullptr),
     paper(nullptr),
@@ -52,6 +54,7 @@ Game::Game() :
 
 Game::~Game() {
     delete player; player = nullptr;
+    delete boss; boss = nullptr;
     // Floor owns all Paper instances, so delete floor first
     delete floor; floor = nullptr;
     // Paper is now deleted by floor's destructor
@@ -253,6 +256,20 @@ void Game::update(float dt) {
     if (player != nullptr) {
         player->move(dt);
     }
+    
+    // Update boss
+    static int gameUpdateCount = 0;
+    gameUpdateCount++;
+    if (gameUpdateCount % 60 == 0) {
+        std::cout << "[Game::update] boss pointer: " << (boss != nullptr ? "valid" : "null") << std::endl;
+    }
+    if (boss != nullptr) {
+        boss->update(dt);
+    } else {
+        if (gameUpdateCount % 60 == 0) {
+            std::cout << "[Game::update] Boss is null, not calling update" << std::endl;
+        }
+    }
 
     // Automatic room switching based on AABB boundary crossing
     if (floor && paper && player && !MenuManager::Get().hasActiveMenu()) {
@@ -448,6 +465,21 @@ void Game::startGame() {
 
     // create weapons
     player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("circle"), .scale={meleeRadius, meleeRadius}}, { .damage=1, .life=0.2f, .radius=meleeRadius / 2.0f }, 0.5f, 6.0f));
+    
+    // Create boss for testing (removed BOSS_ROOM requirement)
+    // Note: bossNode is created in showGameElements() which was called above, so it should exist
+    std::cout << "[Game::startGame] paperView=" << (paperView != nullptr ? "valid" : "null") << std::endl;
+    if (paperView) {
+        std::cout << "[Game::startGame] paperView->getBossNode()=" << (paperView->getBossNode() != nullptr ? "valid" : "null") << std::endl;
+    }
+    if (paperView != nullptr && paperView->getBossNode() != nullptr) {
+        std::cout << "[Game::startGame] Creating boss!" << std::endl;
+        boss = new Boss(this, paperView);
+        std::cout << "[Game::startGame] Boss created, pointer=" << boss << std::endl;
+    } else {
+        std::cout << "[Game::startGame] NOT creating boss - paperView=" << (paperView != nullptr) 
+                  << ", bossNode=" << (paperView && paperView->getBossNode() != nullptr) << std::endl;
+    }
 }
 
 void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
@@ -485,6 +517,24 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
     // Update player nodes to the new room's nodes and update side reference
     setSideToPaperSide();
     player->setSide(this->currentSide);
+    
+    // For testing: always ensure boss exists (removed BOSS_ROOM requirement)
+    // Ensure game elements (including bossNode) are shown
+    if (paperView) {
+        paperView->showGameElements();
+    }
+    // Create boss if it doesn't exist
+    std::cout << "[Game::switchToRoom] boss=" << (boss != nullptr ? "exists" : "null") 
+              << ", paperView=" << (paperView != nullptr ? "valid" : "null");
+    if (paperView) {
+        std::cout << ", bossNode=" << (paperView->getBossNode() != nullptr ? "valid" : "null");
+    }
+    std::cout << std::endl;
+    if (boss == nullptr && paperView != nullptr && paperView->getBossNode() != nullptr) {
+        std::cout << "[Game::switchToRoom] Creating boss!" << std::endl;
+        boss = new Boss(this, paperView);
+        std::cout << "[Game::switchToRoom] Boss created, pointer=" << boss << std::endl;
+    }
     
     // Check if this is the first time visiting this paper
     if (!newPaper->hasBeenVisited) {
@@ -548,6 +598,12 @@ void Game::processReturnToMainMenu() {
     // Hide game elements (health tokens, directional nodes, minimap)
     if (paperView) {
         paperView->hideGameElements();
+    }
+    
+    // Destroy boss
+    if (boss) {
+        delete boss;
+        boss = nullptr;
     }
     
     // Destroy the floor (this will delete all Paper instances)

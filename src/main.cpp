@@ -55,6 +55,12 @@ int main() {
         }
     }
 
+    std::vector<std::string> bossHandNames = { "hand_flip", "hand_grab", "hand_hover", "hand_slam" };
+    for (std::string& name : bossHandNames) {
+        game->addImage("boss_" + name, new Image("art/sprites/enemies/boss/hands/" + name + ".PNG"));
+        game->addMaterial("boss_" + name, new Material({ 1, 1, 1 }, game->getImage("boss_" + name)));
+    }
+
     for (int i = 1; i < 6; i++) {
         game->addImage("piProjectile" + std::to_string(i), new Image("art/sprites/enemies/ranged/grid_pi/projectiles_pi/" + std::to_string(i) + ".PNG"));
         game->addMaterial("piProjectile" + std::to_string(i), new Material({ 1, 1, 1 }, game->getImage("piProjectile" + std::to_string(i))));

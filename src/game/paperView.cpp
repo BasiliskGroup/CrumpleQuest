@@ -75,6 +75,7 @@ PaperView::PaperView(Game* game): game(game) {
     bottomSign = nullptr;
     rightSign = nullptr;
     leftSign = nullptr;
+    bossNode = nullptr;
 }
 
 PaperView::~PaperView() {
@@ -322,6 +323,7 @@ void PaperView::update(Paper* paper) {
         glm::vec3 currentPos = leftSign->getPosition();
         leftSign->setPosition(glm::mix(currentPos, targetPos, nodeT));
     }
+    
 }
 
 void PaperView::regenerateMesh() {
@@ -339,16 +341,6 @@ void PaperView::regenerateMesh() {
     // Generate mesh data from paper
     std::vector<float> quadVertices;
     paper->toData(quadVertices);
-
-    // std::cout << quadVertices.size() / 8 << std::endl;
-    // int i = 0;
-    // while (i < quadVertices.size()) {
-    //     for (int j = 0; j < 8; j++) {
-    //         std::cout << quadVertices[i + j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    //     i += 8;
-    // }
     
     // Replace VBO and VAO with new data
     delete paperVBO;
@@ -517,6 +509,51 @@ void PaperView::showGameElements() {
     bottomSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("hand_down"), .position=bottomBounds.first, .rotation=(glm::angleAxis(glm::radians(-90.0f), planeNormal) * basePlaneRotation), .scale={0.8, 0.6, 0.1}});
     rightSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("hand_right"), .position=rightBounds.first, .rotation=(glm::angleAxis(glm::radians(0.0f), planeNormal) * basePlaneRotation), .scale={0.8, 0.6, 0.1}});
     leftSign = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("hand_left"), .position=leftBounds.first, .rotation=(glm::angleAxis(glm::radians(180.0f), planeNormal) * basePlaneRotation), .scale={0.8, 0.6, 0.1}});
+    
+    // Create boss node - position it above the paper but closer than topBounds
+    // Use a position between paper and topBounds, closer to paper
+    glm::vec3 bossInitialPos = paperPosition + 0.8f * planeUp * quadDistance + offsetVector;
+    // Keep z position same as paper (don't move in z direction)
+    bossInitialPos.z = paperPosition.z;
+    // Only create if it doesn't already exist (to avoid leaks if called multiple times)
+    if (bossNode == nullptr) {
+        bossNode = new Node(scene, {.mesh=game->getMesh("quad3D"), .material=game->getMaterial("boss_hand_hover"), .position=bossInitialPos, .rotation=(glm::angleAxis(glm::radians(90.0f), planeNormal) * basePlaneRotation), .scale={1.2, 0.72, 0.24}});
+    } else {
+        // Update position if node already exists
+        bossNode->setPosition(bossInitialPos);
+        bossNode->setRotation(glm::angleAxis(glm::radians(90.0f), planeNormal) * basePlaneRotation);
+        bossNode->setScale(glm::vec3(1.2f, 0.72f, 0.24f));
+    }
+    bossBasePosition = bossInitialPos;  // Store base position (above paper, closer than top)
+    bossHorizontalDirection = planeRight;  // Store horizontal direction for sliding
+    bossVerticalDirection = planeUp;  // Store vertical direction on paper plane (cross of planeNormal and planeRight)
+    bossPlaneNormal = planeNormal;  // Store plane normal (direction from camera to paper)
+}
+
+vec2 PaperView::projectToPaperPlane(const glm::vec3& worldPos) const {
+    // Calculate paper plane basis vectors (same as in showGameElements)
+    glm::vec3 cameraPos = camera->getPosition();
+    glm::vec3 direction = glm::normalize(paperPosition - cameraPos);
+    
+    glm::vec3 planeNormal = direction;
+    glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 planeRight = glm::cross(worldUp, planeNormal);
+    planeRight = glm::normalize(planeRight);
+    glm::vec3 planeUp = glm::normalize(glm::cross(planeNormal, planeRight));
+    
+    // Get position relative to paper center
+    glm::vec3 relativePos = worldPos - paperPosition;
+    
+    // Project onto the plane by removing component along the normal
+    float normalComponent = glm::dot(relativePos, planeNormal);
+    glm::vec3 projected = relativePos - normalComponent * planeNormal;
+    
+    // Express in terms of planeRight and planeUp (2D coordinates relative to paper center)
+    // Negate x to fix horizontal flip
+    float x = -glm::dot(projected, planeRight);
+    float y = glm::dot(projected, planeUp);
+    
+    return vec2(x, y);
 }
 
 void PaperView::hideGameElements() {
@@ -544,6 +581,12 @@ void PaperView::hideGameElements() {
     if (leftSign) {
         delete leftSign;
         leftSign = nullptr;
+    }
+    
+    // Delete boss node
+    if (bossNode) {
+        delete bossNode;
+        bossNode = nullptr;
     }
     
     // Clear minimap

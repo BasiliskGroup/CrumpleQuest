@@ -73,6 +73,13 @@ class PaperView {
         float minimapScale=0.03;
         float minimapSpacing=0.01;
 
+        // boss battle
+        Node* bossNode;
+        glm::vec3 bossBasePosition;  // Base position for boss node (topBounds.second)
+        glm::vec3 bossHorizontalDirection;  // Horizontal direction for sliding (planeRight)
+        glm::vec3 bossVerticalDirection;  // Vertical direction on paper plane (planeUp)
+        glm::vec3 bossPlaneNormal;  // Plane normal (direction from camera to paper)
+
     public:
         PaperView(Game* game);
         ~PaperView();
@@ -93,6 +100,17 @@ class PaperView {
         void showGameElements(); // Create health tokens and directional nodes
         void hideGameElements(); // Delete health tokens and directional nodes
         bool isTransitioning() const { return transitionTimer > 0.0f; }
+        
+        // Boss node access
+        Node* getBossNode() { return bossNode; }
+        glm::vec3 getBossBasePosition() const { return bossBasePosition; }
+        glm::vec3 getBossHorizontalDirection() const { return bossHorizontalDirection; }
+        glm::vec3 getBossVerticalDirection() const { return bossVerticalDirection; }
+        glm::vec3 getBossPlaneNormal() const { return -bossPlaneNormal; }
+        glm::vec3 getPaperPosition() const { return paperPosition; }
+        
+        // Project 3D position onto paper plane and return 2D coordinates relative to paper center
+        vec2 projectToPaperPlane(const glm::vec3& worldPos) const;
 };
 
 #endif
