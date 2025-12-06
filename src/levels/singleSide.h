@@ -64,6 +64,7 @@ public:
     void reset();
 
     vec2 getPlayerSpawn() const { return playerSpawn; }
+    std::string getBiome() const { return biome; }
 
     void generateNavmesh();
     void update(const vec2& playerPos, float dt, Player* player = nullptr);

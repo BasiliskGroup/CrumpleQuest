@@ -5,11 +5,11 @@
 #include "util/random.h"
 #include "levels/paper.h"
 
-#define FLOOR_WIDTH 7
+#define FLOOR_WIDTH 5
 #define FLOOR_MIN_ROOMS 10
 #define FLOOR_MEAN_ROOMS 13
 #define FLOOR_STDEV_ROOMS 2
-#define FLOOR_TEMP_REDUCT 0.95
+#define FLOOR_TEMP_REDUCT 0.92
 
 class Paper;
 class Game;
