@@ -13,12 +13,24 @@ void Paper::generateTemplates(Game* game) {
         return new Paper(game, { "tutorial_front", "tutorial_back" }, { "tutorial_front", "tutorial_back" }, difficulty);
     };
 
+    templates["notebook_boss"] = [game](float difficulty) {
+        return new Paper(game, { "notebook_boss_front", "notebook_boss_back" }, { "empty", "empty" }, difficulty);
+    };
+    templates["grid_boss"] = [game](float difficulty) {
+        return new Paper(game, { "grid_boss_front", "grid_boss_back" }, { "empty", "empty" }, difficulty);
+    };
+
+
     templates["notebook_health"] = [game](float difficulty) {
         return new Paper(game, { "notebook_health_front", "notebook_health_back" }, { "empty", "empty" }, difficulty);
     };
 
     templates["notebook_weapon"] = [game](float difficulty) {
         return new Paper(game, { "notebook_weapon_front", "notebook_weapon_back" }, { "empty", "empty" }, difficulty);
+    };
+
+    templates["grid_weapon"] = [game](float difficulty) {
+        return new Paper(game, { "grid_weapon_front", "grid_weapon_back" }, { "empty", "empty" }, difficulty);
     };
 
     templates["notebook1"] = [game](float difficulty) {
@@ -66,17 +78,30 @@ void Paper::generateTemplates(Game* game) {
     // label templates
     // ---------------------
 
+    // papers = {
+    //     {SPAWN_ROOM, {
+    //         "tutorial"
+    //     }},
+    //     {BASIC_ROOM, {
+    //         "notebook1",
+    //         "notebook2",
+    //         "notebook3",
+    //         "notebook4",
+    //         "notebook5",
+    //     }},
+    //     {BOSS_ROOM, {
+    //         "notebook_boss"
+    //     }},
+    //     {TREASURE_ROOM, {
+    //         "notebook_weapon"
+    //     }}
+    // };
+
     papers = {
         {SPAWN_ROOM, {
             "tutorial"
         }},
         {BASIC_ROOM, {
-            // "notebook1",
-            // "notebook2",
-            // "notebook3",
-            // "notebook4",
-            // "notebook5",
-            // "notebook_health",
             "grid1",
             "grid2",
             "grid3",
@@ -84,10 +109,10 @@ void Paper::generateTemplates(Game* game) {
             "grid5",
         }},
         {BOSS_ROOM, {
-            "tutorial"
+            "grid_boss"
         }},
         {TREASURE_ROOM, {
-            "notebook_weapon"
+            "grid_weapon"
         }}
     };
 }

@@ -20,6 +20,26 @@ void SingleSide::generateTemplates(Game* game) {
         return side;
     };
 
+    // Boss
+    templates["notebook_boss_front"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper0", "notebook_blank", vec2(0, 0), "notebook", {}, difficulty);
+        return side;
+    };
+    templates["notebook_boss_back"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper1", "notebook_blank", vec2(0, 0), "notebook", {}, difficulty);
+        side->addEnemy(Enemy::templates["clipfly"]({ 10.4 - 6.0, 4.43 - 4.5 }, side));
+        return side;
+    };
+    templates["grid_boss_front"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper0", "grid_blank", vec2(0, 0), "grid", {}, difficulty);
+        return side;
+    };
+    templates["grid_boss_back"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper1", "grid_blank", vec2(0, 0), "grid", {}, difficulty);
+        side->addEnemy(Enemy::templates["clipfly"]({ 10.4 - 6.0, 4.43 - 4.5 }, side));
+        return side;
+    };
+
     // Notebook
     templates["notebook_health_front"] = [game](float difficulty) {
         SingleSide* side = new SingleSide(game, "paper0", "notebook_blank", vec2(0, 0), "notebook", {}, difficulty);
@@ -39,6 +59,15 @@ void SingleSide::generateTemplates(Game* game) {
     };
     templates["notebook_weapon_back"] = [game](float difficulty) {
         SingleSide* side = new SingleSide(game, "paper1", "notebook_blank", vec2(0, 0), "notebook", {}, difficulty);
+        return side;
+    };
+    templates["grid_weapon_front"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper0", "grid_blank", vec2(0, 0), "grid", {}, difficulty);
+        side->addPickup(new StapleGun(game, side, { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position={-3, 0.0}, .scale={1.0, 1.0} }, 0.5f));
+        return side;
+    };
+    templates["grid_weapon_back"] = [game](float difficulty) {
+        SingleSide* side = new SingleSide(game, "paper1", "grid_blank", vec2(0, 0), "grid", {}, difficulty);
         return side;
     };
 
