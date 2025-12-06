@@ -43,8 +43,12 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material, vec2 
         spawn -= offset;
     }
 
+    for (vec2& spawn : this->enemySpawns) {
+        spawn -= offset;
+    }
+
     // add enemies based on difficulty
-    if (!enemySpawns.empty() && difficulty > 0.0f) {
+    if (!enemySpawns.empty() && difficulty >= 0.0f) {
         // Get enemy list for this biome
         auto biomeIt = Enemy::enemyBiomes.find(biome);
         if (biomeIt != Enemy::enemyBiomes.end()) {
@@ -86,8 +90,39 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material, vec2 
                         }
                     }
                     
-                    // TODO fix enemy spawning
-                    if (affordableEnemies.empty()) break; 
+                    if (!affordableEnemies.empty()) {
+                        // Randomly select from affordable enemies (weighted by price)
+                        // Higher price enemies are more likely to be selected
+                        float totalWeight = 0.0f;
+                        for (const auto& enemyPair : affordableEnemies) {
+                            totalWeight += enemyPair.second;
+                        }
+                        
+                        float randomValue = uniform(0.0f, totalWeight);
+                        float cumulativeWeight = 0.0f;
+                        for (const auto& enemyPair : affordableEnemies) {
+                            cumulativeWeight += enemyPair.second;
+                            if (randomValue <= cumulativeWeight) {
+                                selectedEnemy = enemyPair.first;
+                                selectedPrice = enemyPair.second;
+                                break;
+                            }
+                        }
+                    } else {
+                        // No affordable enemies, use weakest enemy
+                        selectedEnemy = weakestEnemy;
+                        selectedPrice = weakestPrice;
+                    }
+                    
+                    // Create and add the enemy
+                    auto templateIt = Enemy::templates.find(selectedEnemy);
+                    if (templateIt != Enemy::templates.end()) {
+                        Enemy* enemy = templateIt->second(spawnPos, this);
+                        if (enemy != nullptr) {
+                            addEnemy(enemy);
+                            remainingDifficulty -= selectedPrice;
+                        }
+                    }
                 }
             }
         }
@@ -574,14 +609,11 @@ void SingleSide::reset() {
     }
     pickups.clear();
 
-    // transform enemy spawns
-    vec2 offset = {6.0f, 4.5f};
-    for (vec2& spawn : enemySpawns) {
-        spawn -= offset;
-    }
+    for (auto spawn : enemySpawns) std::cout << spawn.x << " " << spawn.y;
+    std::cout << std::endl;
 
     // add enemies based on difficulty
-    if (!enemySpawns.empty() && difficulty > 0.0f) {
+    if (!enemySpawns.empty() && difficulty >= 0.0f) {
         // Get enemy list for this biome
         auto biomeIt = Enemy::enemyBiomes.find(biome);
         if (biomeIt != Enemy::enemyBiomes.end()) {
