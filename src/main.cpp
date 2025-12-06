@@ -53,6 +53,10 @@ int main() {
     refresh();
     game->addImage("ladder", new Image("art/assets/ladder.PNG"));
     game->addMaterial("ladder", new Material({ 1, 1, 1 }, game->getImage("ladder")));
+
+    // Crosshair
+    game->addImage("crosshair", new Image("art/assets/crosshair.PNG"));
+    game->addMaterial("crosshair", new Material({ 1, 1, 1 }, game->getImage("crosshair")));
     
     // Load menu paper background from art/assets
     refresh();
@@ -104,8 +108,8 @@ int main() {
     
     refresh();
     std::unordered_map<std::string, std::vector<std::string>> levelNames = {
-        { "notebook", { "blank", "level1", "level2", "level3", "level4", "level5"} },
-        { "grid", { "blank", "level1", "level2", "level3", "level4", "level5"} },
+        { "notebook", { "blank", "level1", "level2", "level3", "level4", "level5", "weaponroom"} },
+        { "grid", { "blank", "level1", "level2", "level3", "level4", "level5", "weaponroom"} },
         {"tutorial", { "tutorial" } }
     };
     for (auto& [name, levels] : levelNames) {
