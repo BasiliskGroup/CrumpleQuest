@@ -57,7 +57,8 @@ Paper::Paper(const Paper& other)
       game(other.game),
       sideNames(other.sideNames),
       obstacleNames(other.obstacleNames),
-      hasCreationParams(other.hasCreationParams)
+      hasCreationParams(other.hasCreationParams),
+      hasBeenVisited(other.hasBeenVisited)
 {
     try {
         // Deep copy sides
@@ -95,7 +96,8 @@ Paper::Paper(Paper&& other) noexcept
       game(other.game),
       sideNames(std::move(other.sideNames)),
       obstacleNames(std::move(other.obstacleNames)),
-      hasCreationParams(other.hasCreationParams)
+      hasCreationParams(other.hasCreationParams),
+      hasBeenVisited(other.hasBeenVisited)
 {
     // Clear other
     other.sides = { nullptr, nullptr };
@@ -127,6 +129,7 @@ Paper& Paper::operator=(const Paper& other) {
     std::swap(sideNames, temp.sideNames);
     std::swap(obstacleNames, temp.obstacleNames);
     std::swap(hasCreationParams, temp.hasCreationParams);
+    std::swap(hasBeenVisited, temp.hasBeenVisited);
     
     // temp's destructor will clean up our old resources
     return *this;
@@ -149,6 +152,7 @@ Paper& Paper::operator=(Paper&& other) noexcept {
     sideNames = std::move(other.sideNames);
     obstacleNames = std::move(other.obstacleNames);
     hasCreationParams = other.hasCreationParams;
+    hasBeenVisited = other.hasBeenVisited;
 
     // Clear other
     other.sides = { nullptr, nullptr };
@@ -156,6 +160,7 @@ Paper& Paper::operator=(Paper&& other) noexcept {
     other.activeFold = NULL_FOLD;
     other.game = nullptr;
     other.hasCreationParams = false;
+    other.hasBeenVisited = false;
 
     return *this;
 }

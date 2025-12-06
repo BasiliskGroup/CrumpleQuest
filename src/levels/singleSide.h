@@ -57,6 +57,8 @@ public:
     void addDamageZone(DamageZone* zone) { this->damageZones.push_back(zone); }
     void addPickup(Pickup* pickup) { this->pickups.push_back(pickup); }
     void addCollider(std::string name, Collider* collider) { this->colliders[name] = collider; }
+    
+    vec2 getPlayerSpawn() const { return playerSpawn; }
 
     void generateNavmesh();
     void update(const vec2& playerPos, float dt, Player* player = nullptr);

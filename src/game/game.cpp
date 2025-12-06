@@ -411,6 +411,13 @@ void Game::startGame() {
     Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
     Player* player = new Player(this, 3, 4, playerNode, getSide(), nullptr, 0.6f, playerNode->getScale());
     setPlayer(player);
+    
+    // Set player position to playerSpawn for first visit
+    vec2 spawnPos = paper->getSingleSide()->getPlayerSpawn();
+    player->setPosition(spawnPos);
+    
+    // Mark paper as visited
+    paper->hasBeenVisited = true;
 
     float meleeRadius = 1.0f;
 
@@ -454,41 +461,49 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
     setSideToPaperSide();
     player->setSide(this->currentSide);
     
-    // Calculate spawn position based on entry direction using raycast
-    PaperMesh* newMesh = (paper->curSide == 0) ? paper->paperMeshes.first : paper->paperMeshes.second;
-    if (newMesh && (dx != 0 || dy != 0)) {
-        // Get AABB center of the new room
-        auto aabb = newMesh->getAABB();
-        vec2 aabbCenter = (aabb.first + aabb.second) * 0.5f;
-        
-        // Calculate direction vector based on where player is coming from
-        vec2 entryDirectionVec = vec2(-dx, dy);
-        float dirLength = glm::length(entryDirectionVec);
-        
-        if (dirLength > 1e-6f) {
-            vec2 entryDirection = entryDirectionVec / dirLength;
+    // Check if this is the first time visiting this paper
+    if (!newPaper->hasBeenVisited) {
+        // First visit: use playerSpawn from the SingleSide
+        vec2 spawnPos = this->currentSide->getPlayerSpawn();
+        player->setPosition(spawnPos);
+        newPaper->hasBeenVisited = true;
+    } else {
+        // Subsequent visit: use current transfer logic based on entry direction
+        PaperMesh* newMesh = (paper->curSide == 0) ? paper->paperMeshes.first : paper->paperMeshes.second;
+        if (newMesh && (dx != 0 || dy != 0)) {
+            // Get AABB center of the new room
+            auto aabb = newMesh->getAABB();
+            vec2 aabbCenter = (aabb.first + aabb.second) * 0.5f;
             
-            // Cast ray from center in the entry direction to find edge intersection
-            vec2 edgeIntersection = newMesh->getNearestEdgeIntersection(aabbCenter, entryDirection);
+            // Calculate direction vector based on where player is coming from
+            vec2 entryDirectionVec = vec2(-dx, dy);
+            float dirLength = glm::length(entryDirectionVec);
             
-            // Move spawn point slightly inside from the edge (0.5 units inward)
-            vec2 spawnDirection = -entryDirection; // Point inward from edge
-            float spawnOffset = 0.5f;
-            vec2 spawnPosition = edgeIntersection + spawnDirection * spawnOffset;
-            
-            player->setPosition(spawnPosition);
+            if (dirLength > 1e-6f) {
+                vec2 entryDirection = entryDirectionVec / dirLength;
+                
+                // Cast ray from center in the entry direction to find edge intersection
+                vec2 edgeIntersection = newMesh->getNearestEdgeIntersection(aabbCenter, entryDirection);
+                
+                // Move spawn point slightly inside from the edge (0.5 units inward)
+                vec2 spawnDirection = -entryDirection; // Point inward from edge
+                float spawnOffset = 0.5f;
+                vec2 spawnPosition = edgeIntersection + spawnDirection * spawnOffset;
+                
+                player->setPosition(spawnPosition);
+            } else {
+                // Fallback if direction is invalid
+                Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
+                if (playerNode) {
+                    player->setPosition(playerNode->getPosition());
+                }
+            }
         } else {
-            // Fallback if direction is invalid
+            // Fallback to default spawn point if mesh not available or no direction
             Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
             if (playerNode) {
                 player->setPosition(playerNode->getPosition());
             }
-        }
-    } else {
-        // Fallback to default spawn point if mesh not available or no direction
-        Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
-        if (playerNode) {
-            player->setPosition(playerNode->getPosition());
         }
     }
 }

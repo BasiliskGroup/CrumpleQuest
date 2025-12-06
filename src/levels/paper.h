@@ -67,6 +67,7 @@ public: // DEBUG
 
     // tracking gameplay
     bool isOpen;
+    bool hasBeenVisited = false;  // Track if player has visited this paper before
 
 public:
     Paper();
