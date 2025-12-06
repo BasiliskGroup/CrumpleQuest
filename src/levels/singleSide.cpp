@@ -3,6 +3,7 @@
 #include "util/random.h"
 #include "pickup/pickup.h"
 #include "pickup/heart.h"
+#include "character/boss.h"
 
 
 SingleSide::SingleSide(Game* game, std::string mesh, std::string material, vec2 playerSpawn, std::string biome, std::vector<vec2> enemySpawns, float difficulty) : 
@@ -307,6 +308,45 @@ void SingleSide::update(const vec2& playerPos, float dt, Player* player) {
             float distSq = glm::length2(player->getPosition() - zone->getPosition());
             if (distSq <= combinedRadius * combinedRadius) {
                 zone->hit(player);
+            }
+        }
+
+        // check collision with boss (if boss exists, is vulnerable, and damage zone is not friendly)
+        if (player != nullptr && player->getGame() != nullptr) {
+            Boss* boss = player->getGame()->getBoss();
+            if (boss != nullptr) {
+                bool isVulnerable = boss->isVulnerable();
+                bool isFriendly = zone->getFriendlyDamage();
+                
+                static int bossCheckCount = 0;
+                bossCheckCount++;
+                if (bossCheckCount % 60 == 0) {  // Print every 60 frames
+                    std::cout << "[SingleSide::update] Boss check - exists=" << (boss != nullptr) 
+                              << ", vulnerable=" << isVulnerable << ", zoneFriendly=" << isFriendly << std::endl;
+                }
+                
+                if (isVulnerable && !isFriendly) {
+                    // Get boss 2D position
+                    vec2 bossPos = boss->get2DPosition();
+                    // Use attack radius (3.0f) for boss hitbox
+                    float bossRadius = 3.0f;
+                    float combinedRadius = bossRadius + zone->getRadius();
+                    float distSq = glm::length2(bossPos - zone->getPosition());
+                    
+                    static int collisionCheckCount = 0;
+                    collisionCheckCount++;
+                    if (collisionCheckCount % 60 == 0) {  // Print every 60 frames
+                        std::cout << "[SingleSide::update] Boss collision check - bossPos=(" << bossPos.x << ", " << bossPos.y 
+                                  << "), zonePos=(" << zone->getPosition().x << ", " << zone->getPosition().y 
+                                  << "), distSq=" << distSq << ", combinedRadiusSq=" << (combinedRadius * combinedRadius) << std::endl;
+                    }
+                    
+                    if (distSq <= combinedRadius * combinedRadius) {
+                        std::cout << "[SingleSide::update] BOSS HIT! Calling onDamage with " << zone->getDamage() << " damage" << std::endl;
+                        // Boss takes damage from non-friendly damage zones
+                        boss->onDamage(zone->getDamage());
+                    }
+                }
             }
         }
     }

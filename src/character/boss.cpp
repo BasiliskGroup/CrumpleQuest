@@ -31,7 +31,9 @@ Boss::Boss(Game* game, PaperView* paperView) :
     timeSinceLastVulnerable(0.0f),
     minTimeBetweenVulnerable(2.0f),
     maxTimeBetweenVulnerable(5.0f),
-    nextVulnerableTime(uniform(2.0f, 5.0f))
+    nextVulnerableTime(uniform(2.0f, 5.0f)),
+    iframeTimer(0.0f),
+    iframeDuration(0.3f)
 {
     // Create hand node in the paperView scene
     // The boss node will be created later in showGameElements, so we'll initialize hand later
@@ -73,6 +75,14 @@ void Boss::setVulnerable(bool vulnerable) {
 }
 
 void Boss::update(float dt) {
+    // Update iframe timer
+    if (iframeTimer > 0.0f) {
+        iframeTimer -= dt;
+        if (iframeTimer < 0.0f) {
+            iframeTimer = 0.0f;
+        }
+    }
+    
     // Update boss node material based on showBoss flag
     Node* bossNode = getBossNode();
     if (bossNode && game) {
@@ -84,7 +94,9 @@ void Boss::update(float dt) {
     static int updateCount = 0;
     updateCount++;
     if (updateCount % 60 == 0) {  // Print every 60 frames (roughly once per second at 60fps)
-        std::cout << "[Boss::update] Called, dt=" << dt << ", bossNode=" << (bossNode ? "valid" : "null") << std::endl;
+        std::cout << "[Boss::update] Called, dt=" << dt << ", bossNode=" << (bossNode ? "valid" : "null") 
+                  << ", health=" << health << "/" << maxHealth << ", vulnerable=" << vulnerable 
+                  << ", iframeTimer=" << iframeTimer << std::endl;
     }
     
     // Handle vulnerable animation states
@@ -178,13 +190,13 @@ void Boss::update(float dt) {
         bossAnimationTime += dt * bossAnimationSpeed;
         
         // Use sine wave to create back-and-forth horizontal motion within bounds
-        // Bounds are (-0.5, -0.4) to (0.5, 0.4)
+        // Bounds are (-0.5, -0.4) to (0.5, 0.5)
         float horizontalOffset = glm::sin(bossAnimationTime) * 0.5f;  // ±0.5 units horizontally
-        float verticalOffset = glm::cos(bossAnimationTime * 0.5f) * 0.4f;  // ±0.4 units vertically (slower)
+        float verticalOffset = glm::cos(bossAnimationTime * 0.5f) * 0.4f;  // ±0.5 units vertically (slower)
 
         // Update 2D position within bounds
         hand2DPosition.x = glm::clamp(horizontalOffset, -0.5f, 0.5f);
-        hand2DPosition.y = glm::clamp(verticalOffset, -0.4f, 0.4f);
+        hand2DPosition.y = glm::clamp(verticalOffset, -0.0f, 0.45f);
         
         // Convert 2D position + height to 3D
         glm::vec3 bossPos = paperView->paperPlaneTo3D(hand2DPosition, handHeight);
@@ -240,10 +252,28 @@ void Boss::startVulnerable() {
 }
 
 void Boss::onDamage(int damage) {
-    if (!vulnerable || health <= 0) return;
+    std::cout << "[Boss::onDamage] Called with damage=" << damage << ", vulnerable=" << vulnerable 
+              << ", currentHealth=" << health << ", iframeTimer=" << iframeTimer << std::endl;
+    
+    // Check iframes first
+    if (iframeTimer > 0.0f) {
+        std::cout << "[Boss::onDamage] Ignoring damage - iframes active (timer=" << iframeTimer << ")" << std::endl;
+        return;
+    }
+    
+    if (!vulnerable || health <= 0) {
+        std::cout << "[Boss::onDamage] Ignoring damage - vulnerable=" << vulnerable << ", health=" << health << std::endl;
+        return;
+    }
     
     health -= damage;
     if (health < 0) health = 0;
+    
+    // Activate iframes after taking damage
+    iframeTimer = iframeDuration;
+    
+    std::cout << "[Boss::onDamage] Boss took " << damage << " damage! New health: " << health << "/" << maxHealth 
+              << ", iframes activated for " << iframeDuration << " seconds" << std::endl;
     
     // TODO: Add damage sound, effects, etc.
 }
@@ -299,7 +329,7 @@ vec2 Boss::get2DPosition() const {
     
     glm::vec3 bossPos3D = bossNode->getPosition();
     // Project 3D position onto paper plane and get 2D coordinates relative to paper center
-    return paperView->projectToPaperPlane(bossPos3D) * vec2{12.0f, 9.0f};
+    return paperView->projectToPaperPlane(bossPos3D) * vec2{12.0f, 9.0f} + vec2{0.0f, 0.15f};
 }
 
 void Boss::attack() {

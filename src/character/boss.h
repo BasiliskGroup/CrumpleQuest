@@ -58,6 +58,10 @@ private:
     float minTimeBetweenVulnerable = 2.0f;  // Minimum seconds between vulnerable periods
     float maxTimeBetweenVulnerable = 5.0f;  // Maximum seconds between vulnerable periods
     float nextVulnerableTime = 0.0f;  // When to trigger next vulnerable period
+    
+    // Invincibility frames
+    float iframeTimer = 0.0f;  // Time remaining for invincibility frames
+    float iframeDuration = 0.3f;  // Duration of invincibility frames after taking damage
 
 public:
     Boss(Game* game, PaperView* paperView);
