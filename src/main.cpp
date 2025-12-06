@@ -145,6 +145,7 @@ int main() {
     game->addAnimation("player_run", "art/sprites/player/run/", 3);
     game->addAnimation("player_attack_pencil", "art/sprites/player/attack/attack_pencil/", 4);
     game->addAnimation("player_attack_gun", "art/sprites/player/attack/attack_gun/", 2);
+    game->addAnimation("player_hurt", "art/sprites/player/hurt/", 3);
     // Pencil
     refresh();
     game->addAnimation("pencil_idle", "art/sprites/player/weapons/pencil/idle/", 4);
