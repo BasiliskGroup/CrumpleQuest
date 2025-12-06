@@ -406,6 +406,10 @@ void PaperView::createMinimap() {
         }
     }
     minimapNodes.clear();
+
+    minimapCenter = {-1.5, -0.9, 0.6};
+    minimapScale = 0.04;
+    minimapSpacing = 0.015;
     
     // Get the floor from game
     Floor* floor = game->getFloor();
@@ -450,6 +454,8 @@ void PaperView::createMinimap() {
                 glm::vec3 rotatedOffset = rotation * offset;
                 
                 glm::vec3 position = minimapCenter + rotatedOffset;
+                // position.x += uniform(-0.005, 0.005);
+                // position.z += uniform(-0.005, 0.005);
                 
                 // Determine material based on room type and position
                 Material* material = game->getMaterial("lightGrey"); // Default
@@ -468,7 +474,7 @@ void PaperView::createMinimap() {
                     .mesh = game->getMesh("cube"),
                     .material = material,
                     .position = position,
-                    .rotation = rotation,
+                    .rotation = rotation,  // glm::angleAxis(glm::radians(uniform(-10.0f, 10.0f)), glm::vec3(0.0f, 1.0f, 0.0f)) * 
                     .scale = {minimapScale, minimapScale, minimapScale}
                 });
                 
