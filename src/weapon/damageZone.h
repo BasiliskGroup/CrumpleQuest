@@ -43,6 +43,8 @@ public:
     // getters
     Character* getOwner() { return this->owner; }
     float getRadius() { return radius; }
+    int getDamage() const { return damage; }
+    bool getFriendlyDamage() const { return friendlyDamage; }
 
     // setters
     void setOnHit(std::function<void(Character*)> func) { onHit = func; }

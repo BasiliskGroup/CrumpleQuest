@@ -4,11 +4,13 @@
 #include "resource/animator.h"
 #include "weapon/weapon.h"
 #include "audio/sfx_player.h"
+#include "character/boss.h"
 #include <iostream>
 
 Game::Game() : 
     player(nullptr), 
     floor(nullptr),
+    boss(nullptr),
     engine(nullptr),
     currentSide(nullptr),
     paper(nullptr),
@@ -52,6 +54,7 @@ Game::Game() :
 
 Game::~Game() {
     delete player; player = nullptr;
+    delete boss; boss = nullptr;
     // Floor owns all Paper instances, so delete floor first
     delete floor; floor = nullptr;
     // Paper is now deleted by floor's destructor
@@ -253,6 +256,18 @@ void Game::update(float dt) {
     if (player != nullptr) {
         player->move(dt);
     }
+    
+    // Update boss
+    if (boss != nullptr) {
+        boss->update(dt);
+        
+        // Check if boss should be deleted (leaving animation complete)
+        if (boss->shouldBeDeleted()) {
+            std::cout << "[Game::update] Deleting boss after leaving animation" << std::endl;
+            delete boss;
+            boss = nullptr;
+        }
+    }
 
     // Automatic room switching based on AABB boundary crossing
     if (floor && paper && player && !MenuManager::Get().hasActiveMenu()) {
@@ -448,6 +463,8 @@ void Game::startGame() {
 
     // create weapons
     player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("circle"), .scale={meleeRadius, meleeRadius}}, { .damage=1, .life=0.2f, .radius=meleeRadius / 2.0f }, 0.5f, 6.0f));
+    
+    // Boss will be created when entering a boss room (see switchToRoom)
 }
 
 void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
@@ -485,6 +502,52 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
     // Update player nodes to the new room's nodes and update side reference
     setSideToPaperSide();
     player->setSide(this->currentSide);
+    
+    // Ensure game elements (including bossNode) are shown
+    if (paperView) {
+        paperView->showGameElements();
+    }
+    
+    // Check if this is a boss room and create/delete boss accordingly
+    RoomTypes newRoomType = floor->getRoomType(newX, newY);
+    if (newRoomType == BOSS_ROOM) {
+        // Entering a boss room - create boss if it doesn't exist
+        if (boss == nullptr && paperView != nullptr && paperView->getBossNode() != nullptr) {
+            std::cout << "[Game::switchToRoom] Entering boss room - creating boss!" << std::endl;
+            boss = new Boss(this, paperView);
+            std::cout << "[Game::switchToRoom] Boss created, pointer=" << boss << std::endl;
+        }
+    } else {
+        // Not a boss room - delete boss if it exists (including if leaving animation is in progress)
+        if (boss != nullptr) {
+            std::cout << "[Game::switchToRoom] Leaving boss room - deleting boss" << std::endl;
+            delete boss;
+            boss = nullptr;
+        }
+        // Hide boss node when not in boss room
+        if (paperView && paperView->getBossNode()) {
+            paperView->getBossNode()->setMaterial(getMaterial("empty"));
+        }
+    }
+    
+    // Check room state and update directional nodes immediately
+    if (paper && floor && paperView) {
+        // Check if room is open
+        bool wasOpen = paper->isOpen;
+        paper->checkAndSetOpen();
+        
+        // Update directional nodes based on room state
+        if (paper->isOpen) {
+            bool topValid = floor->getAdjacentRoom(0, -1) != nullptr;
+            bool bottomValid = floor->getAdjacentRoom(0, 1) != nullptr;
+            bool leftValid = floor->getAdjacentRoom(1, 0) != nullptr;
+            bool rightValid = floor->getAdjacentRoom(-1, 0) != nullptr;
+            paperView->showDirectionalNodes(topValid, bottomValid, leftValid, rightValid);
+        } else {
+            // Room is closed - hide directional nodes
+            paperView->hideDirectionalNodes();
+        }
+    }
     
     // Check if this is the first time visiting this paper
     if (!newPaper->hasBeenVisited) {
@@ -548,6 +611,12 @@ void Game::processReturnToMainMenu() {
     // Hide game elements (health tokens, directional nodes, minimap)
     if (paperView) {
         paperView->hideGameElements();
+    }
+    
+    // Destroy boss
+    if (boss) {
+        delete boss;
+        boss = nullptr;
     }
     
     // Destroy the floor (this will delete all Paper instances)

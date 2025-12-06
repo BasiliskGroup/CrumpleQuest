@@ -1335,10 +1335,30 @@ void Paper::checkAndSetOpen() {
         }
     }
     
-    // Set isOpen to true if there are no alive enemies on either side
-    if (aliveEnemies == 0 && !isOpen) {
+    // Check if boss exists and should keep room closed
+    // Room should be closed if boss exists and is not dead (including when leaving/spawning)
+    bool bossExists = false;
+    if (game) {
+        Boss* boss = game->getBoss();
+        if (boss != nullptr && !boss->isDead()) {
+            // Boss exists and is not dead - room should be closed
+            bossExists = true;
+        }
+    }
+    
+    // Paper is open if there are no alive enemies AND no boss
+    // Paper is closed if there are alive enemies OR boss exists
+    bool shouldBeOpen = (aliveEnemies == 0 && !bossExists);
+    
+    if (shouldBeOpen && !isOpen) {
+        // Room just opened - no enemies and no boss
         isOpen = true;
         // Regenerate walls after opening (will use AABB instead of region polygon)
+        regenerateWalls();
+    } else if (!shouldBeOpen && isOpen) {
+        // Room should be closed - enemies or boss present
+        isOpen = false;
+        // Regenerate walls after closing (will add outer walls back)
         regenerateWalls();
     }
 }
