@@ -46,6 +46,7 @@ public:
     void pushGameOverMenu();
     void popMenu();
     void popMenuDeferred(); // Pop menu but defer deletion until next frame
+    void deletePendingMenus(); // Immediately delete all pending menus
     bool hasActiveMenu() const { return menuStack->hasActiveMenu(); }
     size_t getMenuStackSize() const { return menuStack->size(); }
     bool isInGame() const;

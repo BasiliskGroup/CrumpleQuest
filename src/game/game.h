@@ -58,6 +58,7 @@ private:
 
     // menu management
     bool pendingReturnToMainMenu = false;
+    bool pendingStartGame = false;
 
     // audio
     audio::AudioManager& audioManager;
@@ -121,6 +122,7 @@ public:
     // game flow
     void startGame();
     void returnToMainMenu();
+    void setPendingStartGame(bool value) { pendingStartGame = value; }
     void switchToRoom(Paper* newPaper, int dx, int dy);
 
     void update(float dt);
