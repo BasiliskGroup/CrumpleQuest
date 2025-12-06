@@ -52,6 +52,11 @@ void Player::move(float dt) {
         attacking -= dt;
     }
 
+    // Update dash timer
+    if (dashTimer > 0.0f) {
+        dashTimer -= dt;
+    }
+
     // actual movement
     Keyboard* keys = node->getEngine()->getKeyboard();
 
@@ -100,6 +105,13 @@ void Player::move(float dt) {
         keys->getPressed(GLFW_KEY_D) - keys->getPressed(GLFW_KEY_A),
         keys->getPressed(GLFW_KEY_W) - keys->getPressed(GLFW_KEY_S)
     };
+
+    if (keys->getPressed(GLFW_KEY_LEFT_SHIFT) && shiftWasDown == false && dashTimer <= 0.0f) {
+        dashTimer = maxDashTimer;
+        unstable = true;
+        node->setVelocity(node->getVelocity() + vec3(moveDir, 0) * 10.0f);
+    }
+    shiftWasDown = keys->getPressed(GLFW_KEY_LEFT_SHIFT);
     
     Character::move(dt);
     

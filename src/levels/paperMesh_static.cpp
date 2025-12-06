@@ -7,8 +7,10 @@ std::unordered_map<std::string, std::function<std::vector<UVRegion>()>> PaperMes
 void addLines(std::vector<UVRegion>& obst, std::vector<vec2> points, Game* game) {
     if (points.size() % 2) throw std::runtime_error("addLines: points must be even");
 
+    vec2 offset = vec2(6.0f, 4.5f); 
+
     for (size_t i = 0; i < points.size(); i += 2) {
-        std::pair<glm::vec3, glm::vec2> data = connectSquare(points[i], points[i + 1]);
+        std::pair<glm::vec3, glm::vec2> data = connectSquare(points[i] - offset, points[i + 1] - offset, 0.01f);
         obst.push_back({ game->getMesh("quad"), data.first, data.second, true });
     }
 }

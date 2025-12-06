@@ -19,7 +19,7 @@ protected:
 
 public:
     Weapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, float range);
-    ~Weapon() = default;
+    virtual ~Weapon() = default;
 
     bool attack(const vec2& pos, const vec2& dir);
     bool createDamageZone(const vec2& pos, const vec2& dir);  // Create damage zone without cooldown check (for multi-shot attacks)
@@ -46,11 +46,13 @@ public:
 class ContactWeapon : public Weapon {
 public:
     ContactWeapon(Character* owner, Node2D::Params node, DamageZone::Params params);
+    ~ContactWeapon() = default;
 };
 
 class MeleeWeapon : public Weapon {
 public: 
     MeleeWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, float knockback=0);
+    ~MeleeWeapon() = default;
 };
 
 class ProjectileWeapon : public Weapon {
@@ -60,7 +62,7 @@ private:
 
 public:
     ProjectileWeapon(Character* owner, Node2D::Params node, DamageZone::Params params, float maxCooldown, std::vector<std::string> projectileMaterials, int ricochet=0);
-
+    ~ProjectileWeapon() = default;
     std::vector<std::string> getProjectileMaterials() const { return projectileMaterials; }
     void setProjectileMaterials(std::vector<std::string> projectileMaterials) { this->projectileMaterials = projectileMaterials; }
 };

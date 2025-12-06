@@ -17,6 +17,10 @@ private:
     Node2D* weaponNode;
     Animator* weaponAnimator;
 
+    float dashTimer = 0.0f;
+    float maxDashTimer = 0.5f;
+    bool shiftWasDown = false;
+
 public:
     Player(Game* game, int health, float speed, Node2D* node, SingleSide* side, Weapon* weapon, float radius, vec2 sacle);
     ~Player() = default;

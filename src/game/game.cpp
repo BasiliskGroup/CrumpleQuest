@@ -409,7 +409,7 @@ void Game::startGame() {
 
     // create player
     Node2D* playerNode = paper->getSingleSide()->getPlayerNode();
-    Player* player = new Player(this, 3, 6, playerNode, getSide(), nullptr, 0.6f, playerNode->getScale());
+    Player* player = new Player(this, 3, 4, playerNode, getSide(), nullptr, 0.6f, playerNode->getScale());
     setPlayer(player);
 
     float meleeRadius = 1.0f;
