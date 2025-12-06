@@ -57,7 +57,6 @@ void Paper::generateTemplates(Game* game) {
             "notebook5",
             "notebook_health",
             "notebook_weapon",
-            // "notebook5"
         }},
         {BOSS_ROOM, {
             "tutorial"

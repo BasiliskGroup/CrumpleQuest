@@ -117,7 +117,7 @@ Node2D* SingleSide::genPlayerNode(Game* game, SingleSide* side) {
         .rotation = 0,
         .scale = { 1.5, 1.5 },
         .collider = side->getCollider("quad"),
-        .colliderScale = { 0.5, 0.8 }
+        .colliderScale = { 0.5, 0.7 }
     });
     node->setManifoldMask(1, 1, 0);
     return node;
