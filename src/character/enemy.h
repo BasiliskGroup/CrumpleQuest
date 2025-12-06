@@ -4,6 +4,8 @@
 #include "character/character.h"
 #include "character/ai.h"
 #include "character/behavior.h"
+#include "character/attackAction.h"
+#include "character/moveAction.h"
 #include "resource/animation.h"
 #include "resource/animator.h"
 #include <optional>
@@ -46,8 +48,8 @@ private:
     
     Behavior* behavior = nullptr;  // Current behavior
     std::function<Behavior*(const vec2&, float)> behaviorSelector;  // Function that selects which behavior to use
-    std::function<bool(vec2, vec2)> attackAction;  // Function that performs the attack action
-    std::function<void(const vec2&)> moveAction;  // Function that applies movement toward a destination
+    AttackAction* attackAction = nullptr;  // Action that performs the attack
+    MoveAction* moveAction = nullptr;  // Action that applies movement toward a destination
     std::optional<vec2> customDestination;  // Optional custom destination (if set, updatePathing will skip this enemy)
     
     // Status flags (updated by updateStatus)
@@ -83,12 +85,14 @@ public:
     void setBehaviorSelector(const std::function<Behavior*(const vec2&, float)>& func) { behaviorSelector = func; }
     
     // Attack action getter/setter
-    std::function<bool(vec2, vec2)>& getAttackAction() { return attackAction; }
-    void setAttackAction(const std::function<bool(vec2, vec2)>& func) { attackAction = func; }
+    AttackAction* getAttackAction() { return attackAction; }
+    void setAttackAction(AttackAction* action) { attackAction = action; }
+    void setAttackAction(const std::string& actionName) { attackAction = AttackActionRegistry::getAction(actionName); }
     
     // Move action getter/setter
-    std::function<void(const vec2&)>& getMoveAction() { return moveAction; }
-    void setMoveAction(const std::function<void(const vec2&)>& func) { moveAction = func; }
+    MoveAction* getMoveAction() { return moveAction; }
+    void setMoveAction(MoveAction* action) { moveAction = action; }
+    void setMoveAction(const std::string& actionName) { moveAction = MoveActionRegistry::getAction(actionName); }
     
     // Pending shots getter (for multi-shot attacks)
     std::vector<PendingShot>& getPendingShots() { return pendingShots; }

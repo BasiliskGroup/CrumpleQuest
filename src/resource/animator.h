@@ -20,7 +20,13 @@ class Animator {
         void update();
         void setNode(Node2D* node) { this->node = node; }
         void setAnimation(Animation* animation);
-        void setFrameRate(float frameRate) { timePerFrame = 1.0 / frameRate; }
+        void setFrameRate(float frameRate) { 
+            if (frameRate > 0.0f) {
+                timePerFrame = 1.0f / frameRate;
+            } else {
+                timePerFrame = 999999.0f; // Effectively pause animation
+            }
+        }
         unsigned int getCurrentFrame() const { return frame; }
 };
 

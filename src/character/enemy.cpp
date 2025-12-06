@@ -1,5 +1,7 @@
 #include "character/enemy.h"
 #include "character/behavior.h"
+#include "character/attackAction.h"
+#include "character/moveAction.h"
 #include "game/game.h"
 #include "weapon/weapon.h"
 #include "audio/sfx_player.h"
@@ -17,18 +19,9 @@ Enemy::Enemy(Game* game, int health, float speed, Node2D* node, SingleSide* side
         return BehaviorRegistry::getBehavior("Idle");
     };
 
-    attackAction = [this](const vec2& pos, const vec2& dir) {
-        if(this->weapon == nullptr) return false;
-        if(!this->weapon->isReady()) return false;
-        return this->weapon->attack(pos, dir);
-    };
-    
-    // Default moveAction: move directly toward destination
-    moveAction = [this](const vec2& destination) {
-        vec2 enemyPos = this->getPosition();
-        vec2 direction = destination - enemyPos;
-        this->getMoveDir() = direction;
-    };
+    // Initialize default actions
+    attackAction = AttackActionRegistry::getAction("Normal");
+    moveAction = MoveActionRegistry::getAction("Normal");
 }
 
 void Enemy::onDamage(int damage) {
@@ -92,9 +85,22 @@ void Enemy::move(const vec2& playerPos, float dt) {
         if (attackDelayTimer <= 0.0f) {
             // Delay complete, execute the attack using attackAction
             vec2 offset = radius * pendingAttackDir + getPosition();
-            bool attackSuccessful = attackAction(offset, pendingAttackDir);
+            bool attackSuccessful = false;
+            if (attackAction != nullptr) {
+                attackSuccessful = attackAction->execute(this, offset, pendingAttackDir);
+            }
             attackPending = false;
         }
+    }
+    
+    // Update attack action (for actions that need per-frame updates)
+    if (attackAction != nullptr) {
+        attackAction->update(this, dt);
+    }
+    
+    // Update move action (for actions that need per-frame updates)
+    if (moveAction != nullptr) {
+        moveAction->update(this, dt);
     }
     
     // Process pending shots (for multi-shot attacks)
@@ -122,6 +128,8 @@ void Enemy::move(const vec2& playerPos, float dt) {
     // Set animation based on state: attack > movement
     if (attacking > 0.0f && attackAnimation != nullptr) {
         animator->setAnimation(attackAnimation);
+        // Reset frame rate to normal (8 fps) for attack animation
+        animator->setFrameRate(8.0f);
     }
     else if (glm::length2(moveDir) < 0.01) {
         animator->setAnimation(idleAnimation);
@@ -167,7 +175,10 @@ void Enemy::attack(const vec2& playerPos, float dt) {
         // No delay or delay already in progress, attack immediately (if no delay)
         if (attackDelay <= 0.0f) {
             vec2 offset = 2 * radius * dir + getPosition();
-            bool attackSuccessful = attackAction(offset, dir);
+            bool attackSuccessful = false;
+            if (attackAction != nullptr) {
+                attackSuccessful = attackAction->execute(this, offset, dir);
+            }
             
             // If attack was successful (weapon was off cooldown), set attack animation duration
             if (attackSuccessful && attackAnimation != nullptr) {

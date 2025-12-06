@@ -47,6 +47,21 @@ void Character::move(float dt) {
     // reduce invincibility frames
     itime = glm::clamp(itime, 0.0f, itime - dt);
 
+    vec3 current = node->getVelocity();
+    float currentSpeed = glm::length(current);
+    
+    // Check if unstable character should become stable (velocity <= max speed)
+    if (unstable && currentSpeed <= speed) {
+        unstable = false;
+    }
+
+    // If unstable, ignore moveDir and just apply friction (allow sliding)
+    if (unstable) {
+        // Apply friction to slow down over time
+        node->setVelocity((float)(1 - 2 * dt) * node->getVelocity());
+        return;
+    }
+
     // slow modement if we are not being controlled
     if (glm::length2(moveDir) < EPSILON) {
         node->setVelocity( (float) (1 - 20 * dt) * node->getVelocity());
@@ -55,15 +70,16 @@ void Character::move(float dt) {
 
     moveDir = glm::normalize(moveDir);
 
-    vec3 current = node->getVelocity();
+    // Normal movement acceleration
     vec3 accelVec = vec3(moveDir.x, moveDir.y, 0) * (float) this->accel * dt;
 
     // Compute the hypothetical new velocity
     vec3 trial = current + accelVec;
-    float speed = glm::length(trial);
+    float trialSpeed = glm::length(trial);
 
-    if (speed > this->speed) {
-        vec3 clamped = (trial / speed) * this->speed;
+    // Clamp to max speed
+    if (trialSpeed > this->speed) {
+        vec3 clamped = (trial / trialSpeed) * this->speed;
         accelVec = clamped - current;
     }
 

@@ -31,9 +31,12 @@ public:
     float getCooldown() const { return cooldown; }
     bool isReady() const { return cooldown <= 0.0f; }  // Check if weapon can attack
     float getRange() const { return range; }
+    float getMaxCooldown() const { return maxCooldown; }
 
     // setters
     void setOwner(Character* owner) { this->owner = owner; }
+    void setCooldown(float cooldownValue) { cooldown = cooldownValue; }  // Set cooldown directly (for delayed attacks)
+    void setRange(float rangeValue) { range = rangeValue; }
 };
 
 // --------------------------

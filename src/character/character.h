@@ -52,6 +52,7 @@ public:
     float getRadius() { return radius; }
     vec2& getMoveDir() { return moveDir; }
     std::string getDamageSound() { return damageSound; }
+    bool& getUnstable() { return unstable; }
 
     // setters
     void setMaxMealth(int maxHealth) { this->maxHealth = maxHealth; }

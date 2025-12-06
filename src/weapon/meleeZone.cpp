@@ -19,8 +19,9 @@ bool MeleeZone::hit(Character* other) {
     if (glm::length2(dir) < 1e-6f) return true;
     dir = glm::normalize(dir);
 
-    // apply knockback
+    // apply knockback and set unstable
     other->setVelocity(other->getVelocity() + vec3{ dir * knockback, 0 });
+    other->getUnstable() = true;
 
     return true;
 }

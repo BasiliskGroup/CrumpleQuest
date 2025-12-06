@@ -3,6 +3,8 @@
 #include "ui/ui.h"
 #include "levels/levels.h"
 #include "character/behavior.h"
+#include "character/attackAction.h"
+#include "character/moveAction.h"
 #include "audio/audio_manager.h"
 #include "audio/music_player.h"
 #include "ui/menu_manager.h"
@@ -22,7 +24,7 @@ int main() {
     // ------------------------------------------
 
     // image and material
-    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug", "john", "blue", "darkred", "circle", "notebook" };
+    std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug", "john", "blue", "darkred", "circle" };
     for (std::string& name : imageNames) {
         game->addImage(name, new Image("textures/" + name + ".png"));
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
@@ -92,6 +94,8 @@ int main() {
 
     // Initialize behavior system
     BehaviorRegistry::initialize();
+    AttackActionRegistry::initialize();
+    MoveActionRegistry::initialize();
     
     // load levels
     Enemy::generateTemplates(game);

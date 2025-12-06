@@ -1,4 +1,6 @@
 #include "character/enemy.h"
+#include "character/moveActions.h"
+#include "character/attackActions.h"
 #include "game/game.h"
 #include "levels/levels.h"
 #include "weapon/weapon.h"
@@ -59,7 +61,7 @@ void Enemy::generateTemplates(Game* game) {
             { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ meleeRadius, meleeRadius } }, 
             { .damage=1, .life=0.1f, .radius=meleeRadius / 2.0f },
             2,
-            50.0f // knockback
+            5.0f // knockback
         ));
 
         enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
@@ -86,7 +88,7 @@ void Enemy::generateTemplates(Game* game) {
             { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ meleeRadius, meleeRadius } }, 
             { .damage=1, .life=0.1f, .radius=meleeRadius / 2.0f },
             4.0f,
-            50.0f // knockback
+            5.0f // knockback
         ));
 
         enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
@@ -108,13 +110,24 @@ void Enemy::generateTemplates(Game* game) {
         enemy->runAnimation = game->getAnimation("integral_idle");
         enemy->attackAnimation = game->getAnimation("integral_attack");
 
-        enemy->setWeapon(new MeleeWeapon(
+        float meleeRadius = 1.0f;
+
+        MeleeWeapon* integralWeapon = new MeleeWeapon(
             enemy, 
-            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ enemy->getRadius(), enemy->getRadius() } }, 
-            { .damage=1, .life=0.1f, .radius=enemy->getRadius() },
-            7.0f,
-            50.0f // knockback
-        ));
+            { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ meleeRadius, meleeRadius } }, 
+            { .damage=1, .life=0.1f, .radius=meleeRadius / 2.0f },
+            3.0f,
+            5.0f // knockback
+        );
+        integralWeapon->setRange(5.0f);
+        enemy->setWeapon(integralWeapon);
+
+        enemy->setMoveAction(new JumpMoveAction(1.5f, 10.0f));
+        
+        float cooldownTime = 1.5f;
+        int numFrames = 4;
+        float frameRate = static_cast<float>(numFrames) / cooldownTime;
+        enemy->getAnimator()->setFrameRate(frameRate);
 
         enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
             if (enemy->weaponReadyStatus() || enemy->isAttackingStatus()) {
@@ -140,7 +153,7 @@ void Enemy::generateTemplates(Game* game) {
             { .mesh=game->getMesh("quad"), .material=game->getMaterial("circle"), .scale={ meleeRadius, meleeRadius } }, 
             { .damage=1, .life=0.1f, .radius=meleeRadius / 2.0f },
             2.0f,
-            50.0f // knockback
+            5.0f // knockback
         ));
 
         enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
@@ -173,28 +186,8 @@ void Enemy::generateTemplates(Game* game) {
         );
         enemy->setWeapon(piWeapon);
 
-        // Custom attack action for pi: fires 5 projectiles in quick succession
-        enemy->getAttackAction() = [enemy, piWeapon](const vec2& pos, const vec2& dir) -> bool {
-            if (piWeapon == nullptr) return false;
-            if (!piWeapon->isReady()) return false;
-            
-            // Fire first projectile immediately
-            bool firstShot = piWeapon->attack(pos, dir);
-            if (!firstShot) return false;
-            
-            // Queue 4 more projectiles with 0.1s delays
-            const float delay = 0.1f;
-            for (int i = 0; i < 4; ++i) {
-                Enemy::PendingShot shot;
-                shot.pos = pos;
-                shot.dir = dir;
-                shot.timer = delay * static_cast<float>(i + 1);  // 0.1s, 0.2s, 0.3s, 0.4s
-                shot.weapon = piWeapon;  // Store weapon reference for bypassing cooldown
-                enemy->getPendingShots().push_back(shot);
-            }
-            
-            return true;
-        };
+        // Use Burst attack action for pi: fires 5 projectiles in quick succession
+        enemy->setAttackAction("Burst");
 
         enemy->getBehaviorSelector() = [enemy](const vec2&, float) -> Behavior* {
             // If can attack, stay and attack (stationary)

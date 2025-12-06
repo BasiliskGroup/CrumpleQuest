@@ -47,11 +47,17 @@ static void updatePathFollowing(Enemy* enemy, const vec2& fallbackDir = vec2(0, 
     
     // Use moveAction to set movement direction towards next waypoint
     if (path.size() > 0) {
-        enemy->getMoveAction()(path[0]);
+        MoveAction* moveAction = enemy->getMoveAction();
+        if (moveAction != nullptr) {
+            moveAction->execute(enemy, path[0]);
+        }
     } else {
         // If no path, use fallback direction (or stop if fallback is zero)
         if (glm::length2(fallbackDir) > 1e-6f) {
-            enemy->getMoveAction()(enemyPos + fallbackDir);
+            MoveAction* moveAction = enemy->getMoveAction();
+            if (moveAction != nullptr) {
+                moveAction->execute(enemy, enemyPos + fallbackDir);
+            }
         } else {
             enemy->getMoveDir() = vec2(0, 0);
         }
@@ -70,7 +76,10 @@ static void updateDestinationWandering(
 ) {
     if (!paperMesh) {
         if (glm::length2(fallbackDir) > 1e-6f) {
-            enemy->getMoveAction()(enemy->getPosition() + fallbackDir);
+            MoveAction* moveAction = enemy->getMoveAction();
+            if (moveAction != nullptr) {
+                moveAction->execute(enemy, enemy->getPosition() + fallbackDir);
+            }
         } else {
             enemy->getMoveDir() = vec2(0, 0);
         }
@@ -134,7 +143,10 @@ void ChasePlayerBehavior::update(Enemy* enemy, const vec2& playerPos, float dt) 
     
     // Use moveAction to set movement direction towards next waypoint
     if (path.size() > 0) {
-        enemy->getMoveAction()(path[0]);
+        MoveAction* moveAction = enemy->getMoveAction();
+        if (moveAction != nullptr) {
+            moveAction->execute(enemy, path[0]);
+        }
     } else {
         enemy->getMoveDir() = vec2(0, 0);
     }
