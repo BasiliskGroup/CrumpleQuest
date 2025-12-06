@@ -13,6 +13,7 @@ private:
     Game* game;
     MenuStack* menuStack;
     std::vector<Menu*> pendingDelete; // Menus to delete after current frame
+    bool isGameOverMenuActive; // Track if game over menu is currently showing
     
     // Private constructor for singleton
     MenuManager();
@@ -50,6 +51,7 @@ public:
     bool hasActiveMenu() const { return menuStack->hasActiveMenu(); }
     size_t getMenuStackSize() const { return menuStack->size(); }
     bool isInGame() const;
+    bool isGameOverActive() const { return isGameOverMenuActive; }
     
     // Event handling and updates
     void handleEvent(const vec2& mousePos, bool mouseDown);

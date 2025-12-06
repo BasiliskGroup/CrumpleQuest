@@ -81,7 +81,17 @@ void MusicPlayer::FadeTo(const std::string& track_name, float fade_duration) {
     
     // Don't do anything if we're already on this track
     if (track_name == current_track_) {
-        std::cout << "[MusicPlayer::FadeTo] Already on track: " << track_name << std::endl;
+        std::cout << "[MusicPlayer::FadeTo] Already on track: " << track_name << ", skipping transition" << std::endl;
+        // Ensure the track is playing at full volume (in case it was faded out)
+        AudioManager& audio = AudioManager::GetInstance();
+        TrackHandle target_track = GetTrackHandle(track_name);
+        if (target_track != 0) {
+            // Make sure track is playing
+            audio.PlayTrack(target_track);
+            // Fade to full volume if not already there
+            auto fade_ms = std::chrono::milliseconds(static_cast<long long>(fade_duration * 1000));
+            audio.FadeLayer(target_track, track_name, 1.0f, fade_ms);
+        }
         return;
     }
     
@@ -95,6 +105,10 @@ void MusicPlayer::FadeTo(const std::string& track_name, float fade_duration) {
     
     std::cout << "[MusicPlayer::FadeTo] Fading from '" << current_track_ << "' to '" << track_name << "'" << std::endl;
     
+    // Update current track IMMEDIATELY to prevent duplicate transitions
+    std::string old_track = current_track_;
+    current_track_ = track_name;
+    
     // Convert duration to milliseconds
     auto fade_ms = std::chrono::milliseconds(static_cast<long long>(fade_duration * 1000));
     
@@ -103,10 +117,10 @@ void MusicPlayer::FadeTo(const std::string& track_name, float fade_duration) {
         std::cout << "[MusicPlayer::FadeTo] Using restart mode" << std::endl;
         
         // Fade out current track, then stop it
-        TrackHandle current_track_handle = GetTrackHandle(current_track_);
+        TrackHandle current_track_handle = GetTrackHandle(old_track);
         if (current_track_handle != 0) {
-            std::cout << "[MusicPlayer::FadeTo] Fading out current track: " << current_track_ << std::endl;
-            audio.FadeLayer(current_track_handle, current_track_, 0.0f, fade_ms);
+            std::cout << "[MusicPlayer::FadeTo] Fading out old track: " << old_track << std::endl;
+            audio.FadeLayer(current_track_handle, old_track, 0.0f, fade_ms);
             // Note: We can't easily stop the track after the fade completes without a callback system
             // For now, leaving it at 0 volume is sufficient
         }
@@ -148,7 +162,7 @@ void MusicPlayer::FadeTo(const std::string& track_name, float fade_duration) {
         audio.FadeLayer(target_track, track_name, 1.0f, fade_ms);
     }
     
-    current_track_ = track_name;
+    // current_track_ already updated at the start of the function
 }
 
 void MusicPlayer::SetTrackVolume(const std::string& track_name, float volume) {
