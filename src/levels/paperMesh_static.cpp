@@ -127,6 +127,9 @@ void PaperMesh::generateTemplates(Game* game) {
             vec2(0.03,4.6), vec2(11.86,4.63),
             vec2(5.45,0.06), vec2(5.4,2.1),
             vec2(5.4,8.87), vec2(5.4,6.54),
+            vec2(8.75,6.43), vec2(8.7,2.5),
+            vec2(8.75,6.43), vec2(11.9,8.7),
+            vec2(11.83,0.13), vec2(8.8,2.4),
         };
         
         addLines(obst, points, game);
