@@ -33,7 +33,7 @@ void Enemy::onDamage(int damage) {
 }
 
 void Enemy::onDeath() {
-    if (uniform(0.0f, 1.0f) < 1.0f) {
+    if (uniform(0.0f, 1.0f) < 0.2f) {
         side->addPickup(new Heart(game, side, { .mesh=game->getMesh("quad"), .material=game->getMaterial("red"), .position=getPosition(), .scale={1.0, 1.0} }, 0.5f));
     }
 
