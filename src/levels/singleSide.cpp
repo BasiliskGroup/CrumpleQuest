@@ -50,80 +50,30 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material, vec2 
         spawn -= offset;
     }
 
-    // add enemies based on difficulty
-    if (!enemySpawns.empty() && difficulty >= 0.0f) {
+    // add enemies based on biome - uniformly select from biome enemies
+    if (!enemySpawns.empty()) {
         // Get enemy list for this biome
         auto biomeIt = Enemy::enemyBiomes.find(biome);
         if (biomeIt != Enemy::enemyBiomes.end()) {
             const auto& biomeEnemies = biomeIt->second;
             
-            // Find the weakest enemy (lowest price) for fallback
-            std::string weakestEnemy;
-            float weakestPrice = std::numeric_limits<float>::max();
-            if (!biomeEnemies.empty()) {
-                for (const auto& enemyPair : biomeEnemies) {
-                    if (enemyPair.second < weakestPrice) {
-                        weakestPrice = enemyPair.second;
-                        weakestEnemy = enemyPair.first;
-                    }
-                }
-            }
-            
             // Only proceed if we have valid enemies for this biome
-            if (!weakestEnemy.empty()) {
-                float remainingDifficulty = difficulty;
-                
-                // Shuffle spawn points for randomness
-                std::vector<vec2> shuffledSpawns = enemySpawns;
-                for (size_t i = shuffledSpawns.size() - 1; i > 0; --i) {
-                    size_t j = randint(0, static_cast<int>(i));
-                    std::swap(shuffledSpawns[i], shuffledSpawns[j]);
-                }
-                
-                // Fill spawn points with enemies
-                for (const vec2& spawnPos : shuffledSpawns) {
-                    std::string selectedEnemy;
-                    float selectedPrice = 0.0f;
-                    
-                    // Filter enemies that fit in remaining difficulty
-                    std::vector<std::pair<std::string, float>> affordableEnemies;
-                    for (const auto& enemyPair : biomeEnemies) {
-                        if (enemyPair.second <= remainingDifficulty) {
-                            affordableEnemies.push_back(enemyPair);
-                        }
-                    }
-                    
-                    if (!affordableEnemies.empty()) {
-                        // Randomly select from affordable enemies (weighted by price)
-                        // Higher price enemies are more likely to be selected
-                        float totalWeight = 0.0f;
-                        for (const auto& enemyPair : affordableEnemies) {
-                            totalWeight += enemyPair.second;
-                        }
+            if (!biomeEnemies.empty()) {
+                // Fill spawn points with enemies - each spawn has 50% chance
+                for (const vec2& spawnPos : enemySpawns) {
+                    // 50% chance to spawn an enemy at this location
+                    if (uniform() < 0.8f) {
+                        // Uniformly select from all enemies in biome
+                        int randomIndex = randint(0, static_cast<int>(biomeEnemies.size() - 1));
+                        const std::string& selectedEnemy = biomeEnemies[randomIndex].first;
                         
-                        float randomValue = uniform(0.0f, totalWeight);
-                        float cumulativeWeight = 0.0f;
-                        for (const auto& enemyPair : affordableEnemies) {
-                            cumulativeWeight += enemyPair.second;
-                            if (randomValue <= cumulativeWeight) {
-                                selectedEnemy = enemyPair.first;
-                                selectedPrice = enemyPair.second;
-                                break;
+                        // Create and add the enemy
+                        auto templateIt = Enemy::templates.find(selectedEnemy);
+                        if (templateIt != Enemy::templates.end()) {
+                            Enemy* enemy = templateIt->second(spawnPos, this);
+                            if (enemy != nullptr) {
+                                addEnemy(enemy);
                             }
-                        }
-                    } else {
-                        // No affordable enemies, use weakest enemy
-                        selectedEnemy = weakestEnemy;
-                        selectedPrice = weakestPrice;
-                    }
-                    
-                    // Create and add the enemy
-                    auto templateIt = Enemy::templates.find(selectedEnemy);
-                    if (templateIt != Enemy::templates.end()) {
-                        Enemy* enemy = templateIt->second(spawnPos, this);
-                        if (enemy != nullptr) {
-                            addEnemy(enemy);
-                            remainingDifficulty -= selectedPrice;
                         }
                     }
                 }
@@ -331,21 +281,25 @@ void SingleSide::update(const vec2& playerPos, float dt, Player* player) {
             }
         }
 
-        // check collision with boss (if boss exists, is vulnerable, and damage zone is not friendly)
+        // check collision with boss (if boss exists, is vulnerable, damage zone is not friendly, and owner is not Enemy team)
         if (player != nullptr && player->getGame() != nullptr) {
             Boss* boss = player->getGame()->getBoss();
             if (boss != nullptr) {
                 bool isVulnerable = boss->isVulnerable();
                 bool isFriendly = zone->getFriendlyDamage();
+                // Boss is immune to damage zones from Enemy team
+                Character* zoneOwner = zone->getOwner();
+                bool isEnemyTeam = (zoneOwner != nullptr && zoneOwner->getTeam() == "Enemy");
                 
                 static int bossCheckCount = 0;
                 bossCheckCount++;
                 if (bossCheckCount % 60 == 0) {  // Print every 60 frames
                     std::cout << "[SingleSide::update] Boss check - exists=" << (boss != nullptr) 
-                              << ", vulnerable=" << isVulnerable << ", zoneFriendly=" << isFriendly << std::endl;
+                              << ", vulnerable=" << isVulnerable << ", zoneFriendly=" << isFriendly 
+                              << ", isEnemyTeam=" << isEnemyTeam << std::endl;
                 }
                 
-                if (isVulnerable && !isFriendly) {
+                if (isVulnerable && !isFriendly && !isEnemyTeam) {
                     // Get boss 2D position
                     vec2 bossPos = boss->get2DPosition();
                     // Use attack radius (2.0f) for boss hitbox
@@ -363,7 +317,7 @@ void SingleSide::update(const vec2& playerPos, float dt, Player* player) {
                     
                     if (distSq <= combinedRadius * combinedRadius) {
                         std::cout << "[SingleSide::update] BOSS HIT! Calling onDamage with " << zone->getDamage() << " damage" << std::endl;
-                        // Boss takes damage from non-friendly damage zones
+                        // Boss takes damage from non-friendly damage zones (excluding Enemy team)
                         boss->onDamage(zone->getDamage());
                     }
                 }
@@ -644,80 +598,30 @@ void SingleSide::reset() {
     for (auto spawn : enemySpawns) std::cout << spawn.x << " " << spawn.y;
     std::cout << std::endl;
 
-    // add enemies based on difficulty
-    if (!enemySpawns.empty() && difficulty >= 0.0f) {
+    // add enemies based on biome - uniformly select from biome enemies
+    if (!enemySpawns.empty()) {
         // Get enemy list for this biome
         auto biomeIt = Enemy::enemyBiomes.find(biome);
         if (biomeIt != Enemy::enemyBiomes.end()) {
             const auto& biomeEnemies = biomeIt->second;
             
-            // Find the weakest enemy (lowest price) for fallback
-            std::string weakestEnemy;
-            float weakestPrice = std::numeric_limits<float>::max();
-            if (!biomeEnemies.empty()) {
-                for (const auto& enemyPair : biomeEnemies) {
-                    if (enemyPair.second < weakestPrice) {
-                        weakestPrice = enemyPair.second;
-                        weakestEnemy = enemyPair.first;
-                    }
-                }
-            }
-            
             // Only proceed if we have valid enemies for this biome
-            if (!weakestEnemy.empty()) {
-                float remainingDifficulty = difficulty;
-                
-                // Shuffle spawn points for randomness
-                std::vector<vec2> shuffledSpawns = enemySpawns;
-                for (size_t i = shuffledSpawns.size() - 1; i > 0; --i) {
-                    size_t j = randint(0, static_cast<int>(i));
-                    std::swap(shuffledSpawns[i], shuffledSpawns[j]);
-                }
-                
-                // Fill spawn points with enemies
-                for (const vec2& spawnPos : shuffledSpawns) {
-                    std::string selectedEnemy;
-                    float selectedPrice = 0.0f;
-                    
-                    // Filter enemies that fit in remaining difficulty
-                    std::vector<std::pair<std::string, float>> affordableEnemies;
-                    for (const auto& enemyPair : biomeEnemies) {
-                        if (enemyPair.second <= remainingDifficulty) {
-                            affordableEnemies.push_back(enemyPair);
-                        }
-                    }
-                    
-                    if (!affordableEnemies.empty()) {
-                        // Randomly select from affordable enemies (weighted by price)
-                        // Higher price enemies are more likely to be selected
-                        float totalWeight = 0.0f;
-                        for (const auto& enemyPair : affordableEnemies) {
-                            totalWeight += enemyPair.second;
-                        }
+            if (!biomeEnemies.empty()) {
+                // Fill spawn points with enemies - each spawn has 50% chance
+                for (const vec2& spawnPos : enemySpawns) {
+                    // 50% chance to spawn an enemy at this location
+                    if (uniform() < 0.8f) {
+                        // Uniformly select from all enemies in biome
+                        int randomIndex = randint(0, static_cast<int>(biomeEnemies.size() - 1));
+                        const std::string& selectedEnemy = biomeEnemies[randomIndex].first;
                         
-                        float randomValue = uniform(0.0f, totalWeight);
-                        float cumulativeWeight = 0.0f;
-                        for (const auto& enemyPair : affordableEnemies) {
-                            cumulativeWeight += enemyPair.second;
-                            if (randomValue <= cumulativeWeight) {
-                                selectedEnemy = enemyPair.first;
-                                selectedPrice = enemyPair.second;
-                                break;
+                        // Create and add the enemy
+                        auto templateIt = Enemy::templates.find(selectedEnemy);
+                        if (templateIt != Enemy::templates.end()) {
+                            Enemy* enemy = templateIt->second(spawnPos, this);
+                            if (enemy != nullptr) {
+                                addEnemy(enemy);
                             }
-                        }
-                    } else {
-                        // No affordable enemies, use weakest enemy
-                        selectedEnemy = weakestEnemy;
-                        selectedPrice = weakestPrice;
-                    }
-                    
-                    // Create and add the enemy
-                    auto templateIt = Enemy::templates.find(selectedEnemy);
-                    if (templateIt != Enemy::templates.end()) {
-                        Enemy* enemy = templateIt->second(spawnPos, this);
-                        if (enemy != nullptr) {
-                            addEnemy(enemy);
-                            remainingDifficulty -= selectedPrice;
                         }
                     }
                 }

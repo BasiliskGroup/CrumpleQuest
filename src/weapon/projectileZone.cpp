@@ -1,5 +1,6 @@
 #include "weapon/projectileZone.h"
 #include "util/random.h"
+#include "levels/levels.h"
 #include <cmath>
 
 ProjectileZone::ProjectileZone(Character* owner, Node2D::Params node, Params params, const vec2& pos, const vec2& dir, int ricochet) :
@@ -55,6 +56,21 @@ bool ProjectileZone::update(float dt) {
     }
     
     if (DamageZone::update(dt) == false) return false;
+
+    // Check if projectile entered an obstacle UVRegion
+    if (owner != nullptr) {
+        PaperMesh* paperMesh = owner->getPaperMeshForSide();
+        if (paperMesh != nullptr) {
+            vec2 projPos = getPosition();
+            // Check all UVRegions for obstacle collisions
+            for (const auto& uvRegion : paperMesh->regions) {
+                if (uvRegion.isObstacle && uvRegion.contains(projPos)) {
+                    // Destroy projectile if it's inside an obstacle
+                    return false;
+                }
+            }
+        }
+    }
 
     // check for expire on wall hit
     return true;

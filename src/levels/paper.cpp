@@ -962,7 +962,7 @@ void Paper::regenerateWalls(int side) {
             auto data = connectSquare(uvRegion.positions[i], uvRegion.positions[j]);
             selectedSide->addWall(new Node2D(selectedSide->getScene(), { 
                 .mesh = game->getMesh("quad"), 
-                .material = game->getMaterial("knight"), 
+                .material = game->getMaterial("empty"), 
                 .position = vec2{data.first.x, data.first.y}, 
                 .rotation = data.first.z, 
                 .scale = data.second,

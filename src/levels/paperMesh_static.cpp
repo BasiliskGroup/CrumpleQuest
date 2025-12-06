@@ -10,7 +10,7 @@ void addLines(std::vector<UVRegion>& obst, std::vector<vec2> points, Game* game)
     vec2 offset = vec2(6.0f, 4.5f); 
 
     for (size_t i = 0; i < points.size(); i += 2) {
-        std::pair<glm::vec3, glm::vec2> data = connectSquare(points[i] - offset, points[i + 1] - offset, 0.01f);
+        std::pair<glm::vec3, glm::vec2> data = connectSquare(points[i] - offset, points[i + 1] - offset, 0.1f);
         obst.push_back({ game->getMesh("quad"), data.first, data.second, true });
     }
 }
