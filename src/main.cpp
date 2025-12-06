@@ -25,8 +25,6 @@ int main() {
 
     std::function<void()> refresh = [game](){game->getEngine()->update(); game->getEngine()->render();};
 
-    std::cout << "1" << std::endl;
-
     // image and material
     std::vector<std::string> imageNames = { "man", "paper", "box", "floor", "lightGrey", "test", "knight", "table", "sword", "gun", "bullet", "wand", "green", "red", "black", "empty", "yellow", "rug_desaturated", "john", "blue", "darkred", "circle" };
     for (std::string& name : imageNames) {
@@ -35,14 +33,10 @@ int main() {
         game->addMaterial(name, new Material({ 1, 1, 1 }, game->getImage(name)));
     }
     
-    std::cout << "2" << std::endl;
-
     // Load notebook background from art/assets
     refresh();
     game->addImage("notebook", new Image("art/assets/notebook.PNG"));
     game->addMaterial("notebook", new Material({ 1, 1, 1 }, game->getImage("notebook")));
-
-    std::cout << "3" << std::endl;
 
     // Load Hands
     refresh();
@@ -55,8 +49,6 @@ int main() {
     game->addImage("hand_right", new Image("art/assets/hands/right.PNG"));
     game->addMaterial("hand_right", new Material({ 1, 1, 1 }, game->getImage("hand_right")));
     
-    std::cout << "4" << std::endl;
-
     // Load menu paper background from art/assets
     refresh();
     game->addImage("menuPaper", new Image("art/assets/menuPaper.PNG"));
@@ -110,6 +102,7 @@ int main() {
         game->addMaterial("piProjectile" + std::to_string(i), new Material({ 1, 1, 1 }, game->getImage("piProjectile" + std::to_string(i))));
     }
 
+    refresh();
     game->addImage("glueProjectile", new Image("art/sprites/enemies/ranged/notebook_glue/projectile_glue.PNG"));
     game->addMaterial("glueProjectile", new Material({ 1, 1, 1 }, game->getImage("glueProjectile")));
 
