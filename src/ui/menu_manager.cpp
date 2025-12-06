@@ -220,15 +220,17 @@ Menu* MenuManager::createSettingsMenu() {
     // Sliders layout - centered
     float sliderStartY = 1.3f;
     float sliderSpacing = 0.9f;
-    float iconX = -3.2f;
-    float sliderMinX = -2.5f;
-    float sliderMaxX = 2.5f;
-    float iconSize = 0.4f;
+    float iconX = -3.0f;
+    float sliderMinX = -1.5f;  // Centered slider
+    float sliderMaxX = 1.5f;   // Centered slider
+    float iconSize = 0.7f;     // Bigger icons
+    float pegSize = 0.4f;      // Circle size
+    float pegSizeCompensated = pegSize * (12.0f / 9.0f);  // Compensate for aspect ratio to make circles round
     
     // Master volume slider
     Node2D* masterIcon = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("knight"),
+        .material = game->getMaterial("volumeicon"),
         .position = {iconX, sliderStartY},
         .scale = {iconSize, iconSize}
     });
@@ -238,7 +240,10 @@ Menu* MenuManager::createSettingsMenu() {
     Slider* masterSlider = new Slider(game->getMenuScene(), game, 
         {sliderMinX, sliderStartY}, 
         {sliderMaxX, sliderStartY}, 
-        {.pegMaterial = game->getMaterial("box")}
+        {
+            .pegMaterial = game->getMaterial("blackCircle"),
+            .pegDim = {pegSize, pegSizeCompensated}
+        }
     );
     masterSlider->setProportion(game->getAudio().GetMasterVolume());
     masterSlider->getBar()->setLayer(0.54f);
@@ -251,7 +256,7 @@ Menu* MenuManager::createSettingsMenu() {
     // Music volume slider
     Node2D* musicIcon = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("sword"),
+        .material = game->getMaterial("musicicon"),
         .position = {iconX, sliderStartY - sliderSpacing},
         .scale = {iconSize, iconSize}
     });
@@ -261,7 +266,10 @@ Menu* MenuManager::createSettingsMenu() {
     Slider* musicSlider = new Slider(game->getMenuScene(), game,
         {sliderMinX, sliderStartY - sliderSpacing},
         {sliderMaxX, sliderStartY - sliderSpacing},
-        {.pegMaterial = game->getMaterial("box")}
+        {
+            .pegMaterial = game->getMaterial("blackCircle"),
+            .pegDim = {pegSize, pegSizeCompensated}
+        }
     );
     musicSlider->setProportion(game->getAudio().GetGroupVolume(game->getMusicGroup()));
     musicSlider->getBar()->setLayer(0.54f);
@@ -274,7 +282,7 @@ Menu* MenuManager::createSettingsMenu() {
     // SFX volume slider
     Node2D* sfxIcon = new Node2D(game->getMenuScene(), {
         .mesh = game->getMesh("quad"),
-        .material = game->getMaterial("man"),
+        .material = game->getMaterial("SFXicon"),
         .position = {iconX, sliderStartY - sliderSpacing * 2},
         .scale = {iconSize, iconSize}
     });
@@ -284,7 +292,10 @@ Menu* MenuManager::createSettingsMenu() {
     Slider* sfxSlider = new Slider(game->getMenuScene(), game,
         {sliderMinX, sliderStartY - sliderSpacing * 2},
         {sliderMaxX, sliderStartY - sliderSpacing * 2},
-        {.pegMaterial = game->getMaterial("box")}
+        {
+            .pegMaterial = game->getMaterial("blackCircle"),
+            .pegDim = {pegSize, pegSizeCompensated}
+        }
     );
     sfxSlider->setProportion(game->getAudio().GetGroupVolume(game->getSFXGroup()) / 0.3f);
     sfxSlider->getBar()->setLayer(0.54f);
