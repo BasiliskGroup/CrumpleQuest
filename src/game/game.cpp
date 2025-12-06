@@ -261,11 +261,16 @@ void Game::update(float dt) {
     if (boss != nullptr) {
         boss->update(dt);
         
+        // Update boss health bar
+        updateBossHealthBar();
+        
         // Check if boss should be deleted (leaving animation complete)
         if (boss->shouldBeDeleted()) {
             std::cout << "[Game::update] Deleting boss after leaving animation" << std::endl;
             delete boss;
             boss = nullptr;
+            // Hide health bar when boss is deleted
+            showBossHealthBar(false);
         }
     }
 
@@ -382,13 +387,15 @@ void Game::update(float dt) {
             paperView->update(paper);
         }
         paperView->render();
+        
+        // Always render menu scene during gameplay (for health bar and menus)
+        menuScene->update();
+        menuScene->render();
     }
     
     if (MenuManager::Get().hasActiveMenu()) {
-        // Menu scene renders on top
+        // Menu interactions
         MenuManager::Get().update(engine->getDeltaTime());
-        menuScene->update();
-        menuScene->render();
     }
     
     engine->render();
@@ -409,6 +416,66 @@ void Game::initMenus() {
     MenuManager::Get().pushMainMenu();
 }
 
+void Game::initBossHealthBar() {
+    std::cout << "[Game::initBossHealthBar] Creating boss health bar at (" << healthBarPosition.x << ", " << healthBarPosition.y << ")" << std::endl;
+    
+    // Create background (black) - use higher layer values to be visible
+    bossHealthBarBackground = new Node2D(menuScene, {
+        .mesh = getMesh("quad"),
+        .material = getMaterial("empty"), // Hidden by default
+        .position = vec3(healthBarPosition.x, healthBarPosition.y, 0.0f),
+        .scale = vec3(healthBarWidth, healthBarHeight, 1.0f)
+    });
+    bossHealthBarBackground->setLayer(0.7f);  // Above all menus
+
+    // Create foreground (red health)
+    bossHealthBarForeground = new Node2D(menuScene, {
+        .mesh = getMesh("quad"),
+        .material = getMaterial("empty"), // Hidden by default
+        .position = vec3(healthBarPosition.x, healthBarPosition.y, 0.0f),
+        .scale = vec3(healthBarWidth, healthBarHeight, 1.0f)
+    });
+    bossHealthBarForeground->setLayer(0.71f);  // Just above background
+    
+    std::cout << "[Game::initBossHealthBar] Health bar created - background=" << bossHealthBarBackground 
+              << ", foreground=" << bossHealthBarForeground << std::endl;
+}
+
+void Game::updateBossHealthBar() {
+    if (!boss || !bossHealthBarForeground) return;
+
+    float healthPercent = static_cast<float>(boss->getHealth()) / static_cast<float>(boss->getMaxHealth());
+    float newWidth = healthBarWidth * healthPercent;
+    
+    // Update foreground width (shrinks from right)
+    bossHealthBarForeground->setScale(vec3(newWidth, healthBarHeight, 1.0f));
+    
+    // Adjust x position to make it shrink from the right
+    float offset = (healthBarWidth - newWidth) * 0.5f;
+    bossHealthBarForeground->setPosition(vec3(healthBarPosition.x - offset, healthBarPosition.y, 0.06f));
+}
+
+void Game::showBossHealthBar(bool show) {
+    std::cout << "[Game::showBossHealthBar] Called with show=" << show 
+              << ", background=" << bossHealthBarBackground 
+              << ", foreground=" << bossHealthBarForeground << std::endl;
+    
+    if (!bossHealthBarBackground || !bossHealthBarForeground) {
+        std::cout << "[Game::showBossHealthBar] Health bar nodes are null!" << std::endl;
+        return;
+    }
+
+    if (show) {
+        bossHealthBarBackground->setMaterial(getMaterial("black"));
+        bossHealthBarForeground->setMaterial(getMaterial("red"));
+        std::cout << "[Game::showBossHealthBar] Health bar shown" << std::endl;
+    } else {
+        bossHealthBarBackground->setMaterial(getMaterial("empty"));
+        bossHealthBarForeground->setMaterial(getMaterial("empty"));
+        std::cout << "[Game::showBossHealthBar] Health bar hidden" << std::endl;
+    }
+}
+
 void Game::initPaperView() {
     // Create paper scene
     paperView = new PaperView(this);
@@ -423,6 +490,9 @@ void Game::startGame() {
         menuScene->setCamera(menuCamera);
         menuScene->getSolver()->setGravity(0);
     }
+    
+    // Recreate boss health bar (it was destroyed with the old menuScene)
+    initBossHealthBar();
     
     // Create the floor (this will generate rooms and create Paper instances)
     if (floor) {
@@ -517,6 +587,8 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
             boss = new Boss(this, paperView);
             std::cout << "[Game::switchToRoom] Boss created, pointer=" << boss << std::endl;
         }
+        // Show boss health bar
+        showBossHealthBar(true);
     } else {
         // Not a boss room - delete boss if it exists (including if leaving animation is in progress)
         if (boss != nullptr) {
@@ -528,6 +600,8 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
         if (paperView && paperView->getBossNode()) {
             paperView->getBossNode()->setMaterial(getMaterial("empty"));
         }
+        // Hide boss health bar
+        showBossHealthBar(false);
     }
     
     // Check room state and update directional nodes immediately
@@ -650,6 +724,9 @@ void Game::processReturnToMainMenu() {
         menuScene->setCamera(menuCamera);
         menuScene->getSolver()->setGravity(0);
     }
+    
+    // Recreate boss health bar (it was destroyed with the old menuScene)
+    initBossHealthBar();
     
     // Then push the main menu (which will be the only menu)
     MenuManager::Get().pushMainMenu();

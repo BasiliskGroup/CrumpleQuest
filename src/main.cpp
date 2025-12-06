@@ -145,6 +145,7 @@ int main() {
     // initialize menus (menu scene is ready)
     game->initPaperView();
     game->initMenus();
+    game->initBossHealthBar();
 
     while (game->getEngine()->isRunning()) {
         game->update(game->getEngine()->getDeltaTime());
