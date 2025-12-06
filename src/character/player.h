@@ -31,7 +31,7 @@ private:
     bool shiftWasDown = false;
 
     bool pencilAvailible = true;
-    bool stapleGunAvailible = true;
+    bool stapleGunAvailible = false;
     bool scissorAvailible = false;
 
 public:
