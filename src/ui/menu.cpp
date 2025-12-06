@@ -1,8 +1,14 @@
 #include "ui/menu.h"
 #include "game/game.h"
 #include "ui/slider.h"
+#include "audio/sfx_player.h"
 
-Menu::Menu(Game* game) : game(game), visible(true), animationTimer(-1.0f), animationDuration(0.35f), slideDistance(8.0f), animatingOut(false), isClosing(false) {
+// Ease-in-out function (smooth acceleration and deceleration)
+static float easeInOutCubic(float t) {
+    return t < 0.5f ? 4.0f * t * t * t : 1.0f - pow(-2.0f * t + 2.0f, 3.0f) / 2.0f;
+}
+
+Menu::Menu(Game* game) : game(game), visible(true), animationTimer(-1.0f), animationDuration(0.35f), slideDistance(8.0f), animatingOut(false), isClosing(false), soundPlayed(false) {
 }
 
 Menu::~Menu() {
@@ -53,6 +59,7 @@ void Menu::resetAnimation() {
     animationTimer = -999.0f; // Large negative value - will be set to 0 on first update
     animatingOut = false;
     isClosing = false;
+    soundPlayed = false;
     
     std::cout << "[Menu::resetAnimation] Resetting " << uiElements.size() << " elements and " << nodes.size() << " nodes" << std::endl;
     
@@ -93,6 +100,7 @@ void Menu::startCloseAnimation() {
     animationTimer = 0.0f;
     animatingOut = true;
     isClosing = true;
+    soundPlayed = false;
     std::cout << "[Menu::startCloseAnimation] Starting slide-out animation" << std::endl;
 }
 
@@ -105,6 +113,12 @@ void Menu::update(float dt) {
     
     // Animate menu sliding in or out
     if (animationTimer < animationDuration) {
+        // Play slide sound on first frame of animation
+        if (!soundPlayed) {
+            audio::SFXPlayer::Get().Play("slide");
+            soundPlayed = true;
+        }
+        
         animationTimer += dt;
         
         static int frameCount = 0;
@@ -114,7 +128,8 @@ void Menu::update(float dt) {
         }
         
         // Calculate animation progress (0 to 1)
-        float progress = std::min(animationTimer / animationDuration, 1.0f);
+        float rawProgress = std::min(animationTimer / animationDuration, 1.0f);
+        float progress = easeInOutCubic(rawProgress);
         
         // Animate UI elements
         for (size_t i = 0; i < uiElements.size(); i++) {

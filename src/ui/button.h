@@ -12,6 +12,8 @@ private:
         std::function<void()> onDown = []() {};
         std::function<void()> onUp = []() {};
         std::function<void()> onHover = []() {};
+        Material* hoverMaterial = nullptr;
+        vec2 hitboxScale = {-1, -1};  // If set, use this for hitbox instead of visual scale
     };
 
     std::function<void()> onDown;
@@ -19,6 +21,10 @@ private:
     std::function<void()> onHover;
 
     bool wasPressed = false;
+    bool isCurrentlyHovered = false;
+    Material* normalMaterial = nullptr;
+    Material* hoverMaterial = nullptr;
+    vec2 hitboxScale;
 
     Game* game;
 

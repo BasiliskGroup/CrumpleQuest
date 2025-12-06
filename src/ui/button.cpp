@@ -5,6 +5,9 @@ Button::Button(Scene2D* scene, Game* game, Node2D::Params params, Button::Params
     onDown(callbacks.onDown),
     onUp(callbacks.onUp),
     onHover(callbacks.onHover),
+    normalMaterial(params.material),
+    hoverMaterial(callbacks.hoverMaterial),
+    hitboxScale(callbacks.hitboxScale.x > 0 ? callbacks.hitboxScale : params.scale),
     game(game)
 {
 }
@@ -16,6 +19,10 @@ Button::Button(const Button& other) :
     onUp(other.onUp),
     onHover(other.onHover),
     wasPressed(false),  // Don't copy pressed state
+    isCurrentlyHovered(false),
+    normalMaterial(other.normalMaterial),
+    hoverMaterial(other.hoverMaterial),
+    hitboxScale(other.hitboxScale),
     game(other.game)
 {
 }
@@ -31,6 +38,10 @@ Button& Button::operator=(const Button& other) {
         onUp = other.onUp;
         onHover = other.onHover;
         wasPressed = false;  // Don't copy pressed state
+        isCurrentlyHovered = false;
+        normalMaterial = other.normalMaterial;
+        hoverMaterial = other.hoverMaterial;
+        hitboxScale = other.hitboxScale;
         game = other.game;
     }
     return *this;
@@ -43,10 +54,17 @@ Button::Button(Button&& other) noexcept :
     onUp(std::move(other.onUp)),
     onHover(std::move(other.onHover)),
     wasPressed(other.wasPressed),
+    isCurrentlyHovered(other.isCurrentlyHovered),
+    normalMaterial(other.normalMaterial),
+    hoverMaterial(other.hoverMaterial),
+    hitboxScale(other.hitboxScale),
     game(other.game)
 {
     // Reset other's state
     other.wasPressed = false;
+    other.isCurrentlyHovered = false;
+    other.normalMaterial = nullptr;
+    other.hoverMaterial = nullptr;
     other.game = nullptr;
 }
 
@@ -61,22 +79,48 @@ Button& Button::operator=(Button&& other) noexcept {
         onUp = std::move(other.onUp);
         onHover = std::move(other.onHover);
         wasPressed = other.wasPressed;
+        isCurrentlyHovered = other.isCurrentlyHovered;
+        normalMaterial = other.normalMaterial;
+        hoverMaterial = other.hoverMaterial;
+        hitboxScale = other.hitboxScale;
         game = other.game;
         
         // Reset other's state
         other.wasPressed = false;
+        other.isCurrentlyHovered = false;
+        other.normalMaterial = nullptr;
+        other.hoverMaterial = nullptr;
         other.game = nullptr;
     }
     return *this;
 }
 
 bool Button::isHovered(const vec2& pos) {
-    return (this->position.x - this->scale.x < pos.x && pos.x < this->position.x + this->scale.x) 
-        && (this->position.y - this->scale.y < pos.y && pos.y < this->position.y + this->scale.y);
+    // Scale is the full width/height (quad mesh goes from -0.5 to 0.5, so scale of 2.0 = 2.0 units wide)
+    // So we need to use scale/2 to get the half-width/half-height for bounds checking
+    float halfWidth = hitboxScale.x * 0.5f;
+    float halfHeight = hitboxScale.y * 0.5f;
+    return (this->position.x - halfWidth < pos.x && pos.x < this->position.x + halfWidth) 
+        && (this->position.y - halfHeight < pos.y && pos.y < this->position.y + halfHeight);
 }
 
 void Button::event(const vec2& pos, bool mouseDown) {
-    if (isHovered(pos) == false) {
+    bool hovered = isHovered(pos);
+    
+    // Update hover state and material
+    if (hovered && !isCurrentlyHovered) {
+        isCurrentlyHovered = true;
+        if (hoverMaterial) {
+            this->setMaterial(hoverMaterial);
+        }
+    } else if (!hovered && isCurrentlyHovered) {
+        isCurrentlyHovered = false;
+        if (normalMaterial) {
+            this->setMaterial(normalMaterial);
+        }
+    }
+    
+    if (!hovered) {
         wasPressed = false;
         return;
     }
