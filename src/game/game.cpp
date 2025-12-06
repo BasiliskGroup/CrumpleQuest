@@ -537,10 +537,8 @@ void Game::startGame() {
     // Mark paper as visited
     paper->hasBeenVisited = true;
 
-    float meleeRadius = 1.0f;
-
-    // create weapons
-    player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("empty"), .scale={meleeRadius, meleeRadius}}, { .damage=1, .life=0.2f, .radius=meleeRadius / 2.0f }, 0.5f, 6.0f));
+    // Weapon is created by setWeaponPencil() in Player constructor
+    // No need to set it here
     
     // Boss will be created when entering a boss room (see switchToRoom)
 }

@@ -148,9 +148,20 @@ void Player::move(float dt) {
     if (glm::length2(dir) < 1e-6f) return;
 
     dir = glm::normalize(dir);
-    vec2 offset = 2 * radius * dir + getPosition();
     
-    bool attackSuccessful = weapon->attack(offset, dir);
+    // Check if weapon is a projectile weapon - if so, spawn at player position (no offset)
+    // Otherwise (melee weapons), use offset
+    ProjectileWeapon* projectileWeapon = dynamic_cast<ProjectileWeapon*>(weapon);
+    vec2 attackPos;
+    if (projectileWeapon != nullptr) {
+        // Projectile weapons spawn directly at player position
+        attackPos = getPosition();
+    } else {
+        // Melee weapons use offset
+        attackPos = 2 * radius * dir + getPosition();
+    }
+    
+    bool attackSuccessful = weapon->attack(attackPos, dir);
     
     // If attack was successful (weapon was off cooldown), set attack animation duration
     if (attackSuccessful) {
@@ -183,6 +194,19 @@ void Player::setWeaponPencil() {
 
     animator->setAnimation(idleAnimation);
     weaponAnimator->setAnimation(weaponIdle);
+
+    // Create and set MeleeWeapon for pencil
+    // Use same stats as initial weapon from game.cpp
+    float meleeRadius = 1.0f;
+    if (weapon != nullptr) {
+        delete weapon;
+    }
+    setWeapon(new MeleeWeapon(this, 
+        { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={meleeRadius, meleeRadius}}, 
+        { .damage=1, .life=0.2f, .radius=meleeRadius / 2.0f }, 
+        0.5f,  // maxCooldown
+        6.0f   // knockback
+    ));
 }
 
 void Player::setWeaponStapleGun() {
@@ -195,6 +219,19 @@ void Player::setWeaponStapleGun() {
 
     animator->setAnimation(idleAnimation);
     weaponAnimator->setAnimation(weaponIdle);
+
+    // Create and set ProjectileWeapon for stapler
+    float projectileRadius = 0.5f;
+    if (weapon != nullptr) {
+        delete weapon;
+    }
+    setWeapon(new ProjectileWeapon(this,
+        { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={projectileRadius, 2.0f * projectileRadius}},
+        { .damage=1, .life=5.0f, .speed=7.0f, .radius=projectileRadius / 2.0f },
+        0.8f,  // maxCooldown
+        { "glueProjectile" },  // projectile materials
+        0      // ricochet
+    ));
 }
 
 void Player::setWeaponScissor() {
@@ -207,6 +244,18 @@ void Player::setWeaponScissor() {
 
     animator->setAnimation(idleAnimation);
     weaponAnimator->setAnimation(weaponIdle);
+
+    // Create and set MeleeWeapon for scissor (same stats as pencil)
+    float meleeRadius = 1.0f;
+    if (weapon != nullptr) {
+        delete weapon;
+    }
+    setWeapon(new MeleeWeapon(this, 
+        { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .scale={meleeRadius, meleeRadius}}, 
+        { .damage=1, .life=0.2f, .radius=meleeRadius / 2.0f }, 
+        0.5f,  // maxCooldown
+        6.0f   // knockback
+    ));
 }
 
 void Player::addHealth(int amount) {
