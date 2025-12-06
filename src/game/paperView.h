@@ -111,6 +111,12 @@ class PaperView {
         
         // Project 3D position onto paper plane and return 2D coordinates relative to paper center
         vec2 projectToPaperPlane(const glm::vec3& worldPos) const;
+        
+        // Convert 2D coordinates on paper plane to 3D position, with height offset along plane normal
+        glm::vec3 paperPlaneTo3D(const vec2& paperPos, float height = 0.0f) const;
+        
+        // Clamp a 3D position to be at least minDistance above the paper plane along the plane normal
+        glm::vec3 clampAbovePaperPlane(const glm::vec3& worldPos, float minDistance = 0.1f) const;
 };
 
 #endif

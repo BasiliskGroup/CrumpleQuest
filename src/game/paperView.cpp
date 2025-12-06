@@ -556,6 +556,47 @@ vec2 PaperView::projectToPaperPlane(const glm::vec3& worldPos) const {
     return vec2(x, y);
 }
 
+glm::vec3 PaperView::paperPlaneTo3D(const vec2& paperPos, float height) const {
+    // Calculate paper plane basis vectors (same as in projectToPaperPlane)
+    glm::vec3 cameraPos = camera->getPosition();
+    glm::vec3 direction = glm::normalize(paperPosition - cameraPos);
+    
+    glm::vec3 planeNormal = direction;
+    glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 planeRight = glm::cross(worldUp, planeNormal);
+    planeRight = glm::normalize(planeRight);
+    glm::vec3 planeUp = glm::normalize(glm::cross(planeNormal, planeRight));
+    
+    // Convert 2D coordinates to 3D position on the paper plane
+    // Note: x was negated in projectToPaperPlane, so we negate it here too
+    glm::vec3 positionOnPlane = paperPosition + (-paperPos.x) * planeRight + paperPos.y * planeUp;
+    
+    // Add height offset along plane normal (positive height moves away from camera, toward paper)
+    glm::vec3 finalPosition = positionOnPlane - planeNormal * height;
+    
+    return finalPosition;
+}
+
+glm::vec3 PaperView::clampAbovePaperPlane(const glm::vec3& worldPos, float minDistance) const {
+    // Calculate paper plane basis vectors (same as in projectToPaperPlane)
+    glm::vec3 cameraPos = camera->getPosition();
+    glm::vec3 direction = glm::normalize(paperPosition - cameraPos);
+    
+    glm::vec3 planeNormal = direction;
+    
+    // Calculate distance along plane normal from paper position
+    glm::vec3 relativePos = worldPos - paperPosition;
+    float distanceAlongNormal = glm::dot(relativePos, -planeNormal);
+    
+    // If below minimum distance, adjust along plane normal
+    if (distanceAlongNormal < minDistance) {
+        float adjustment = minDistance - distanceAlongNormal;
+        return worldPos - planeNormal * adjustment;
+    }
+    
+    return worldPos;
+}
+
 void PaperView::hideGameElements() {
     // Delete health tokens
     for (Node* token : healthTokens) {

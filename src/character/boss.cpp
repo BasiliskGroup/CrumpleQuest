@@ -10,29 +10,28 @@
 Boss::Boss(Game* game, PaperView* paperView) : 
     game(game),
     paperView(paperView),
-    health(100),
-    maxHealth(100),
+    health(20),
+    maxHealth(20),
     stage("spawn"),
     vulnerable(false),
     hitboxRadius(0.5f),
     hitboxPosition(0.0f, 0.0f),
-    handRaisedOffset(0.0f),
-    handBaseY(0.0f),
+    hand2DPosition(0.0f, 0.0f),
+    handHeight(0.2f),
     vulnerableState(VulnerableState::None),
     vulnerableLowerProgress(0.0f),
     vulnerableRaiseProgress(0.0f),
     vulnerableLowerDuration(0.3f),
     vulnerableRaiseDuration(0.3f),
-    vulnerableRaisedPosition(0.0f),
-    vulnerableLoweredPosition(0.0f),
+    vulnerableRaisedHeight(0.2f),
+    vulnerableLoweredHeight(0.2f),
     vulnerableTime(0.0f),
     vulnerableDuration(2.0f),
     handScale(1.2f, 0.72f, 0.3f),
     timeSinceLastVulnerable(0.0f),
     minTimeBetweenVulnerable(2.0f),
     maxTimeBetweenVulnerable(5.0f),
-    nextVulnerableTime(uniform(2.0f, 5.0f)),
-    currentBasePosition(0.0f)
+    nextVulnerableTime(uniform(2.0f, 5.0f))
 {
     // Create hand node in the paperView scene
     // The boss node will be created later in showGameElements, so we'll initialize hand later
@@ -42,15 +41,17 @@ Boss::Boss(Game* game, PaperView* paperView) :
         glm::vec3 bossPos = {0.0f, 0.1386f, 0.544f};  // Default paper position
         if (bossNode) {
             bossPos = bossNode->getPosition();
-            currentBasePosition = bossPos;  // Initialize base position
+            // Initialize 2D position from current 3D position
+            hand2DPosition = paperView->projectToPaperPlane(bossPos);
+            // Clamp to bounds
+            hand2DPosition.x = glm::clamp(hand2DPosition.x, -0.5f, 0.5f);
+            hand2DPosition.y = glm::clamp(hand2DPosition.y, -0.4f, 0.4f);
             std::cout << "[Boss::Boss] Boss node exists, position=(" << bossPos.x << ", " << bossPos.y << ", " << bossPos.z << ")" << std::endl;
         } else {
-            // If boss node doesn't exist yet, initialize with PaperView's base position
-            currentBasePosition = paperView->getBossBasePosition();
-            std::cout << "[Boss::Boss] Boss node doesn't exist yet, using PaperView base position=(" 
-                      << currentBasePosition.x << ", " << currentBasePosition.y << ", " << currentBasePosition.z << ")" << std::endl;
+            // If boss node doesn't exist yet, start at center
+            hand2DPosition = vec2(0.0f, 0.0f);
+            std::cout << "[Boss::Boss] Boss node doesn't exist yet, using center position" << std::endl;
         }
-        handBaseY = bossPos.y;
         std::cout << "[Boss::Boss] Boss created, vulnerable=" << vulnerable << std::endl;
     }
 }
@@ -98,10 +99,13 @@ void Boss::update(float dt) {
             vulnerableLowerProgress = 1.0f;
             vulnerableState = VulnerableState::Lowered;
             vulnerableTime = 0.0f;  // Reset vulnerable timer
-            // Set to lowered position (clamp to plane height, preserve distance)
-            glm::vec3 currentPos = clampToPlaneHeight(vulnerableLoweredPosition, true);
+            handHeight = vulnerableLoweredHeight;
+            
+            // Convert 2D position + height to 3D
+            glm::vec3 currentPos = paperView->paperPlaneTo3D(hand2DPosition, handHeight);
+            // Ensure hand stays above paper along plane normal
+            currentPos = paperView->clampAbovePaperPlane(currentPos, 0.1f);
             bossNode->setPosition(currentPos);
-            handBaseY = currentPos.y;
             setVulnerable(true);
             // Randomly spawn an enemy or attack when the hand lowers
             if (uniform() < 0.5f) {
@@ -110,22 +114,26 @@ void Boss::update(float dt) {
                 attack();
             }
         } else {
-            // Lowering animation: interpolate from raised to lowered position
+            // Lowering animation: interpolate height from raised to lowered
             float smoothProgress = vulnerableLowerProgress * vulnerableLowerProgress * (3.0f - 2.0f * vulnerableLowerProgress);  // Smoothstep
             
-            glm::vec3 currentPos = glm::mix(vulnerableRaisedPosition, vulnerableLoweredPosition, smoothProgress);
+            handHeight = glm::mix(vulnerableRaisedHeight, vulnerableLoweredHeight, smoothProgress);
             
-            // Clamp to plane height to keep hand between page and camera (preserve distance during animation)
-            currentPos = clampToPlaneHeight(currentPos, true);
-            
+            // Convert 2D position + height to 3D
+            glm::vec3 currentPos = paperView->paperPlaneTo3D(hand2DPosition, handHeight);
+            // Ensure hand stays above paper along plane normal during lowering animation
+            currentPos = paperView->clampAbovePaperPlane(currentPos, 0.1f);
             bossNode->setPosition(currentPos);
-            handBaseY = currentPos.y;
         }
     } else if (vulnerableState == VulnerableState::Lowered && bossNode && paperView) {
-        // Stay in lowered position, no sliding (clamp to plane height, preserve distance)
-        glm::vec3 currentPos = clampToPlaneHeight(vulnerableLoweredPosition, true);
+        // Stay in lowered position, no sliding
+        handHeight = vulnerableLoweredHeight;
+        
+        // Convert 2D position + height to 3D
+        glm::vec3 currentPos = paperView->paperPlaneTo3D(hand2DPosition, handHeight);
+        // Ensure hand stays above paper along plane normal
+        currentPos = paperView->clampAbovePaperPlane(currentPos, 0.1f);
         bossNode->setPosition(currentPos);
-        handBaseY = currentPos.y;
         
         // Handle vulnerability recovery
         vulnerableTime += dt;
@@ -146,64 +154,47 @@ void Boss::update(float dt) {
             vulnerableRaiseProgress = 1.0f;
             vulnerableState = VulnerableState::None;
             setVulnerable(false);
-            // Return to raised position (clamp to plane height, preserve distance)
-            glm::vec3 currentPos = clampToPlaneHeight(vulnerableRaisedPosition, true);
+            handHeight = vulnerableRaisedHeight;
+            
+            // Convert 2D position + height to 3D
+            glm::vec3 currentPos = paperView->paperPlaneTo3D(hand2DPosition, handHeight);
             bossNode->setPosition(currentPos);
-            handBaseY = currentPos.y;
             // Reset timer for next vulnerable period
             timeSinceLastVulnerable = 0.0f;
             nextVulnerableTime = uniform(minTimeBetweenVulnerable, maxTimeBetweenVulnerable);
         } else {
-            // Raising animation: interpolate from lowered to raised position
+            // Raising animation: interpolate height from lowered to raised
             float smoothProgress = vulnerableRaiseProgress * vulnerableRaiseProgress * (3.0f - 2.0f * vulnerableRaiseProgress);  // Smoothstep
             
-            glm::vec3 currentPos = glm::mix(vulnerableLoweredPosition, vulnerableRaisedPosition, smoothProgress);
+            handHeight = glm::mix(vulnerableLoweredHeight, vulnerableRaisedHeight, smoothProgress);
             
-            // Clamp to plane height to keep hand between page and camera (preserve distance during animation)
-            currentPos = clampToPlaneHeight(currentPos, true);
-            
+            // Convert 2D position + height to 3D
+            glm::vec3 currentPos = paperView->paperPlaneTo3D(hand2DPosition, handHeight);
             bossNode->setPosition(currentPos);
-            handBaseY = currentPos.y;
         }
     } else if (vulnerableState == VulnerableState::None && bossNode && paperView) {
         // Normal random movement around the plane (only when not slapping AND not vulnerable)
         // Update animation time for movement
         bossAnimationTime += dt * bossAnimationSpeed;
         
-        // Get base position from PaperView (top of screen)
-        glm::vec3 bossBasePosition = paperView->getBossBasePosition();
-        // Always use PaperView's base position to ensure we're at the top
-        currentBasePosition = bossBasePosition;
-        glm::vec3 bossHorizontalDirection = paperView->getBossHorizontalDirection();
-        glm::vec3 bossVerticalDirection = paperView->getBossVerticalDirection();
+        // Use sine wave to create back-and-forth horizontal motion within bounds
+        // Bounds are (-0.5, -0.4) to (0.5, 0.4)
+        float horizontalOffset = glm::sin(bossAnimationTime) * 0.5f;  // ±0.5 units horizontally
+        float verticalOffset = glm::cos(bossAnimationTime * 0.5f) * 0.4f;  // ±0.4 units vertically (slower)
+
+        // Update 2D position within bounds
+        hand2DPosition.x = glm::clamp(horizontalOffset, -0.5f, 0.5f);
+        hand2DPosition.y = glm::clamp(verticalOffset, -0.4f, 0.4f);
         
-        // Use multiple sine/cosine waves with different frequencies and phases to create random-looking circular movement
-        // Different frequencies make the movement less predictable
-        float t1 = bossAnimationTime * 0.7f;  // Slower horizontal component
-        float t2 = bossAnimationTime * 0.9f + 1.5f;  // Slightly faster vertical component with phase offset
-        float t3 = bossAnimationTime * 1.3f + 2.1f;  // Even faster component for more randomness
-        
-        // Combine multiple waves for more complex, random-looking motion
-        float horizontalOffset = (glm::sin(t1) * 0.4f + glm::cos(t3) * 0.2f) * 0.6f;
-        float verticalOffset = (glm::cos(t2) * 0.4f + glm::sin(t3) * 0.2f) * 0.6f;
-        
-        // Apply offsets in both horizontal and vertical directions on the plane
-        glm::vec3 desiredPos = bossBasePosition + bossHorizontalDirection * horizontalOffset + bossVerticalDirection * verticalOffset;
-        
-        // Clamp to maintain constant height above the plane
-        glm::vec3 bossPos = clampToPlaneHeight(desiredPos);
-        
-        // Store base Y position
-        handBaseY = bossPos.y;
-        
+        // Convert 2D position + height to 3D
+        glm::vec3 bossPos = paperView->paperPlaneTo3D(hand2DPosition, handHeight);
         bossNode->setPosition(bossPos);
         
         static int slidePrintCount = 0;
         slidePrintCount++;
         if (slidePrintCount % 60 == 0) {  // Print every 60 frames
-            std::cout << "[Boss::update] Random movement - basePos=(" << bossBasePosition.x << ", " << bossBasePosition.y << ", " << bossBasePosition.z 
-                      << "), horizontalOffset=" << horizontalOffset << ", verticalOffset=" << verticalOffset 
-                      << ", finalPos=(" << bossPos.x << ", " << bossPos.y << ", " << bossPos.z << ")" << std::endl;
+            std::cout << "[Boss::update] Sliding - 2DPos=(" << hand2DPosition.x << ", " << hand2DPosition.y 
+                      << "), height=" << handHeight << ", finalPos=(" << bossPos.x << ", " << bossPos.y << ", " << bossPos.z << ")" << std::endl;
         }
         
         // Randomly trigger vulnerable period while moving
@@ -236,29 +227,11 @@ void Boss::startVulnerable() {
     Node* bossNode = getBossNode();
     if (!bossNode || !paperView) return;
     
-    // Get current position (this is the raised position)
-    glm::vec3 currentPos = bossNode->getPosition();
-    vulnerableRaisedPosition = currentPos;
+    // Store current height as raised height
+    vulnerableRaisedHeight = handHeight;
     
-    // Get paper position and plane normal to calculate lowered position
-    glm::vec3 paperPos = paperView->getPaperPosition();
-    glm::vec3 bossPlaneNormal = paperView->getBossPlaneNormal();  // Direction from paper to camera (outward normal)
-    
-    // Calculate target position (move down toward paper along plane normal)
-    // Lower the hand toward the paper, but not below it
-    float verticalDistance = 0.3f;  // Distance to lower toward paper along plane normal
-    
-    // Calculate position relative to paper
-    glm::vec3 relativePos = vulnerableRaisedPosition - paperPos;
-    float distanceAlongNormal = glm::dot(relativePos, bossPlaneNormal);
-    
-    // Lower by reducing distance along normal, but ensure minimum distance
-    float minDistance = 0.01f;  // Minimum distance from paper
-    float targetDistance = glm::max(minDistance, distanceAlongNormal - verticalDistance);
-    
-    // Project raised position onto plane, then add back the target distance
-    glm::vec3 onPlane = vulnerableRaisedPosition - bossPlaneNormal * distanceAlongNormal;
-    vulnerableLoweredPosition = onPlane + bossPlaneNormal * targetDistance;
+    // Lowered height is 0 (at paper level)
+    vulnerableLoweredHeight = 0.0f;
     
     // Start lowering animation
     vulnerableState = VulnerableState::Lowering;

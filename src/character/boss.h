@@ -23,14 +23,13 @@ private:
     float hitboxRadius;
     vec2 hitboxPosition;
     
-    // Hand position offset (for vulnerability - raise/lower)
-    float handRaisedOffset = 0.0f;  // How much the hand is raised (0 when vulnerable, raised when not vulnerable)
-    float handBaseY = 0.0f;  // Base Y position of hand
+    // Hand position in 2D paper plane coordinates
+    vec2 hand2DPosition = vec2(0.0f, 0.0f);  // 2D position on paper plane (bounded -12 to 12, -4.5 to 4.5)
+    float handHeight = 0.0f;  // Height offset along plane normal (for raising/lowering)
     
     // Boss node animation
     float bossAnimationTime = 0.0f;  // Time for back-and-forth animation
     float bossAnimationSpeed = 1.0f;  // Speed of boss sliding animation
-    glm::vec3 currentBasePosition;  // Current base position for sliding (updated after slaps)
     
     // Vulnerability animation state
     enum class VulnerableState {
@@ -44,8 +43,8 @@ private:
     float vulnerableRaiseProgress = 0.0f;  // 0.0 to 1.0, progress through raising animation
     float vulnerableLowerDuration = 0.3f;  // Duration of lowering animation in seconds
     float vulnerableRaiseDuration = 0.3f;  // Duration of raising animation in seconds
-    glm::vec3 vulnerableRaisedPosition;   // Original raised position
-    glm::vec3 vulnerableLoweredPosition;   // Target lowered position (toward paper)
+    float vulnerableRaisedHeight = 0.0f;   // Height when raised
+    float vulnerableLoweredHeight = 0.0f;  // Height when lowered
     
     // Vulnerability recovery
     float vulnerableTime = 0.0f;  // Time spent in lowered state
