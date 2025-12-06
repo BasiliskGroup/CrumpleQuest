@@ -84,12 +84,20 @@ Game::~Game() {
     }
     meshes.clear();
 
+    // animations
+    for (auto const& [name, animation] : animations) {
+        delete animation;
+    }
+    animations.clear();
+
     // Clean up menu scene
     delete menuCamera; menuCamera = nullptr;
     delete menuScene; menuScene = nullptr;
 
     // scene2D will handle deletion
     uiElements.clear();
+
+    delete paperView; paperView = nullptr;
 
     // basilisk closing, must be last
     delete engine; engine = nullptr;

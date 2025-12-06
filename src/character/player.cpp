@@ -21,6 +21,11 @@ Player::Player(Game* game, int health, float speed, Node2D* node, SingleSide* si
     setWeaponPencil();
 }
 
+Player::~Player() {
+    delete animator;
+    delete weaponAnimator;
+}
+
 void Player::onDamage(int damage) {
     Character::onDamage(damage);
 
