@@ -12,8 +12,8 @@
 Boss::Boss(Game* game, PaperView* paperView) : 
     game(game),
     paperView(paperView),
-    health(1),
-    maxHealth(1),
+    health(20),
+    maxHealth(20),
     stage("spawn"),
     vulnerable(false),
     hitboxRadius(0.5f),
@@ -612,7 +612,7 @@ void Boss::attack() {
     // Create node parameters
     Node2D::Params nodeParams;
     nodeParams.mesh = game->getMesh("quad");
-    nodeParams.material = game->getMaterial("circle");
+    nodeParams.material = game->getMaterial("empty");
     nodeParams.scale = vec2(params.radius * 2.0f, params.radius * 2.0f);  // Scale to match radius
     nodeParams.collider = currentSide->getCollider("quad");
     nodeParams.colliderScale = vec2(1.0f, 1.0f);
