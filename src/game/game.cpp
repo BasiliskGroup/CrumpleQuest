@@ -4,6 +4,7 @@
 #include "resource/animator.h"
 #include "weapon/weapon.h"
 #include "audio/sfx_player.h"
+#include "audio/music_player.h"
 #include "character/boss.h"
 #include <iostream>
 
@@ -414,6 +415,8 @@ void Game::setPaper(std::string str) {
 
 void Game::initMenus() {
     MenuManager::Get().pushMainMenu();
+    // Start parchment music on main menu
+    audio::MusicPlayer::Get().FadeTo("parchment", 2.0f);
 }
 
 void Game::initBossHealthBar() {
@@ -534,6 +537,10 @@ void Game::startGame() {
     // create weapons
     player->setWeapon(new MeleeWeapon(player, { .mesh=getMesh("quad"), .material=getMaterial("circle"), .scale={meleeRadius, meleeRadius}}, { .damage=1, .life=0.2f, .radius=meleeRadius / 2.0f }, 0.5f, 6.0f));
     
+    // Always transition to notebook music when starting the game
+    std::cout << "[Game::startGame] Starting game with notebook music" << std::endl;
+    audio::MusicPlayer::Get().FadeTo("notebook", 2.0f);
+    
     // Boss will be created when entering a boss room (see switchToRoom)
 }
 
@@ -551,6 +558,10 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
     int newX = currentX + dx;
     int newY = currentY + dy;
     floor->setCurrentPosition(newX, newY);
+    
+    // Check room type FIRST to determine music
+    RoomTypes newRoomType = floor->getRoomType(newX, newY);
+    std::cout << "[Game::switchToRoom] Room type: " << newRoomType << " (BOSS_ROOM=" << BOSS_ROOM << ")" << std::endl;
     
     // Verify position was set correctly
     int verifyX = floor->getCurrentX();
@@ -578,8 +589,7 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
         paperView->showGameElements();
     }
     
-    // Check if this is a boss room and create/delete boss accordingly
-    RoomTypes newRoomType = floor->getRoomType(newX, newY);
+    // Handle boss room and music transitions based on room type
     if (newRoomType == BOSS_ROOM) {
         // Entering a boss room - create boss if it doesn't exist
         if (boss == nullptr && paperView != nullptr && paperView->getBossNode() != nullptr) {
@@ -589,6 +599,9 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
         }
         // Show boss health bar
         showBossHealthBar(true);
+        // Transition to boss music
+        std::cout << "[Game::switchToRoom] Transitioning to boss music" << std::endl;
+        audio::MusicPlayer::Get().FadeTo("boss", 2.0f);
     } else {
         // Not a boss room - delete boss if it exists (including if leaving animation is in progress)
         if (boss != nullptr) {
@@ -602,6 +615,11 @@ void Game::switchToRoom(Paper* newPaper, int dx, int dy) {
         }
         // Hide boss health bar
         showBossHealthBar(false);
+        
+        // Transition to biome music based on new paper
+        std::string biome = newPaper->getBiome();
+        std::cout << "[Game::switchToRoom] Not boss room - transitioning to biome music: " << biome << std::endl;
+        audio::MusicPlayer::Get().FadeTo(biome, 2.0f);
     }
     
     // Check room state and update directional nodes immediately
@@ -707,6 +725,9 @@ void Game::processReturnToMainMenu() {
     if (paperView) {
         paperView->regenerateMesh();
     }
+    
+    // Transition back to main menu music
+    audio::MusicPlayer::Get().FadeTo("parchment", 2.0f);
     
     // Clear all menus and return to main menu
     // Pop all existing menus (they will be deleted immediately, safe now)

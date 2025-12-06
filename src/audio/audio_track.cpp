@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <chrono>
+#include <iostream>
 
 #include "audio_track.h"
 #include "audio_system.h"
@@ -23,6 +24,7 @@ AudioTrack::~AudioTrack() {
 
 void AudioTrack::AddLayer(const std::string& name, const std::string& filepath, 
                          AudioGroup* group, bool looping) {
+  std::cout << "[AudioTrack::AddLayer] Adding layer: " << name << " from file: " << filepath << " (looping: " << (looping ? "yes" : "no") << ")" << std::endl;
   Layer layer;
   layer.sound = system_->CreateSound(filepath, group);
   layer.sound->SetLooping(looping);
