@@ -23,6 +23,7 @@ void MenuManager::playMenuTouchSound() {
 }
 
 void MenuManager::pushMainMenu() {
+    std::cout << "[MenuManager] Creating main menu..." << std::endl;
     Menu* mainMenu = createMainMenu();
     menuStack->push(mainMenu);
 }
@@ -42,8 +43,10 @@ void MenuManager::popMenu() {
         return;
     }
     Menu* menu = menuStack->top();
-    menuStack->pop();
-    delete menu;  // Delete the menu when hiding it
+    
+    // Start the close animation
+    menu->startCloseAnimation();
+    // Menu will be removed after animation completes in update()
 }
 
 void MenuManager::popMenuDeferred() {
@@ -70,7 +73,18 @@ void MenuManager::update(float dt) {
     }
     pendingDelete.clear();
     
+    // Update menu stack first
     menuStack->update(dt);
+    
+    // Then check if top menu has finished closing animation
+    if (menuStack && menuStack->top()) {
+        Menu* topMenu = menuStack->top();
+        if (topMenu->isAnimatingOut() && topMenu->isDoneAnimating()) {
+            std::cout << "[MenuManager] Menu finished closing animation, removing from stack" << std::endl;
+            menuStack->pop();
+            delete topMenu;
+        }
+    }
 }
 
 Menu* MenuManager::createMainMenu() {

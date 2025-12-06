@@ -362,6 +362,7 @@ void Game::update(float dt) {
     
     if (MenuManager::Get().hasActiveMenu()) {
         // Menu scene renders on top
+        MenuManager::Get().update(engine->getDeltaTime());
         menuScene->update();
         menuScene->render();
     }
@@ -535,7 +536,7 @@ void Game::processReturnToMainMenu() {
     // Clear all menus and return to main menu
     // Pop all existing menus (they will be deleted immediately, safe now)
     while (MenuManager::Get().getMenuStackSize() > 0) {
-        MenuManager::Get().popMenu();
+        MenuManager::Get().popMenuDeferred();
     }
     
     // Then push the main menu (which will be the only menu)

@@ -10,6 +10,7 @@ MenuStack::~MenuStack() {
 
 void MenuStack::push(Menu* menu) {
     stack.push_back(menu);
+    menu->resetAnimation(); // Start slide-in animation when menu becomes visible
 }
 
 void MenuStack::pop() {
