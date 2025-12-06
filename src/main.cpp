@@ -45,7 +45,7 @@ int main() {
     game->addMaterial("hand_right", new Material({ 1, 1, 1 }, game->getImage("hand_right")));
     
     std::unordered_map<std::string, std::vector<std::string>> levelNames = {
-        { "notebook", { "blank", "level1", "level2", "level3", "level4", "level5" } },
+        { "notebook", { "blank", "level1", "level2", "level3", "level4", "level5"} },
         {"tutorial", { "tutorial" } }
     };
     for (auto& [name, levels] : levelNames) {

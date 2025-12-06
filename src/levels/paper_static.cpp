@@ -52,8 +52,8 @@ void Paper::generateTemplates(Game* game) {
         {BASIC_ROOM, {
             "notebook1",
             "notebook2",
-            "notebook3",
-            "notebook4",
+            // "notebook3",
+            // "notebook4",
             "notebook_health",
             "notebook_weapon",
             // "notebook5"
