@@ -23,7 +23,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(basilisk)
 
 # NOTE:
-# Basilisk exposes its own clipper2 target via FetchContent.
+# Basilisk exposes its own clipper2 target via FetchContent. 
 # So we do NOT declare or build our own copy.
 # ======================================================
 

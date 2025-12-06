@@ -1,5 +1,8 @@
 #include "levels/levels.h"
 #include "character/enemy.h"
+#include "pickup/heart.h"
+#include "pickup/stapleGun.h"
+#include "pickup/scissor.h"
 
 
 std::unordered_map<std::string, std::function<SingleSide*(float)>> SingleSide::templates;
@@ -9,6 +12,9 @@ void SingleSide::generateTemplates(Game* game) {
     // Tutorial
     templates["tutorial_front"] = [game](float difficulty) {
         SingleSide* side = new SingleSide(game, "paper0", "tutorial_tutorial", vec2(0, 0), "notebook", {}, difficulty);
+
+        side->addPickup(new StapleGun(game, side, { .mesh=game->getMesh("quad"), .material=game->getMaterial("empty"), .position={2.0 - 6.0, 2.0 - 4.5}, .scale={1.0, 1.0} }, 0.5f));
+
         return side;
     };
     templates["tutorial_back"] = [game](float difficulty) {
