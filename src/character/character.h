@@ -30,7 +30,7 @@ protected:
 
 public:
     Character(Game* game, int maxHealth, float speed, Node2D* node, SingleSide* side, Weapon* weapon, std::string team, float radius, vec2 scale, std::string damageSound);
-    ~Character();
+    virtual ~Character();
 
     virtual void onDamage(int damage);
     virtual void onDeath();
