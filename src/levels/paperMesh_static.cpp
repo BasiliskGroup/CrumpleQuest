@@ -116,9 +116,9 @@ void PaperMesh::generateTemplates(Game* game) {
         std::vector<UVRegion> obst;
 
         std::vector<vec2> points = { 
-            vec2\left(1.84,5.5\right), vec2\left(1.94,2.1\right),
-            vec2\left(10.16,6.9\right), vec2\left(1.94,2.1\right),
-            vec2\left(10.16,6.9\right), vec2\left(10.16,3.55\right),
+            vec2(1.84,5.5), vec2(1.94,2.1),
+            vec2(10.16,6.9), vec2(1.94,2.1),
+            vec2(10.16,6.9), vec2(10.16,3.55),
         };
         
         addLines(obst, points, game);
@@ -129,10 +129,10 @@ void PaperMesh::generateTemplates(Game* game) {
         std::vector<UVRegion> obst;
 
         std::vector<vec2> points = { 
-            vec2\left(0.13,8.9\right), vec2\left(4.2,6\right),
-            vec2\left(0.13,2.58\right), vec2\left(4.16,2.58\right),
-            vec2\left(11.84,6.44\right), vec2\left(8,6.47\right),
-            vec2\left(11.8,0.12\right), vec2\left(8.03,3.26\right),
+            vec2(0.13,8.9), vec2(4.2,6),
+            vec2(0.13,2.58), vec2(4.16,2.58),
+            vec2(11.84,6.44), vec2(8,6.47),
+            vec2(11.8,0.12), vec2(8.03,3.26),
         };
         
         addLines(obst, points, game);
@@ -143,8 +143,8 @@ void PaperMesh::generateTemplates(Game* game) {
         std::vector<UVRegion> obst;
 
         std::vector<vec2> points = { 
-            vec2\left(9.17,6.37\right), vec2\left(2.86,6.4\right),
-            vec2\left(9.1,2.55\right), vec2\left(3,2.57\right),
+            vec2(9.17,6.37), vec2(2.86,6.4),
+            vec2(9.1,2.55), vec2(3,2.57),
         };
         
         addLines(obst, points, game);
@@ -155,10 +155,10 @@ void PaperMesh::generateTemplates(Game* game) {
         std::vector<UVRegion> obst;
 
         std::vector<vec2> points = { 
-            vec2\left(0.22,0.13\right), vec2\left(3.45,2.53\right),
-            vec2\left(0.2,8.8\right), vec2\left(3.5,6.4\right),
-            vec2\left(11.87,8.9\right), vec2\left(8.44,6.4\right),
-            vec2\left(11.9,0.2\right), vec2\left(8.4,2.56\right),
+            vec2(0.22,0.13), vec2(3.45,2.53),
+            vec2(0.2,8.8), vec2(3.5,6.4),
+            vec2(11.87,8.9), vec2(8.44,6.4),
+            vec2(11.9,0.2), vec2(8.4,2.56),
         };
         
         addLines(obst, points, game);
@@ -169,18 +169,8 @@ void PaperMesh::generateTemplates(Game* game) {
         std::vector<UVRegion> obst;
 
         std::vector<vec2> points = { 
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
+            vec2(11.77,6.1), vec2(0.2,6.1),
+            vec2(11.84,2.93), vec2(0.2,2.78),
         };
         
         addLines(obst, points, game);
@@ -191,18 +181,8 @@ void PaperMesh::generateTemplates(Game* game) {
         std::vector<UVRegion> obst;
 
         std::vector<vec2> points = { 
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
-            vec2, vec2,
+            vec2(4.1,0.18), vec2(4,8.88),
+            vec2(7.85,0.2), vec2(7.98,8.95),
         };
         
         addLines(obst, points, game);
