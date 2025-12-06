@@ -13,4 +13,6 @@
 #include "character/character.h"
 #include "character/enemy.h"
 
+#include "pickup/pickup.h"
+
 #endif

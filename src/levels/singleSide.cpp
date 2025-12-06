@@ -1,6 +1,7 @@
 #include "levels/levels.h"
 #include "weapon/meleeZone.h"
 #include "util/random.h"
+#include "pickup/pickup.h"
 
 
 SingleSide::SingleSide(Game* game, std::string mesh, std::string material, vec2 playerSpawn, std::string biome, std::vector<vec2> enemySpawns, float difficulty) : 
@@ -31,6 +32,12 @@ SingleSide::SingleSide(Game* game, std::string mesh, std::string material, vec2 
         .scale={ 1, 1 } 
     });
     background->setLayer(-0.7);
+
+    // transform enemy spawns
+    vec2 offset = {6.0f, 4.5f};
+    for (vec2& spawn : enemySpawns) {
+        spawn -= offset;
+    }
 
     // add enemies based on difficulty
     if (!enemySpawns.empty() && difficulty > 0.0f) {
@@ -121,6 +128,7 @@ SingleSide::SingleSide(const SingleSide& other) noexcept
     if (other.camera) camera = new StaticCamera2D(*other.camera);
     enemies = other.enemies;
     damageZones = other.damageZones;
+    pickups = other.pickups;
 
     loadResources();
     
@@ -218,6 +226,7 @@ SingleSide& SingleSide::operator=(SingleSide&& other) noexcept {
     camera = other.camera;
     enemies = std::move(other.enemies);
     damageZones = std::move(other.damageZones);
+    pickups = std::move(other.pickups);
 
     // clear other
     other.scene = nullptr;
@@ -327,6 +336,25 @@ void SingleSide::update(const vec2& playerPos, float dt, Player* player) {
         enemy->move(playerPos, dt);
     }
 
+    // Check for collisions between player and pickups
+    if (player != nullptr && !player->isDead()) {
+        for (int i = 0; i < pickups.size(); i++) {
+            Pickup* pickup = pickups[i];
+            if (pickup == nullptr) continue;
+            
+            float combinedRadius = player->getRadius() + pickup->getRadius();
+            float distSq = glm::length2(player->getPosition() - pickup->getPosition());
+            
+            if (distSq <= combinedRadius * combinedRadius) {
+                // Player collided with pickup
+                pickup->onPickup();
+                delete pickup;
+                pickups.erase(pickups.begin() + i);
+                i--; // Adjust index after removal
+            }
+        }
+    }
+
     scene->update();
 }
 
@@ -335,6 +363,12 @@ void SingleSide::clear() {
         delete enemy;
     }
     enemies.clear();
+    
+    for (Pickup* pickup : pickups) {
+        delete pickup;
+    }
+    pickups.clear();
+    
     walls.clear(); // will get cleaned by the scene
 
     delete scene; scene = nullptr;
