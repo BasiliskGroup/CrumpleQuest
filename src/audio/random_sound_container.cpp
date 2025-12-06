@@ -3,6 +3,7 @@
 #include <iostream>
 #include <random>
 #include <filesystem>
+#include "miniaudio/miniaudio.h"
 
 namespace fs = std::filesystem;
 
@@ -55,6 +56,23 @@ void RandomSoundContainer::LoadFromFolder(const std::string& folderPath) {
 
         auto path = entry.path();
         if (path.extension() == ".wav") {
+            // Check duration if maxDuration is set
+            if (config_.maxDuration > 0.0f) {
+                ma_decoder decoder;
+                ma_decoder_config decoderConfig = ma_decoder_config_init(ma_format_f32, 0, 0);
+                
+                if (ma_decoder_init_file(path.string().c_str(), &decoderConfig, &decoder) == MA_SUCCESS) {
+                    ma_uint64 lengthInFrames;
+                    ma_decoder_get_length_in_pcm_frames(&decoder, &lengthInFrames);
+                    float durationInSeconds = (float)lengthInFrames / (float)decoder.outputSampleRate;
+                    ma_decoder_uninit(&decoder);
+                    
+                    if (durationInSeconds > config_.maxDuration) {
+                        continue; // Skip this file
+                    }
+                }
+            }
+            
             AddSound(path.string());
             count++;
         }

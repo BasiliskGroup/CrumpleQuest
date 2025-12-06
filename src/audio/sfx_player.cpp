@@ -36,6 +36,14 @@ void SFXPlayer::Initialize(GroupHandle sfx_group) {
     rotateConfig.pitchMax = 1.1f;
     LoadCollection("rotate", "sounds/sfx/paper/move_sounds", rotateConfig);
     
+    // Load move sounds for UI interactions (only short ones)
+    RandomSoundContainerConfig moveConfig;
+    moveConfig.avoidRepeat = true;
+    moveConfig.pitchMin = 0.8f;
+    moveConfig.pitchMax = 1.3f;
+    moveConfig.maxDuration = 0.3f; // Only load sounds under 0.3 seconds
+    LoadCollection("move", "sounds/sfx/paper/move_sounds", moveConfig);
+    
     // Load flip sounds
     RandomSoundContainerConfig flipConfig;
     flipConfig.avoidRepeat = true;
